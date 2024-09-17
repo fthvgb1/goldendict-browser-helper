@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         goldendict
+// @name         goldendicthelper
 // @namespace    http://tampermonkey.net/
 // @version      0.1
 // @description  调用goldendict
-// @author       https://github.com/fthvgb1
+// @author       https://github.com/fthvgb1/goldendicthelper
 // @match        http://*/*
 // @include      https://*/*
 // @include      file:///*
