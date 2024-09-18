@@ -1,10 +1,10 @@
-module bridge
+module github.com/fthvgb1/goldendict-browser-helper
 
 go 1.23.1
 
 require (
 	github.com/fthvgb1/wp-go v0.0.0-20240831120152-8aeec6018135
-	github.com/go-vgo/robotgo v0.110.2
+	github.com/go-vgo/robotgo v0.110.3
 	golang.design/x/clipboard v0.7.0
 )
 

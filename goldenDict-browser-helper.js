@@ -1,16 +1,15 @@
 // ==UserScript==
-// @name         goldendicthelper
+// @name         goldenDict-browser-helper
 // @namespace    http://tampermonkey.net/
 // @version      0.1
 // @description  调用goldendict
-// @author       https://github.com/fthvgb1/goldendicthelper
+// @author       https://github.com/fthvgb1/goldendict-browser-helper
 // @match        http://*/*
 // @include      https://*/*
 // @include      file:///*
 // @connect      127.0.0.1
 // @connect      127.0.0.1:9999
 // @run-at       document-start
-// @connect      hjenglish.com
 // @grant        GM_xmlhttpRequest
 // @grant        GM_registerMenuCommand
 // @grant        GM_setValue
@@ -23,10 +22,15 @@
     GM_registerMenuCommand(
         "ocr",
         () => {
+            let orcKey = 'alt c'
+            let ua = navigator.userAgent.toLowerCase()
+            if (ua.indexOf('windows') > -1 || ua.indexOf('win32') > -1) {
+                orcKey = 'cmd alt c'
+            }// 苹果系统的不知道快捷键是啥
             GM_xmlhttpRequest({
                 method: "post",
                 url: 'http://127.0.0.1:9999/ocr',
-                data: 'copy=' + parseKey(GM_getValue('copykey', 'ctrl c,ctrl c'))+'&ocr='+parseKey(GM_getValue('ocrkey','alt c')),
+                data: 'copy=' + parseKey(GM_getValue('copykey', 'ctrl c,ctrl c')) + '&ocr=' + parseKey(GM_getValue('ocrkey', orcKey)),
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded"
                 },
