@@ -1,5 +1,5 @@
 .idea
-bridge.iml
+goldendict-browser-helper.iml
 go.sum
 bridge.exe
 make.sh
