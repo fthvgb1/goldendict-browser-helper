@@ -17,9 +17,11 @@ import (
 
 var addr string
 var mux = sync.Mutex{}
+var timeout time.Duration
 
 func main() {
 	flag.StringVar(&addr, "p", ":9999", "httpserver listen port")
+	flag.DurationVar(&timeout, "t", 10*time.Second, "ocr watch timeout")
 	flag.Parse()
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +67,7 @@ func main() {
 			panic(err)
 		}
 
-		ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.TODO(), timeout)
 		defer cancel()
 		ch := clipboard.Watch(ctx, clipboard.FmtText)
 		for {
