@@ -472,8 +472,10 @@
                 }).finally(() => {
                     if (!gbinded) {
                         const ss = icon.querySelector('img[icon-id="icon-golden-dict"]');
-                        ss.addEventListener('click', goldenDictEv, false)
-                        gbinded = true
+                        setTimeout(() => {
+                            ss.addEventListener('click', goldenDictEv, false)
+                            gbinded = true
+                        }, 100)
                     }
                 })
 
