@@ -411,8 +411,7 @@
         GM_xmlhttpRequest({
             method: "POST",
             url: 'http://127.0.0.1:9999',
-            //data: 'keys=xkfjss',
-            data: 'keys=' + copyKey,
+            data: 'keys=' + copyKey + '&text=' + text,
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded"
             },
@@ -466,6 +465,14 @@
             trigger: (t, time) => {
                 text = t
                 navigator.clipboard.writeText(text).then(r => {
+                    goldenDict('')
+                    if (!gbinded) {
+                        var ss = icon.querySelector('img[icon-id="icon-golden-dict"]');
+                        ss.addEventListener('click', goldenDictEv, false)
+                        gbinded = true
+                    }
+                }).catch((res) => {
+                    console.log(res)
                     goldenDict(text)
                     if (!gbinded) {
                         var ss = icon.querySelector('img[icon-id="icon-golden-dict"]');

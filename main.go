@@ -23,7 +23,6 @@ func main() {
 	flag.StringVar(&addr, "p", ":9999", "httpserver listen port")
 	flag.DurationVar(&timeout, "t", 10*time.Second, "ocr watch timeout")
 	flag.Parse()
-
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.RequestURI == "/favicon.ico" {
 			return
@@ -32,6 +31,11 @@ func main() {
 		if err != nil {
 			log.Println(err)
 			return
+		}
+		text := r.Form.Get("text")
+		if text != "" {
+			log.Println("copied:", text)
+			clipboard.Write(clipboard.FmtText, []byte(text))
 		}
 		keys, err := parseKeyboard(r, "keys")
 		if err != nil {
