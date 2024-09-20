@@ -466,16 +466,12 @@
                 text = t
                 navigator.clipboard.writeText(text).then(r => {
                     goldenDict('')
-                    if (!gbinded) {
-                        var ss = icon.querySelector('img[icon-id="icon-golden-dict"]');
-                        ss.addEventListener('click', goldenDictEv, false)
-                        gbinded = true
-                    }
                 }).catch((res) => {
                     console.log(res)
                     goldenDict(text)
+                }).finally(() => {
                     if (!gbinded) {
-                        var ss = icon.querySelector('img[icon-id="icon-golden-dict"]');
+                        const ss = icon.querySelector('img[icon-id="icon-golden-dict"]');
                         ss.addEventListener('click', goldenDictEv, false)
                         gbinded = true
                     }
@@ -530,7 +526,7 @@
         img.setAttribute('alt', obj.name);
         img.setAttribute('title', obj.name);
         img.setAttribute('icon-id', obj.id);
-        img.addEventListener('mouseup', function () {
+        img.addEventListener('mouseup', (event) => {
             if (engineId === obj.id) {
                 // 已经是当前翻译引擎，不做任何处理
             } else {
