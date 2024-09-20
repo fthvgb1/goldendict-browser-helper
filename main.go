@@ -115,6 +115,13 @@ func tapKeyboard(a []any) error {
 			continue
 		}
 		if len(k) > 1 {
+			k = slice.Map(k, func(t any) any {
+				v, ok := t.(float64)
+				if ok {
+					return int(v)
+				}
+				return t
+			})
 			key := k[0].(string)
 			err := robotgo.KeyTap(key, k[1:]...)
 			if err != nil {
