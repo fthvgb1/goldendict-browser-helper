@@ -392,18 +392,22 @@
     var engineResult = {}; // id: DOM
     // 唯一 ID
     var vices = [];
-    var vice;
+    let vice;
     var ttt = '';
     let text = '';
-    let gbinded = false
+    let gbinded = false;
+    let s;
+    speechSynthesis.addEventListener("voiceschanged", () => {
+        if (vices.length < 1) {
+            vices = speechSynthesis.getVoices();
+            s = new SpeechSynthesisUtterance();
+        }
+    });
 
     function speech(event) {
         var ss = icon.querySelector('img[icon-id="icon-speech"]');
-
         if (event.target === ss) {
-            var x = new SpeechSynthesisUtterance(ttt);
-            x.voice = vice;
-            speechSynthesis.speak(x);
+            speechSynthesis.speak(s);
         }
     }
 
@@ -454,6 +458,32 @@
         goldenDict(text)
     }
 
+    function speak(t) {
+        const la = eld.detect(ttt).language;
+        console.log(la);
+        let vic = false;
+        vices.forEach(value => {
+            if (vic) {
+                return
+            }
+            if (value.lang.toLowerCase().indexOf(la) > -1) {
+                vice = value
+                vic = true
+            }
+        });
+        if (!vice) {
+            icon.querySelector('img[icon-id="icon-speech"]').title = '似乎无可用的tts,请先安装';
+        } else {
+            s.voice = vice;
+            s.text = t;
+            speechSynthesis.speak(s);
+            setTimeout(() => {
+                const ss = icon.querySelector('img[icon-id="icon-speech"]');
+                ss.addEventListener('click', speech, false)
+            }, 100)
+        }
+    }
+
     // 绑定图标拖动事件
     var iconDrag = new Drag(icon);
     // 图标数组
@@ -478,7 +508,6 @@
                         }, 100)
                     }
                 })
-
             }
         },
         {
@@ -486,38 +515,17 @@
             id: 'icon-speech',
             image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAbCAYAAACJISRoAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAANsSURBVEhLlVY7aBRRFD1vN5vVJKtoosFI4icYEEHE+IckiBFJITaWFlpYiIWdFmKhoihYamWhkM7KylYUC+OfWAiCHxJFo0ENyWqya3a8n/f2vdmdgXjZ3fPOnTfvnnNn3syag8NRBPrAGCQiCPGfWLNOhrKaCJEm6oh+ZUDcYh2X8PM1HUctIooDJEU6ol8ZJHCLGv64puNci1gdiSjDep7mRCHObRGvqA7pkzERcjSzMRs566lOFLwjDj1HZXkMlOWyQOdSgxM7gFN7DLpbgYZMuhNNx9EK8wrsQH4X5yL0rwXODwID64DdXcDpPqBjSboTTce5bZfqYIUtjUAhb9DWDBzdanB8O6RV994Czz4DbU3AqkK6E4U4lyKG6vHiBzZEOLcXuEjKL+8H9nUDU7PA9ccRhl8CEzNAls7I0jVKcrJ+eYSeNl7UO+KQIrmswZEtwLFeQ/0HVrYA7fTlRS89AEbGDcoVmW8j2cmFQYNrQ9QRWk8PK0oRvmv61gCleeDqQ+AGKecYnwLGfgKVao9dqJNCPkIrta8hU3PczbcoRTJUsSUP/CkDoxPA96JTSKGSZOhDnZzcZUg90Nxolbtw10TtahFWxpSrahsDXY4HKSY8j28Cbm+eOhE/7J1w2CIxHRQBV0lOlI0EbkcSgRPGqpN4BFwlOVE2ErgdSQROGKtOmHBVVRjocjxIMVmoEw4pwnfPTIl3OLC5HVjRHOhSSRZdqJPRr8Cjj3TD/E13wiFFSvNGJufpOXWmX+8aDr6oXctoEiurVU78zmu63UeAYindCaMUKc/Tjn4F3Hoeyd74RpuQNyJvyLMDwM5OfQr7UCez5KBIHXD7aOwX8O4H8Yp3wmhfvzyinU/fPLWMqy8iPLxJH4zztNvvv9ei21YDV2jDPvlU7YYEn9NEjyZ6/GFmTnPusNWntEwK+NpMz0WYLAK3X0S4+ZTzwFAP0EsFJn8DX6bViV9GdRZLEZ3Lxb0TjqoT7rHkWFLA+X3SUQAObSSXDcDdN8AHagl12K0hYU9LxAX9W+E3Y5ZfVHTa34qRa8D5+uUs1qxj28UTUpA+lcjQ4noXUkclrzP8vBinhWXEhShi10RQhvVcxAd5HVlOBxO5nuSdVJWohHpuUaOGO+WcD7nFqpOYkpDLgLhFjQQeYuAkAvAPy4GovdmaNF4AAAAASUVORK5CYII=',
             trigger: function (text, time) {
-                speechSynthesis.getVoices();
                 ttt = text;
-                const la = eld.detect(ttt).language
-                setTimeout(() => {
-                    if (vices.length < 1) {
-                        let vic = false
+                if (vices.length < 1) {
+                    setTimeout(() => {
                         vices = speechSynthesis.getVoices();
-                        vices.forEach(value => {
-                            if (vic) {
-                                return
-                            }
-                            if (value.lang.toLowerCase().indexOf(la) > -1) {
-                                vice = value
-                                vic = true
-                            }
-                        });
-                        if (!vice) {
-                            icon.querySelector('img[icon-id="icon-speech"]').title = '似乎无可用的tts,请先安装';
-
+                        if (vices.length > 0) {
+                            speak(ttt)
                         }
-                    }
-                    if (vice) {
-                        const s = new SpeechSynthesisUtterance();
-                        s.voice = vice;
-                        s.text = text;
-                        speechSynthesis.speak(s);
-                        const ss = icon.querySelector('img[icon-id="icon-speech"]');
-                        ss.addEventListener('click', speech, false)
-                    }
-
-                }, 450);
-
+                    }, 450);
+                } else {
+                    speak(ttt)
+                }
             }
         },
     ];
