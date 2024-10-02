@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         goldenDict-browser-helper
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.2
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1/goldendict-browser-helper
 // @match        http://*/*
@@ -19,6 +19,7 @@
 
 (function () {
     'use strict';
+    const host = GM_getValue('host', 'http://127.0.0.1:9999')
     const copyKey = parseKey(GM_getValue('copykey', 'ctrl c,ctrl c'));
     GM_registerMenuCommand(
         "ocr",
@@ -28,14 +29,7 @@
             if (ua.indexOf('windows') > -1 || ua.indexOf('win32') > -1) {
                 orcKey = 'cmd alt c'
             }// 苹果系统的不知道快捷键是啥
-            GM_xmlhttpRequest({
-                method: "post",
-                url: 'http://127.0.0.1:9999/ocr',
-                data: 'copy=' + copyKey + '&ocr=' + parseKey(GM_getValue('ocrkey', orcKey)),
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-            })
+            request('copy=' + copyKey + '&ocr=' + parseKey(GM_getValue('ocrkey', orcKey)), 'ocr');
         },
         "h"
     );
@@ -411,15 +405,23 @@
         }
     }
 
-    function goldenDict(text) {
+    function request(data, path = '', call = null) {
+        if (path !== '') {
+            if (path[0] !== '/') {
+                path = '/' + path;
+            }
+        }
         GM_xmlhttpRequest({
             method: "POST",
-            url: 'http://127.0.0.1:9999',
-            data: 'keys=' + copyKey + '&text=' + text,
+            url: host + path,
+            data: data,
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded"
             },
             onload: function (res) {
+                if (call) {
+                    call();
+                }
                 console.log(res);
             },
             onerror: function (res) {
@@ -427,8 +429,12 @@
             },
             onabort: function (res) {
                 console.log(res);
-            },
-        })
+            }
+        });
+    }
+
+    function goldenDict(text) {
+        request('keys=' + copyKey + '&text=' + text)
     }
 
     function parseKey(key) {
@@ -455,7 +461,7 @@
         if (e.target !== ele) {
             return
         }
-        goldenDict(text)
+        goldenDict(text);
     }
 
     function speak(t) {
@@ -528,6 +534,16 @@
                 }
             }
         },
+        {
+            name: 'force copy',
+            id: 'icon-copy',
+            image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAABBRJREFUeF7tm0uoTlEUx3+XEFEG3mSghFLKABkpBsoj5FEeGQhlICVkQMpAxMCrFAbyyPtREkoykNeMkqKURB4D5U0e5/917nWcb5/77e/es/b9vnvPGn7fPmvt9d9rP9Z/7d1AB5eGDu4/PgD0AMYA/YEuxoC9BZ4Cr4ztNKlvDoCRUastwEyge6gOAX+AB8A24KK13SwAVgD7Aox4Jf/OAkuBL5UatvR/FwArgQMtVWjw3VVgOvDLQHfZGjACeFQDI5/2dQOwIwQAJ4EFFoZaqfMDMBT42Eo9ZZ8np4BW+/eOBe8NsAy4DvzMuwMpfaOAvcBkh535wJm87ScBmADccRiYBlzJ23Az+npGC9/zaBHuk2qzE1iXdz+SAMyK9vsLDgPdgB95G66g71K8/SabHQcW592PJAAKsVMOAz6Hpbz7dRqYl1Kq8Fcfc5UCgASctRQBRx3hfgxYkuvww3/ngFoCYBEgh5Oi+a91IFep1SkgJzcBq2Nv9wBbc/U8VlbLAFj4W6azAKBGF8Egoy8jRQQUEfAPAettcBgwI9rKhgP9jGNcR3clcXcB8QmZWWSIKTAEUCIjgNviWK1UWvTaLhepYg3AWOAyMNB4xH3UXwPmpOk1SwA08iI3B/j0LlCbsoTKEoBaZZcUBU1pvxUAWvCeZcx5cY5PjEe8a8RgTQT6OuzcB8Y3/m4FgM7wux3G12T8boGHmCWN9JSUctUdBgOvLQ9C+4FVKcMP4wqThbNZOsUxPnb8OQm4ZQmAmKU0e3MOmBvS+3gK/nbYFNukoovZUTgYpeUBqEI+LaL+1ccCAKtFsIiAUKxunlNAC5Sr8tIpLll72GpqUpcRoK3hpsNLbSXVHlzqEoBBwEvH6e0GoKrRpypCoC4BkH/3ojrgOIejKpreTpTIvsd5dhZNXbcAzAbOVzHSmzPo6roFQL67Op+FybsMdqeuAdA9AR1bp3pEQrsEQH53jni0tcBGoHczQLTLKZD0VymlIkGXJ8TsKM+WtNtF0CPqvZrU9Rrg5WGFRgUA9ZgL5DHyjTqKCCgiINAlJ4+w9WaEPHR5NymmQDEFiikQ5qKjx6RskzVAPMHCVOd0/VXESkjRNd9vDoNK+0uvUazq9boPoGQqKcocVTOshllqLVh67iPg06LaoGqEZgCo8lIqPKRE9Jrqhq5yVWudTX6vpE1J3EEHX/E5Lpp+tQSgF/CiQiqdp8PV6DoRvUzTTdSSWE0B6V4fPb7YXk3PArTV3aHR8dM8cwBEquh6jA+zFMD3konlwKGkMcsIkB3Ra0faoCqcBlQjr3L94fQf1gA02tO2o5dfotxD2ZRtvTfUdqcHoHqRWiYhOyPjui2me4J6hmspGnHdANF1nNJqnyWhAbB0ukW6OzwAfwEljPdBHsaHcAAAAABJRU5ErkJggg==',
+            trigger: (t) => {
+                request('text=' + t, '', () => {
+                    hideIcon();
+                });
+            },
+        }
     ];
     // 添加翻译引擎图标
     iconArray.forEach(function (obj) {
@@ -717,7 +733,7 @@
             }
         }
         log('selected:' + selected + ', pageX:' + pageX + ', pageY:' + pageY)
-        if (e.target == icon || (e.target.parentNode && e.target.parentNode == icon)) { // 点击了翻译图标
+        if (e.target === icon || (e.target.parentNode && e.target.parentNode === icon)) { // 点击了翻译图标
             e.preventDefault();
             return;
         }
