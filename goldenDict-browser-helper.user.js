@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         goldenDict-browser-helper
 // @namespace    http://tampermonkey.net/
-// @version      0.2
+// @version      0.3
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1/goldendict-browser-helper
 // @match        http://*/*
@@ -21,17 +21,20 @@
     'use strict';
     const host = GM_getValue('host', 'http://127.0.0.1:9999')
     const copyKey = parseKey(GM_getValue('copykey', 'ctrl c,ctrl c'));
+    const ocrKey = parseKey(GM_getValue('ocrkey', navigator.userAgent.toLowerCase().indexOf('windows') > -1 ? 'cmd alt c' : 'alt c'));
+    GM_registerMenuCommand(
+        "ocr translate",
+        () => {
+            request({copy: copyKey, ocr: ocrKey}, 'ocr');
+        },
+        "h"
+    );
     GM_registerMenuCommand(
         "ocr",
         () => {
-            let orcKey = 'alt c'
-            let ua = navigator.userAgent.toLowerCase()
-            if (ua.indexOf('windows') > -1 || ua.indexOf('win32') > -1) {
-                orcKey = 'cmd alt c'
-            }// 苹果系统的不知道快捷键是啥
-            request('copy=' + copyKey + '&ocr=' + parseKey(GM_getValue('ocrkey', orcKey)), 'ocr');
+            request('keys=' + ocrKey);
         },
-        "h"
+        "k"
     );
     /**样式*/
     var style = document.createElement('style');
@@ -406,6 +409,10 @@
     }
 
     function request(data, path = '', call = null) {
+        if (data instanceof Object) {
+            const keys = Object.keys(data);
+            data = keys.map(k => k + '=' + data[k]).join('&');
+        }
         if (path !== '') {
             if (path[0] !== '/') {
                 path = '/' + path;
@@ -434,7 +441,7 @@
     }
 
     function goldenDict(text) {
-        request('keys=' + copyKey + '&text=' + text)
+        request({keys: copyKey, text: text})
     }
 
     function parseKey(key) {
