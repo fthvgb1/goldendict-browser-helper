@@ -20,7 +20,7 @@ var mux = sync.Mutex{}
 var timeout time.Duration
 
 func main() {
-	flag.StringVar(&addr, "p", ":9999", "httpserver listen port")
+	flag.StringVar(&addr, "p", "127.0.0.1:9999", "httpserver listen port")
 	flag.DurationVar(&timeout, "t", 10*time.Second, "ocr watch timeout")
 	flag.Parse()
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

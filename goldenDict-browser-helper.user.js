@@ -410,13 +410,10 @@
 
     function request(data, path = '', call = null) {
         if (data instanceof Object) {
-            const keys = Object.keys(data);
-            data = keys.map(k => k + '=' + data[k]).join('&');
+            data = Object.keys(data).map(k => k + '=' + data[k]).join('&');
         }
-        if (path !== '') {
-            if (path[0] !== '/') {
-                path = '/' + path;
-            }
+        if (path !== '' && path[0] !== '/') {
+            path = '/' + path;
         }
         GM_xmlhttpRequest({
             method: "POST",
