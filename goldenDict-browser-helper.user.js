@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         goldenDict-browser-helper
 // @namespace    http://tampermonkey.net/
-// @version      0.3
+// @version      0.4
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1/goldendict-browser-helper
 // @match        http://*/*
@@ -36,17 +36,38 @@
         },
         "k"
     );
-    /**样式*/
-    var style = document.createElement('style');
-    // >>>>> 可以自定义的变量
-    var fontSize = 14; // 字体大小
-    var iconWidth = 300; // 整个面板宽度
-    var iconHeight = 400; // 整个面板高度
-    // 可以自定义的变量 <<<<< （自定义变量修改后把 “@version” 版本号改为 “10000” 防止更新后消失）
-    var trContentWidth = iconWidth - 16; // 整个面板宽度 - 边距间隔 = 翻译正文宽度
-    var trContentHeight = iconHeight - 35; // 整个面板高度 - 边距间隔 = 翻译正文高度
-    var zIndex = '2147483647'; // 渲染图层
-    style.textContent = `
+
+    function parseKey(key) {
+        key = key.trim()
+        if (key.indexOf('[') > -1) {
+            return key
+        }
+        const keys = key.split(',').map(v => {
+            v = v.trim()
+            const vv = v.split(' ')
+            if (vv.length > 1) {
+                const k = vv[vv.length - 1]
+                let kk = vv.slice(0, vv.length - 1)
+                kk.unshift(k)
+                return kk
+            }
+            return vv
+        })
+        return JSON.stringify(keys)
+    }
+
+    document.addEventListener("DOMContentLoaded", (event) => {
+        /**样式*/
+        const style = document.createElement('style');
+        // >>>>> 可以自定义的变量
+        const fontSize = 14; // 字体大小
+        const iconWidth = 300; // 整个面板宽度
+        const iconHeight = 400; // 整个面板高度
+        // 可以自定义的变量 <<<<< （自定义变量修改后把 “@version” 版本号改为 “10000” 防止更新后消失）
+        const trContentWidth = iconWidth - 16; // 整个面板宽度 - 边距间隔 = 翻译正文宽度
+        const trContentHeight = iconHeight - 35; // 整个面板高度 - 边距间隔 = 翻译正文高度
+        const zIndex = '2147483647'; // 渲染图层
+        style.textContent = `
     /*组件样式*/
     :host{all:unset!important}
     :host{all:initial!important}
@@ -367,424 +388,404 @@
     .hjenglish dd{margin-left:1em}
     .hjenglish dd>p{margin-left:2.5em}
     `;
-    // iframe 工具库
-    var iframe = document.createElement('iframe');
-    var iframeWin = null;
-    var iframeDoc = null;
-    iframe.style.display = 'none';
-    var icon = document.createElement('tr-icon'), //翻译图标
-        content = document.createElement('tr-content'), // 内容面板
-        contentList = document.createElement('div'), //翻译内容结果集（HTML内容）列表
-        selected, // 当前选中文本
-        engineId, // 当前翻译引擎
-        engineTriggerTime, // 引擎触发时间（milliseconds）
-        idsType, // 当前翻译面板内容列表数组
-        pageX, // 图标显示的 X 坐标
-        pageY; // 图标显示的 Y 坐标
-    // 初始化内容面板
-    content.appendChild(contentList);
-    // 发音缓存
-    var audioCache = {}; // {'mp3 download url': data}
-    // 翻译引擎结果集
-    var engineResult = {}; // id: DOM
-    // 唯一 ID
-    var vices = [];
-    let vice;
-    var ttt = '';
-    let text = '';
-    let gbinded = false;
-    let s;
-    speechSynthesis.addEventListener("voiceschanged", () => {
-        if (vices.length < 1) {
-            vices = speechSynthesis.getVoices();
-            s = new SpeechSynthesisUtterance();
-        }
-    });
-
-    function speech(event) {
-        var ss = icon.querySelector('img[icon-id="icon-speech"]');
-        if (event.target === ss) {
-            speechSynthesis.speak(s);
-        }
-    }
-
-    function request(data, path = '', call = null) {
-        if (data instanceof Object) {
-            data = Object.keys(data).map(k => k + '=' + data[k]).join('&');
-        }
-        if (path !== '' && path[0] !== '/') {
-            path = '/' + path;
-        }
-        GM_xmlhttpRequest({
-            method: "POST",
-            url: host + path,
-            data: data,
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            onload: function (res) {
-                if (call) {
-                    call();
-                }
-                console.log(res);
-            },
-            onerror: function (res) {
-                console.log(res);
-            },
-            onabort: function (res) {
-                console.log(res);
+        // iframe 工具库
+        const iframe = document.createElement('iframe');
+        let iframeWin = null;
+        let iframeDoc = null;
+        iframe.style.display = 'none';
+        let icon = document.createElement('tr-icon'), //翻译图标
+            content = document.createElement('tr-content'), // 内容面板
+            contentList = document.createElement('div'), //翻译内容结果集（HTML内容）列表
+            selected, // 当前选中文本
+            engineId, // 当前翻译引擎
+            engineTriggerTime, // 引擎触发时间（milliseconds）
+            idsType, // 当前翻译面板内容列表数组
+            pageX, // 图标显示的 X 坐标
+            pageY; // 图标显示的 Y 坐标
+        // 初始化内容面板
+        content.appendChild(contentList);
+        // 发音缓存
+        let audioCache = {}; // {'mp3 download url': data}
+        // 翻译引擎结果集
+        let engineResult = {}; // id: DOM
+        // 唯一 ID
+        let vices = [];
+        let vice;
+        let ttt = '';
+        let text = '';
+        let gbinded = false;
+        let s;
+        speechSynthesis.addEventListener("voiceschanged", () => {
+            if (vices.length < 1) {
+                vices = speechSynthesis.getVoices();
+                s = new SpeechSynthesisUtterance();
             }
         });
-    }
 
-    function goldenDict(text) {
-        request({keys: copyKey, text: text})
-    }
-
-    function parseKey(key) {
-        key = key.trim()
-        if (key.indexOf('[') > -1) {
-            return key
-        }
-        const keys = key.split(',').map(v => {
-            v = v.trim()
-            const vv = v.split(' ')
-            if (vv.length > 1) {
-                const k = vv[vv.length - 1]
-                let kk = vv.slice(0, vv.length - 1)
-                kk.unshift(k)
-                return kk
+        function speech(event) {
+            var ss = icon.querySelector('img[icon-id="icon-speech"]');
+            if (event.target === ss) {
+                speechSynthesis.speak(s);
             }
-            return vv
-        })
-        return JSON.stringify(keys)
-    }
-
-    function goldenDictEv(e) {
-        const ele = icon.querySelector('img[icon-id="icon-golden-dict"]')
-        if (e.target !== ele) {
-            return
         }
-        goldenDict(text);
-    }
 
-    function speak(t) {
-        const la = eld.detect(ttt).language;
-        console.log(la);
-        let vic = false;
-        vices.forEach(value => {
-            if (vic) {
+        function request(data, path = '', call = null) {
+            if (data instanceof Object) {
+                data = Object.keys(data).map(k => k + '=' + data[k]).join('&');
+            }
+            if (path !== '' && path[0] !== '/') {
+                path = '/' + path;
+            }
+            GM_xmlhttpRequest({
+                method: "POST",
+                url: host + path,
+                data: data,
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                onload: function (res) {
+                    if (call) {
+                        call();
+                    }
+                    console.log(res);
+                },
+                onerror: function (res) {
+                    console.log(res);
+                },
+                onabort: function (res) {
+                    console.log(res);
+                }
+            });
+        }
+
+        function goldenDict(text) {
+            request({keys: copyKey, text: text})
+        }
+
+        function goldenDictEv(e) {
+            const ele = icon.querySelector('img[icon-id="icon-golden-dict"]')
+            if (e.target !== ele) {
                 return
             }
-            if (value.lang.toLowerCase().indexOf(la) > -1) {
-                vice = value
-                vic = true
-            }
-        });
-        if (!vice) {
-            icon.querySelector('img[icon-id="icon-speech"]').title = '似乎无可用的tts,请先安装';
-        } else {
-            s.voice = vice;
-            s.text = t;
-            speechSynthesis.speak(s);
-            setTimeout(() => {
-                const ss = icon.querySelector('img[icon-id="icon-speech"]');
-                ss.addEventListener('click', speech, false)
-            }, 100)
+            goldenDict(text);
         }
-    }
 
-    // 绑定图标拖动事件
-    var iconDrag = new Drag(icon);
-    // 图标数组
-    var iconArray = [
-        {
-            name: 'golden dict',
-            id: 'icon-golden-dict',
-            image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAABPlJREFUSEu1lQ9MlGUcxz/vHXAHHCUg4KGgxx8BRQv/lJSzrDUra1nTuTB16kQIbWlGizlzM6ebm06dZGXOOdlSNJdCaqEJk6GipiQM/yGoCdyd/Lnj7t4/d+/b7lRWgi3nfLZ377N339/38zy/3/t7HoGnPIQn9PfHhwM9j/J5IkD+68wdYGJsp4M9236nuj/IYwNiwJTzJtOyxmQumr5458Rw81h2FGbWLlhf/x7Q+jCkD2DjTDJQGCwEIT8Ql9agKV7CsoYzfOac2QsyJuU+NyhlYq/Xlk8sXZ9vbV4lqWx6JODbjzAbogfkvZRTvNQUbYlQJBeaqoKmasZgmbY77UJs4kjMKdl9MnHp3Akq9625c+zXisID5yn5pyCwg+IcItNeHlH5wvTFo0yx+fgAjwcUrxeP6MHR3c2pUzW8M3UqAyPD+gCutnQiOS5isK/l0K7jKz/b6V39QBQAbPyQ196aazmWkDUL/cDVSD09AWNJlvC4XNjtHVQc+405s2djsVj6AKx2D/UXDjIsciMHt5+//Ok2ZSZw0S8MADbnMGvSNHanvlJMUGQ+HrcTSfIgSSJulxub3c7hw4eZP38+ycnJ/f6RR46WkxBcSGVpg61gG/nA/l7AnpWJm7OyrUuGZFchhI1HcncjSRKyrNDT48RqtVJeXs7ChQtJSUnpF3C0ooZo30o6Lp+TCtZ0Fl2zsqEXUL4+dX/GqLsfxE9qQtM9gyQ6EUURxSvj6nHS3malrLyc3NzcRwKqT19Hay3C6D7Nl+tuban4Uy3yN6CwYQahI8bHnB+dPTw9buJJZElB8udfEhFlOVCDtra2wA7+C1DX0IazpZhw5y42bW35eWcVS4BbwuZ5xFiG0jz27QVhceO3I3q8KLILSRSRFQXXPwCLcnNJ7idFNpudphY7gvssuubllPzYfnLHCZY7PJwWvs8PnWBJ9NRkTvmKuKxVeDwyiiIGUiQrEq4ed+8O8vLySEpK6q1BXV0dtbW1tLe3k/n8BNKGmXDUvEv1GfHygWrX2qp6325h19KBeWlJ8jcj399L+OApgWCv14skyoFCO13OgEF5WRkfFxQQFxtLY2MjpaX7sNlsREdHMWr0aNIzMkkYmkrzT+O42tRl+6Xq9u4fKqSvhZJlkesyM2K/GPhGKUpEJpKjK1BcySMi+4vscmO327h04RyTX51IVfUZ6hvqMRpDSUhIJHFoImZzPFFRMQxOSkc8OYvWa2ddhyqbj2wqk1cIuwqE4xkp8ZOvK9k03LgLqgdNBVVTA0eFqqpIsohbNwSrKwyfrRZDSDDGUAPhocGEhhgICdGh00FUzBDGxd9G6WjkbKOzrmgPC4XieVyzdZHsNxWE+53n70DdvXmEAcwRIIVE0CqbMTqvYHWApEKw/t6j98cJ4FPvtW6UCUSNvwpLWCx8V2Ba0Salre7s6iYoyK/UPSiihgbhRkHzuTt1ekc7/nibG8LNqX6dD03T6XSCoN2P0FQNY3Awcc967/5Rf71qxwnvAWHvDPT7bzGvw81Y1Rfw6B0+Fc1kxDB+9LCp9u4gM3ojMSY3re32IxdvOK4Yg9AJ0LuiQOfq0d200XHDSrPi4+yD+8D/HgQEgX/d/xraGAvRL6ZHLDMY9PGXmpxXK+p8TRC4wVoAfT9nhx/aDTge50YzAGmACbgJ3O73UHro4+MA/o9fH81TB/wNCHBBieXFoj8AAAAASUVORK5CYII=',
-            trigger: (t, time) => {
-                text = t
-                navigator.clipboard.writeText(text).then(r => {
-                    goldenDict('')
-                }).catch((res) => {
-                    console.log(res)
-                    goldenDict(text)
-                }).finally(() => {
-                    if (!gbinded) {
-                        const ss = icon.querySelector('img[icon-id="icon-golden-dict"]');
-                        setTimeout(() => {
-                            ss.addEventListener('click', goldenDictEv, false)
-                            gbinded = true
-                        }, 100)
-                    }
-                })
-            }
-        },
-        {
-            name: 'tts发音',
-            id: 'icon-speech',
-            image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAbCAYAAACJISRoAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAANsSURBVEhLlVY7aBRRFD1vN5vVJKtoosFI4icYEEHE+IckiBFJITaWFlpYiIWdFmKhoihYamWhkM7KylYUC+OfWAiCHxJFo0ENyWqya3a8n/f2vdmdgXjZ3fPOnTfvnnNn3syag8NRBPrAGCQiCPGfWLNOhrKaCJEm6oh+ZUDcYh2X8PM1HUctIooDJEU6ol8ZJHCLGv64puNci1gdiSjDep7mRCHObRGvqA7pkzERcjSzMRs566lOFLwjDj1HZXkMlOWyQOdSgxM7gFN7DLpbgYZMuhNNx9EK8wrsQH4X5yL0rwXODwID64DdXcDpPqBjSboTTce5bZfqYIUtjUAhb9DWDBzdanB8O6RV994Czz4DbU3AqkK6E4U4lyKG6vHiBzZEOLcXuEjKL+8H9nUDU7PA9ccRhl8CEzNAls7I0jVKcrJ+eYSeNl7UO+KQIrmswZEtwLFeQ/0HVrYA7fTlRS89AEbGDcoVmW8j2cmFQYNrQ9QRWk8PK0oRvmv61gCleeDqQ+AGKecYnwLGfgKVao9dqJNCPkIrta8hU3PczbcoRTJUsSUP/CkDoxPA96JTSKGSZOhDnZzcZUg90Nxolbtw10TtahFWxpSrahsDXY4HKSY8j28Cbm+eOhE/7J1w2CIxHRQBV0lOlI0EbkcSgRPGqpN4BFwlOVE2ErgdSQROGKtOmHBVVRjocjxIMVmoEw4pwnfPTIl3OLC5HVjRHOhSSRZdqJPRr8Cjj3TD/E13wiFFSvNGJufpOXWmX+8aDr6oXctoEiurVU78zmu63UeAYindCaMUKc/Tjn4F3Hoeyd74RpuQNyJvyLMDwM5OfQr7UCez5KBIHXD7aOwX8O4H8Yp3wmhfvzyinU/fPLWMqy8iPLxJH4zztNvvv9ei21YDV2jDPvlU7YYEn9NEjyZ6/GFmTnPusNWntEwK+NpMz0WYLAK3X0S4+ZTzwFAP0EsFJn8DX6bViV9GdRZLEZ3Lxb0TjqoT7rHkWFLA+X3SUQAObSSXDcDdN8AHagl12K0hYU9LxAX9W+E3Y5ZfVHTa34qRa8D5+uUs1qxj28UTUpA+lcjQ4noXUkclrzP8vBinhWXEhShi10RQhvVcxAd5HVlOBxO5nuSdVJWohHpuUaOGO+WcD7nFqpOYkpDLgLhFjQQeYuAkAvAPy4GovdmaNF4AAAAASUVORK5CYII=',
-            trigger: function (text, time) {
-                ttt = text;
-                if (vices.length < 1) {
-                    setTimeout(() => {
-                        vices = speechSynthesis.getVoices();
-                        if (vices.length > 0) {
-                            speak(ttt)
-                        }
-                    }, 450);
-                } else {
-                    speak(ttt)
+        function speak(t) {
+            const la = eld.detect(ttt).language;
+            console.log(la);
+            let vic = false;
+            vices.forEach(value => {
+                if (vic) {
+                    return
                 }
-            }
-        },
-        {
-            name: 'force copy',
-            id: 'icon-copy',
-            image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAABBRJREFUeF7tm0uoTlEUx3+XEFEG3mSghFLKABkpBsoj5FEeGQhlICVkQMpAxMCrFAbyyPtREkoykNeMkqKURB4D5U0e5/917nWcb5/77e/es/b9vnvPGn7fPmvt9d9rP9Z/7d1AB5eGDu4/PgD0AMYA/YEuxoC9BZ4Cr4ztNKlvDoCRUastwEyge6gOAX+AB8A24KK13SwAVgD7Aox4Jf/OAkuBL5UatvR/FwArgQMtVWjw3VVgOvDLQHfZGjACeFQDI5/2dQOwIwQAJ4EFFoZaqfMDMBT42Eo9ZZ8np4BW+/eOBe8NsAy4DvzMuwMpfaOAvcBkh535wJm87ScBmADccRiYBlzJ23Az+npGC9/zaBHuk2qzE1iXdz+SAMyK9vsLDgPdgB95G66g71K8/SabHQcW592PJAAKsVMOAz6Hpbz7dRqYl1Kq8Fcfc5UCgASctRQBRx3hfgxYkuvww3/ngFoCYBEgh5Oi+a91IFep1SkgJzcBq2Nv9wBbc/U8VlbLAFj4W6azAKBGF8Egoy8jRQQUEfAPAettcBgwI9rKhgP9jGNcR3clcXcB8QmZWWSIKTAEUCIjgNviWK1UWvTaLhepYg3AWOAyMNB4xH3UXwPmpOk1SwA08iI3B/j0LlCbsoTKEoBaZZcUBU1pvxUAWvCeZcx5cY5PjEe8a8RgTQT6OuzcB8Y3/m4FgM7wux3G12T8boGHmCWN9JSUctUdBgOvLQ9C+4FVKcMP4wqThbNZOsUxPnb8OQm4ZQmAmKU0e3MOmBvS+3gK/nbYFNukoovZUTgYpeUBqEI+LaL+1ccCAKtFsIiAUKxunlNAC5Sr8tIpLll72GpqUpcRoK3hpsNLbSXVHlzqEoBBwEvH6e0GoKrRpypCoC4BkH/3ojrgOIejKpreTpTIvsd5dhZNXbcAzAbOVzHSmzPo6roFQL67Op+FybsMdqeuAdA9AR1bp3pEQrsEQH53jni0tcBGoHczQLTLKZD0VymlIkGXJ8TsKM+WtNtF0CPqvZrU9Rrg5WGFRgUA9ZgL5DHyjTqKCCgiINAlJ4+w9WaEPHR5NymmQDEFiikQ5qKjx6RskzVAPMHCVOd0/VXESkjRNd9vDoNK+0uvUazq9boPoGQqKcocVTOshllqLVh67iPg06LaoGqEZgCo8lIqPKRE9Jrqhq5yVWudTX6vpE1J3EEHX/E5Lpp+tQSgF/CiQiqdp8PV6DoRvUzTTdSSWE0B6V4fPb7YXk3PArTV3aHR8dM8cwBEquh6jA+zFMD3konlwKGkMcsIkB3Ra0faoCqcBlQjr3L94fQf1gA02tO2o5dfotxD2ZRtvTfUdqcHoHqRWiYhOyPjui2me4J6hmspGnHdANF1nNJqnyWhAbB0ukW6OzwAfwEljPdBHsaHcAAAAABJRU5ErkJggg==',
-            trigger: (t) => {
-                request('text=' + t, '', () => {
-                    hideIcon();
-                });
-            },
-        }
-    ];
-    // 添加翻译引擎图标
-    iconArray.forEach(function (obj) {
-        var img = document.createElement('img');
-        img.setAttribute('src', obj.image);
-        img.setAttribute('alt', obj.name);
-        img.setAttribute('title', obj.name);
-        img.setAttribute('icon-id', obj.id);
-        img.addEventListener('mouseup', (event) => {
-            if (engineId === obj.id) {
-                // 已经是当前翻译引擎，不做任何处理
+                if (value.lang.toLowerCase().indexOf(la) > -1) {
+                    vice = value
+                    vic = true
+                }
+            });
+            if (!vice) {
+                icon.querySelector('img[icon-id="icon-speech"]').title = '似乎无可用的tts,请先安装';
             } else {
-                icon.setAttribute('activate', 'activate'); // 标注面板展开
-                engineId = obj.id; // 翻译引擎 ID
-                engineTriggerTime = new Date().getTime(); // 引擎触发时间
-                engineActivateShow(); // 显示翻译引擎指示器
-                audioCache = {}; // 清空发音缓存
-                engineResult = {}; // 清空翻译引擎结果集
-                obj.trigger(selected, engineTriggerTime); // 启动翻译引擎
+                s.voice = vice;
+                s.text = t;
+                speechSynthesis.speak(s);
+                setTimeout(() => {
+                    const ss = icon.querySelector('img[icon-id="icon-speech"]');
+                    ss.addEventListener('click', speech, false)
+                }, 100)
+            }
+        }
+
+        // 绑定图标拖动事件
+        const iconDrag = new Drag(icon);
+        // 图标数组
+        const iconArray = [
+            {
+                name: 'golden dict',
+                id: 'icon-golden-dict',
+                image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAABPlJREFUSEu1lQ9MlGUcxz/vHXAHHCUg4KGgxx8BRQv/lJSzrDUra1nTuTB16kQIbWlGizlzM6ebm06dZGXOOdlSNJdCaqEJk6GipiQM/yGoCdyd/Lnj7t4/d+/b7lRWgi3nfLZ377N339/38zy/3/t7HoGnPIQn9PfHhwM9j/J5IkD+68wdYGJsp4M9236nuj/IYwNiwJTzJtOyxmQumr5458Rw81h2FGbWLlhf/x7Q+jCkD2DjTDJQGCwEIT8Ql9agKV7CsoYzfOac2QsyJuU+NyhlYq/Xlk8sXZ9vbV4lqWx6JODbjzAbogfkvZRTvNQUbYlQJBeaqoKmasZgmbY77UJs4kjMKdl9MnHp3Akq9625c+zXisID5yn5pyCwg+IcItNeHlH5wvTFo0yx+fgAjwcUrxeP6MHR3c2pUzW8M3UqAyPD+gCutnQiOS5isK/l0K7jKz/b6V39QBQAbPyQ196aazmWkDUL/cDVSD09AWNJlvC4XNjtHVQc+405s2djsVj6AKx2D/UXDjIsciMHt5+//Ok2ZSZw0S8MADbnMGvSNHanvlJMUGQ+HrcTSfIgSSJulxub3c7hw4eZP38+ycnJ/f6RR46WkxBcSGVpg61gG/nA/l7AnpWJm7OyrUuGZFchhI1HcncjSRKyrNDT48RqtVJeXs7ChQtJSUnpF3C0ooZo30o6Lp+TCtZ0Fl2zsqEXUL4+dX/GqLsfxE9qQtM9gyQ6EUURxSvj6nHS3malrLyc3NzcRwKqT19Hay3C6D7Nl+tuban4Uy3yN6CwYQahI8bHnB+dPTw9buJJZElB8udfEhFlOVCDtra2wA7+C1DX0IazpZhw5y42bW35eWcVS4BbwuZ5xFiG0jz27QVhceO3I3q8KLILSRSRFQXXPwCLcnNJ7idFNpudphY7gvssuubllPzYfnLHCZY7PJwWvs8PnWBJ9NRkTvmKuKxVeDwyiiIGUiQrEq4ed+8O8vLySEpK6q1BXV0dtbW1tLe3k/n8BNKGmXDUvEv1GfHygWrX2qp6325h19KBeWlJ8jcj399L+OApgWCv14skyoFCO13OgEF5WRkfFxQQFxtLY2MjpaX7sNlsREdHMWr0aNIzMkkYmkrzT+O42tRl+6Xq9u4fKqSvhZJlkesyM2K/GPhGKUpEJpKjK1BcySMi+4vscmO327h04RyTX51IVfUZ6hvqMRpDSUhIJHFoImZzPFFRMQxOSkc8OYvWa2ddhyqbj2wqk1cIuwqE4xkp8ZOvK9k03LgLqgdNBVVTA0eFqqpIsohbNwSrKwyfrRZDSDDGUAPhocGEhhgICdGh00FUzBDGxd9G6WjkbKOzrmgPC4XieVyzdZHsNxWE+53n70DdvXmEAcwRIIVE0CqbMTqvYHWApEKw/t6j98cJ4FPvtW6UCUSNvwpLWCx8V2Ba0Salre7s6iYoyK/UPSiihgbhRkHzuTt1ekc7/nibG8LNqX6dD03T6XSCoN2P0FQNY3Awcc967/5Rf71qxwnvAWHvDPT7bzGvw81Y1Rfw6B0+Fc1kxDB+9LCp9u4gM3ojMSY3re32IxdvOK4Yg9AJ0LuiQOfq0d200XHDSrPi4+yD+8D/HgQEgX/d/xraGAvRL6ZHLDMY9PGXmpxXK+p8TRC4wVoAfT9nhx/aDTge50YzAGmACbgJ3O73UHro4+MA/o9fH81TB/wNCHBBieXFoj8AAAAASUVORK5CYII=',
+                trigger: (t, time) => {
+                    text = t
+                    navigator.clipboard.writeText(text).then(r => {
+                        goldenDict('')
+                    }).catch((res) => {
+                        console.log(res)
+                        goldenDict(text)
+                    }).finally(() => {
+                        if (!gbinded) {
+                            const ss = icon.querySelector('img[icon-id="icon-golden-dict"]');
+                            setTimeout(() => {
+                                ss.addEventListener('click', goldenDictEv, false)
+                                gbinded = true
+                            }, 100)
+                        }
+                    })
+                }
+            },
+            {
+                name: 'tts发音',
+                id: 'icon-speech',
+                image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAbCAYAAACJISRoAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAANsSURBVEhLlVY7aBRRFD1vN5vVJKtoosFI4icYEEHE+IckiBFJITaWFlpYiIWdFmKhoihYamWhkM7KylYUC+OfWAiCHxJFo0ENyWqya3a8n/f2vdmdgXjZ3fPOnTfvnnNn3syag8NRBPrAGCQiCPGfWLNOhrKaCJEm6oh+ZUDcYh2X8PM1HUctIooDJEU6ol8ZJHCLGv64puNci1gdiSjDep7mRCHObRGvqA7pkzERcjSzMRs566lOFLwjDj1HZXkMlOWyQOdSgxM7gFN7DLpbgYZMuhNNx9EK8wrsQH4X5yL0rwXODwID64DdXcDpPqBjSboTTce5bZfqYIUtjUAhb9DWDBzdanB8O6RV994Czz4DbU3AqkK6E4U4lyKG6vHiBzZEOLcXuEjKL+8H9nUDU7PA9ccRhl8CEzNAls7I0jVKcrJ+eYSeNl7UO+KQIrmswZEtwLFeQ/0HVrYA7fTlRS89AEbGDcoVmW8j2cmFQYNrQ9QRWk8PK0oRvmv61gCleeDqQ+AGKecYnwLGfgKVao9dqJNCPkIrta8hU3PczbcoRTJUsSUP/CkDoxPA96JTSKGSZOhDnZzcZUg90Nxolbtw10TtahFWxpSrahsDXY4HKSY8j28Cbm+eOhE/7J1w2CIxHRQBV0lOlI0EbkcSgRPGqpN4BFwlOVE2ErgdSQROGKtOmHBVVRjocjxIMVmoEw4pwnfPTIl3OLC5HVjRHOhSSRZdqJPRr8Cjj3TD/E13wiFFSvNGJufpOXWmX+8aDr6oXctoEiurVU78zmu63UeAYindCaMUKc/Tjn4F3Hoeyd74RpuQNyJvyLMDwM5OfQr7UCez5KBIHXD7aOwX8O4H8Yp3wmhfvzyinU/fPLWMqy8iPLxJH4zztNvvv9ei21YDV2jDPvlU7YYEn9NEjyZ6/GFmTnPusNWntEwK+NpMz0WYLAK3X0S4+ZTzwFAP0EsFJn8DX6bViV9GdRZLEZ3Lxb0TjqoT7rHkWFLA+X3SUQAObSSXDcDdN8AHagl12K0hYU9LxAX9W+E3Y5ZfVHTa34qRa8D5+uUs1qxj28UTUpA+lcjQ4noXUkclrzP8vBinhWXEhShi10RQhvVcxAd5HVlOBxO5nuSdVJWohHpuUaOGO+WcD7nFqpOYkpDLgLhFjQQeYuAkAvAPy4GovdmaNF4AAAAASUVORK5CYII=',
+                trigger: function (text, time) {
+                    ttt = text;
+                    if (vices.length < 1) {
+                        setTimeout(() => {
+                            vices = speechSynthesis.getVoices();
+                            if (vices.length > 0) {
+                                speak(ttt)
+                            }
+                        }, 450);
+                    } else {
+                        speak(ttt)
+                    }
+                }
+            },
+            {
+                name: 'force copy',
+                id: 'icon-copy',
+                image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAABBRJREFUeF7tm0uoTlEUx3+XEFEG3mSghFLKABkpBsoj5FEeGQhlICVkQMpAxMCrFAbyyPtREkoykNeMkqKURB4D5U0e5/917nWcb5/77e/es/b9vnvPGn7fPmvt9d9rP9Z/7d1AB5eGDu4/PgD0AMYA/YEuxoC9BZ4Cr4ztNKlvDoCRUastwEyge6gOAX+AB8A24KK13SwAVgD7Aox4Jf/OAkuBL5UatvR/FwArgQMtVWjw3VVgOvDLQHfZGjACeFQDI5/2dQOwIwQAJ4EFFoZaqfMDMBT42Eo9ZZ8np4BW+/eOBe8NsAy4DvzMuwMpfaOAvcBkh535wJm87ScBmADccRiYBlzJ23Az+npGC9/zaBHuk2qzE1iXdz+SAMyK9vsLDgPdgB95G66g71K8/SabHQcW592PJAAKsVMOAz6Hpbz7dRqYl1Kq8Fcfc5UCgASctRQBRx3hfgxYkuvww3/ngFoCYBEgh5Oi+a91IFep1SkgJzcBq2Nv9wBbc/U8VlbLAFj4W6azAKBGF8Egoy8jRQQUEfAPAettcBgwI9rKhgP9jGNcR3clcXcB8QmZWWSIKTAEUCIjgNviWK1UWvTaLhepYg3AWOAyMNB4xH3UXwPmpOk1SwA08iI3B/j0LlCbsoTKEoBaZZcUBU1pvxUAWvCeZcx5cY5PjEe8a8RgTQT6OuzcB8Y3/m4FgM7wux3G12T8boGHmCWN9JSUctUdBgOvLQ9C+4FVKcMP4wqThbNZOsUxPnb8OQm4ZQmAmKU0e3MOmBvS+3gK/nbYFNukoovZUTgYpeUBqEI+LaL+1ccCAKtFsIiAUKxunlNAC5Sr8tIpLll72GpqUpcRoK3hpsNLbSXVHlzqEoBBwEvH6e0GoKrRpypCoC4BkH/3ojrgOIejKpreTpTIvsd5dhZNXbcAzAbOVzHSmzPo6roFQL67Op+FybsMdqeuAdA9AR1bp3pEQrsEQH53jni0tcBGoHczQLTLKZD0VymlIkGXJ8TsKM+WtNtF0CPqvZrU9Rrg5WGFRgUA9ZgL5DHyjTqKCCgiINAlJ4+w9WaEPHR5NymmQDEFiikQ5qKjx6RskzVAPMHCVOd0/VXESkjRNd9vDoNK+0uvUazq9boPoGQqKcocVTOshllqLVh67iPg06LaoGqEZgCo8lIqPKRE9Jrqhq5yVWudTX6vpE1J3EEHX/E5Lpp+tQSgF/CiQiqdp8PV6DoRvUzTTdSSWE0B6V4fPb7YXk3PArTV3aHR8dM8cwBEquh6jA+zFMD3konlwKGkMcsIkB3Ra0faoCqcBlQjr3L94fQf1gA02tO2o5dfotxD2ZRtvTfUdqcHoHqRWiYhOyPjui2me4J6hmspGnHdANF1nNJqnyWhAbB0ukW6OzwAfwEljPdBHsaHcAAAAABJRU5ErkJggg==',
+                trigger: (t) => {
+                    request('text=' + t, '', () => {
+                        hideIcon();
+                    });
+                },
+            }
+        ];
+        // 添加翻译引擎图标
+        iconArray.forEach(function (obj) {
+            const img = document.createElement('img');
+            img.setAttribute('src', obj.image);
+            img.setAttribute('alt', obj.name);
+            img.setAttribute('title', obj.name);
+            img.setAttribute('icon-id', obj.id);
+            img.addEventListener('mouseup', (event) => {
+                if (engineId === obj.id) {
+                    // 已经是当前翻译引擎，不做任何处理
+                } else {
+                    icon.setAttribute('activate', 'activate'); // 标注面板展开
+                    engineId = obj.id; // 翻译引擎 ID
+                    engineTriggerTime = new Date().getTime(); // 引擎触发时间
+                    engineActivateShow(); // 显示翻译引擎指示器
+                    audioCache = {}; // 清空发音缓存
+                    engineResult = {}; // 清空翻译引擎结果集
+                    obj.trigger(selected, engineTriggerTime); // 启动翻译引擎
+                }
+            });
+            icon.appendChild(img);
+        });
+        // 添加内容面板（放图标后面）
+        icon.appendChild(content);
+        // 添加样式、翻译图标到 DOM
+        const root = document.createElement('div');
+        document.documentElement.appendChild(root);
+        const shadow = root.attachShadow({
+            mode: 'closed'
+        });
+        // iframe 工具库加入 Shadow
+        shadow.appendChild(iframe);
+        iframeWin = iframe.contentWindow;
+        iframeDoc = iframe.contentDocument;
+        // 外部样式表
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = createObjectURLWithTry(new Blob(['\ufeff', style.textContent], {
+            type: 'text/css;charset=UTF-8'
+        }));
+        // 多种方式最大化兼容：Content Security Policy
+        // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
+        shadow.appendChild(style); // 内部样式表
+        shadow.appendChild(link); // 外部样式表
+        // 翻译图标加入 Shadow
+        shadow.appendChild(icon);
+        // 鼠标事件：防止选中的文本消失
+        document.addEventListener('mousedown', function (e) {
+            log('mousedown event:', e);
+            if (e.target === icon || (e.target.parentNode && e.target.parentNode === icon)) { // 点击了翻译图标
+                e.preventDefault();
             }
         });
-        icon.appendChild(img);
-    });
-    // 添加内容面板（放图标后面）
-    icon.appendChild(content);
-    // 添加样式、翻译图标到 DOM
-    var root = document.createElement('div');
-    document.documentElement.appendChild(root);
-    var shadow = root.attachShadow({
-        mode: 'closed'
-    });
-    // iframe 工具库加入 Shadow
-    shadow.appendChild(iframe);
-    iframeWin = iframe.contentWindow;
-    iframeDoc = iframe.contentDocument;
-    // 外部样式表
-    var link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.type = 'text/css';
-    link.href = createObjectURLWithTry(new Blob(['\ufeff', style.textContent], {
-        type: 'text/css;charset=UTF-8'
-    }));
-    // 多种方式最大化兼容：Content Security Policy
-    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
-    shadow.appendChild(style); // 内部样式表
-    shadow.appendChild(link); // 外部样式表
-    // 翻译图标加入 Shadow
-    shadow.appendChild(icon);
-    // 鼠标事件：防止选中的文本消失
-    document.addEventListener('mousedown', function (e) {
-        log('mousedown event:', e);
-        if (e.target === icon || (e.target.parentNode && e.target.parentNode === icon)) { // 点击了翻译图标
-            e.preventDefault();
-        }
-    });
-    // 鼠标事件：防止选中的文本消失；显示、隐藏翻译图标
-    document.addEventListener('mouseup', showIcon);
-    // 选中变化事件
-    document.addEventListener('selectionchange', showIcon);
-    document.addEventListener('touchend', showIcon);
-    // 内容面板滚动事件
-    content.addEventListener('scroll', function (e) {
-        if (content.scrollHeight - content.scrollTop === content.clientHeight) {
-            log('scroll bottom', e);
-            e.preventDefault();
-            e.stopPropagation();
-        } else if (content.scrollTop === 0) {
-            log('scroll top', e);
-            e.preventDefault();
-            e.stopPropagation();
-        }
-    });
-
-    /**日志输出*/
-    function log() {
-        var debug = false;
-        if (!debug) {
-            return;
-        }
-        if (arguments) {
-            for (var i = 0; i < arguments.length; i++) {
-                console.log(arguments[i]);
+        // 鼠标事件：防止选中的文本消失；显示、隐藏翻译图标
+        document.addEventListener('mouseup', showIcon);
+        // 选中变化事件
+        document.addEventListener('selectionchange', showIcon);
+        document.addEventListener('touchend', showIcon);
+        // 内容面板滚动事件
+        content.addEventListener('scroll', function (e) {
+            if (content.scrollHeight - content.scrollTop === content.clientHeight) {
+                log('scroll bottom', e);
+                e.preventDefault();
+                e.stopPropagation();
+            } else if (content.scrollTop === 0) {
+                log('scroll top', e);
+                e.preventDefault();
+                e.stopPropagation();
             }
-        }
-    }
+        });
 
-    /**鼠标拖动*/
-    function Drag(element) {
-        this.dragging = false;
-        this.startDragTime = 0;
-        this.stopDragTime = 0;
-        this.mouseDownPositionX = 0;
-        this.mouseDownPositionY = 0;
-        this.elementOriginalLeft = parseInt(element.style.left);
-        this.elementOriginalTop = parseInt(element.style.top);
-        var ref = this;
-        this.startDrag = function (e) {
-            e.preventDefault();
-            ref.dragging = true;
-            ref.startDragTime = new Date().getTime();
-            ref.mouseDownPositionX = e.clientX;
-            ref.mouseDownPositionY = e.clientY;
-            ref.elementOriginalLeft = parseInt(element.style.left);
-            ref.elementOriginalTop = parseInt(element.style.top);
-            // set mousemove event
-            window.addEventListener('mousemove', ref.dragElement);
-            log('startDrag');
-        };
-        this.unsetMouseMove = function () {
-            // unset mousemove event
-            window.removeEventListener('mousemove', ref.dragElement);
-        };
-        this.stopDrag = function (e) {
-            e.preventDefault();
-            ref.dragging = false;
-            ref.stopDragTime = new Date().getTime();
-            ref.unsetMouseMove();
-            log('stopDrag');
-        };
-        this.dragElement = function (e) {
-            log('dragging');
-            if (!ref.dragging) {
+        /**日志输出*/
+        function log() {
+            var debug = false;
+            if (!debug) {
                 return;
             }
-            e.preventDefault();
-            // move element
-            element.style.left = ref.elementOriginalLeft + (e.clientX - ref.mouseDownPositionX) + 'px';
-            element.style.top = ref.elementOriginalTop + (e.clientY - ref.mouseDownPositionY) + 'px';
-            log('dragElement');
-        };
-        element.onmousedown = this.startDrag;
-        element.onmouseup = this.stopDrag;
-    }
-
-    /**强制结束拖动*/
-    function forceStopDrag() {
-        if (iconDrag) {
-            // 强制设置鼠标拖动事件结束，防止由于网页本身的其它鼠标事件冲突而导致没有侦测到：mouseup
-            iconDrag.dragging = false;
-            iconDrag.unsetMouseMove();
-        }
-    }
-
-// html 字符串转 DOM
-    /**带异常处理的 createObjectURL*/
-    function createObjectURLWithTry(blob) {
-        try {
-            return iframeWin.URL.createObjectURL(blob);
-        } catch (error) {
-            log(error);
-        }
-        return '';
-    }
-
-    /**隐藏翻译引擎指示器*/
-    function engineActivateHide() {
-        icon.querySelectorAll('img[activate]').forEach(function (ele) {
-            ele.removeAttribute('activate');
-        });
-    }
-
-    /**显示翻译引擎指示器*/
-    function engineActivateShow() {
-        engineActivateHide();
-        icon.querySelector('img[icon-id="' + engineId + '"]').setAttribute('activate', 'activate');
-    }
-
-    /**显示 icon*/
-    function showIcon(e) {
-        log('showIcon event:', e);
-        var offsetX = 4; // 横坐标翻译图标偏移
-        var offsetY = 8; // 纵坐标翻译图标偏移
-        // 更新翻译图标 X、Y 坐标
-        if (e.pageX && e.pageY) { // 鼠标
-            log('mouse pageX/Y');
-            pageX = e.pageX;
-            pageY = e.pageY;
-        }
-        if (e.changedTouches) { // 触屏
-            if (e.changedTouches.length > 0) { // 多点触控选取第 1 个
-                log('touch pageX/Y');
-                pageX = e.changedTouches[0].pageX;
-                pageY = e.changedTouches[0].pageY;
-                // 触屏修改翻译图标偏移（Android、iOS 选中后的动作菜单一般在当前文字顶部，翻译图标则放到底部）
-                offsetX = -26; // 单个翻译图标块宽度
-                offsetY = 16 * 3; // 一般字体高度的 3 倍，距离系统自带动作菜单、选择光标太近会导致无法点按
+            if (arguments) {
+                for (var i = 0; i < arguments.length; i++) {
+                    console.log(arguments[i]);
+                }
             }
         }
-        log('selected:' + selected + ', pageX:' + pageX + ', pageY:' + pageY)
-        if (e.target === icon || (e.target.parentNode && e.target.parentNode === icon)) { // 点击了翻译图标
-            e.preventDefault();
-            return;
-        }
-        selected = window.getSelection().toString().trim(); // 当前选中文本
-        log('selected:' + selected + ', icon display:' + icon.style.display);
-        if (selected && icon.style.display !== 'block' && pageX && pageY) { // 显示翻译图标
-            log('show icon');
-            icon.style.top = pageY + offsetY + 'px';
-            icon.style.left = pageX + offsetX + 'px';
-            icon.style.display = 'block';
-            // 兼容部分 Content Security Policy
-            icon.style.position = 'absolute';
-            icon.style.zIndex = zIndex;
-        } else if (!selected) { // 隐藏翻译图标
-            log('hide icon');
-            hideIcon();
-        }
-    }
 
-    /**隐藏 icon*/
-    function hideIcon() {
-        icon.style.display = 'none';
-        icon.removeAttribute('activate'); // 标注面板关闭
-        content.style.display = 'none';
-        engineId = '';
-        engineTriggerTime = 0;
-        pageX = 0;
-        pageY = 0;
-        engineActivateHide();
-        audioCache = {};
-        engineResult = {};
-        forceStopDrag();
-        var s = icon.querySelector('.langs-cj');
-        if (s) {
-            s.parentNode.removeChild(s);
+        /**鼠标拖动*/
+        function Drag(element) {
+            this.dragging = false;
+            this.startDragTime = 0;
+            this.stopDragTime = 0;
+            this.mouseDownPositionX = 0;
+            this.mouseDownPositionY = 0;
+            this.elementOriginalLeft = parseInt(element.style.left);
+            this.elementOriginalTop = parseInt(element.style.top);
+            var ref = this;
+            this.startDrag = function (e) {
+                e.preventDefault();
+                ref.dragging = true;
+                ref.startDragTime = new Date().getTime();
+                ref.mouseDownPositionX = e.clientX;
+                ref.mouseDownPositionY = e.clientY;
+                ref.elementOriginalLeft = parseInt(element.style.left);
+                ref.elementOriginalTop = parseInt(element.style.top);
+                // set mousemove event
+                window.addEventListener('mousemove', ref.dragElement);
+                log('startDrag');
+            };
+            this.unsetMouseMove = function () {
+                // unset mousemove event
+                window.removeEventListener('mousemove', ref.dragElement);
+            };
+            this.stopDrag = function (e) {
+                e.preventDefault();
+                ref.dragging = false;
+                ref.stopDragTime = new Date().getTime();
+                ref.unsetMouseMove();
+                log('stopDrag');
+            };
+            this.dragElement = function (e) {
+                log('dragging');
+                if (!ref.dragging) {
+                    return;
+                }
+                e.preventDefault();
+                // move element
+                element.style.left = ref.elementOriginalLeft + (e.clientX - ref.mouseDownPositionX) + 'px';
+                element.style.top = ref.elementOriginalTop + (e.clientY - ref.mouseDownPositionY) + 'px';
+                log('dragElement');
+            };
+            element.onmousedown = this.startDrag;
+            element.onmouseup = this.stopDrag;
         }
-        var k = icon.querySelector('img[icon-id="icon-speech"]');
-        speechSynthesis.cancel();
-        if (k) {
-            k.removeEventListener('click', speech, false)
-        }
-        const ele = icon.querySelector('img[icon-id="icon-golden-dict"]');
-        if (ele) {
-            ele.removeEventListener('click', goldenDictEv, false)
-            gbinded = false
-        }
-    }
 
-// 音频播放器
+        /**强制结束拖动*/
+        function forceStopDrag() {
+            if (iconDrag) {
+                // 强制设置鼠标拖动事件结束，防止由于网页本身的其它鼠标事件冲突而导致没有侦测到：mouseup
+                iconDrag.dragging = false;
+                iconDrag.unsetMouseMove();
+            }
+        }
+
+// html 字符串转 DOM
+        /**带异常处理的 createObjectURL*/
+        function createObjectURLWithTry(blob) {
+            try {
+                return iframeWin.URL.createObjectURL(blob);
+            } catch (error) {
+                log(error);
+            }
+            return '';
+        }
+
+        /**隐藏翻译引擎指示器*/
+        function engineActivateHide() {
+            icon.querySelectorAll('img[activate]').forEach(function (ele) {
+                ele.removeAttribute('activate');
+            });
+        }
+
+        /**显示翻译引擎指示器*/
+        function engineActivateShow() {
+            engineActivateHide();
+            icon.querySelector('img[icon-id="' + engineId + '"]').setAttribute('activate', 'activate');
+        }
+
+        /**显示 icon*/
+        function showIcon(e) {
+            log('showIcon event:', e);
+            let offsetX = 4; // 横坐标翻译图标偏移
+            let offsetY = 8; // 纵坐标翻译图标偏移
+            // 更新翻译图标 X、Y 坐标
+            if (e.pageX && e.pageY) { // 鼠标
+                log('mouse pageX/Y');
+                pageX = e.pageX;
+                pageY = e.pageY;
+            }
+            if (e.changedTouches) { // 触屏
+                if (e.changedTouches.length > 0) { // 多点触控选取第 1 个
+                    log('touch pageX/Y');
+                    pageX = e.changedTouches[0].pageX;
+                    pageY = e.changedTouches[0].pageY;
+                    // 触屏修改翻译图标偏移（Android、iOS 选中后的动作菜单一般在当前文字顶部，翻译图标则放到底部）
+                    offsetX = -26; // 单个翻译图标块宽度
+                    offsetY = 16 * 3; // 一般字体高度的 3 倍，距离系统自带动作菜单、选择光标太近会导致无法点按
+                }
+            }
+            log('selected:' + selected + ', pageX:' + pageX + ', pageY:' + pageY)
+            if (e.target === icon || (e.target.parentNode && e.target.parentNode === icon)) { // 点击了翻译图标
+                e.preventDefault();
+                return;
+            }
+            selected = window.getSelection().toString().trim(); // 当前选中文本
+            log('selected:' + selected + ', icon display:' + icon.style.display);
+            if (selected && icon.style.display !== 'block' && pageX && pageY) { // 显示翻译图标
+                log('show icon');
+                icon.style.top = pageY + offsetY + 'px';
+                icon.style.left = pageX + offsetX + 'px';
+                icon.style.display = 'block';
+                // 兼容部分 Content Security Policy
+                icon.style.position = 'absolute';
+                icon.style.zIndex = zIndex;
+            } else if (!selected) { // 隐藏翻译图标
+                log('hide icon');
+                hideIcon();
+            }
+        }
+
+        /**隐藏 icon*/
+        function hideIcon() {
+            icon.style.display = 'none';
+            icon.removeAttribute('activate'); // 标注面板关闭
+            content.style.display = 'none';
+            engineId = '';
+            engineTriggerTime = 0;
+            pageX = 0;
+            pageY = 0;
+            engineActivateHide();
+            audioCache = {};
+            engineResult = {};
+            forceStopDrag();
+            const s = icon.querySelector('.langs-cj');
+            if (s) {
+                s.parentNode.removeChild(s);
+            }
+            const k = icon.querySelector('img[icon-id="icon-speech"]');
+            speechSynthesis.cancel();
+            if (k) {
+                k.removeEventListener('click', speech, false)
+            }
+            const ele = icon.querySelector('img[icon-id="icon-golden-dict"]');
+            if (ele) {
+                ele.removeEventListener('click', goldenDictEv, false)
+                gbinded = false
+            }
+        }
+    });
 })();
