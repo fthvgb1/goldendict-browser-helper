@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         goldenDict-browser-helper
 // @namespace    http://tampermonkey.net/
-// @version      0.5
+// @version      0.6
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1/goldendict-browser-helper
 // @match        http://*/*
@@ -44,6 +44,35 @@
             utterance = new SpeechSynthesisUtterance();
         }
     });
+
+    function request(data, path = '', call = null) {
+        if (data instanceof Object) {
+            data = Object.keys(data).map(k => k + '=' + data[k]).join('&');
+        }
+        if (path !== '' && path[0] !== '/') {
+            path = '/' + path;
+        }
+        GM_xmlhttpRequest({
+            method: "POST",
+            url: host + path,
+            data: data,
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            onload: function (res) {
+                if (call) {
+                    call();
+                }
+                console.log(res);
+            },
+            onerror: function (res) {
+                console.log(res);
+            },
+            onabort: function (res) {
+                console.log(res);
+            }
+        });
+    }
 
     function parseKey(key) {
         key = key.trim()
@@ -427,35 +456,6 @@
             if (event.target === ss) {
                 speechSynthesis.speak(utterance);
             }
-        }
-
-        function request(data, path = '', call = null) {
-            if (data instanceof Object) {
-                data = Object.keys(data).map(k => k + '=' + data[k]).join('&');
-            }
-            if (path !== '' && path[0] !== '/') {
-                path = '/' + path;
-            }
-            GM_xmlhttpRequest({
-                method: "POST",
-                url: host + path,
-                data: data,
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                onload: function (res) {
-                    if (call) {
-                        call();
-                    }
-                    console.log(res);
-                },
-                onerror: function (res) {
-                    console.log(res);
-                },
-                onabort: function (res) {
-                    console.log(res);
-                }
-            });
         }
 
         function goldenDict(text) {
