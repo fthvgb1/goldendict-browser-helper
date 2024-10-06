@@ -36,6 +36,14 @@
         },
         "k"
     );
+    let vices = [];
+    let utterance;
+    speechSynthesis.addEventListener("voiceschanged", () => {
+        if (vices.length < 1) {
+            vices = speechSynthesis.getVoices();
+            utterance = new SpeechSynthesisUtterance();
+        }
+    });
 
     function parseKey(key) {
         key = key.trim()
@@ -409,23 +417,15 @@
         // 翻译引擎结果集
         let engineResult = {}; // id: DOM
         // 唯一 ID
-        let vices = [];
         let vice;
         let ttt = '';
         let text = '';
         let gbinded = false;
-        let s;
-        speechSynthesis.addEventListener("voiceschanged", () => {
-            if (vices.length < 1) {
-                vices = speechSynthesis.getVoices();
-                s = new SpeechSynthesisUtterance();
-            }
-        });
 
         function speech(event) {
             var ss = icon.querySelector('img[icon-id="icon-speech"]');
             if (event.target === ss) {
-                speechSynthesis.speak(s);
+                speechSynthesis.speak(utterance);
             }
         }
 
@@ -486,9 +486,9 @@
             if (!vice) {
                 icon.querySelector('img[icon-id="icon-speech"]').title = '似乎无可用的tts,请先安装';
             } else {
-                s.voice = vice;
-                s.text = t;
-                speechSynthesis.speak(s);
+                utterance.voice = vice;
+                utterance.text = t;
+                speechSynthesis.speak(utterance);
                 setTimeout(() => {
                     const ss = icon.querySelector('img[icon-id="icon-speech"]');
                     ss.addEventListener('click', speech, false)
@@ -553,6 +553,7 @@
         ];
         // 添加翻译引擎图标
         iconArray.forEach(function (obj) {
+            // todo bypass icon maybe can't load within csp limited
             const img = document.createElement('img');
             img.setAttribute('src', obj.image);
             img.setAttribute('alt', obj.name);
