@@ -56,7 +56,7 @@
         return JSON.stringify(keys)
     }
 
-    document.addEventListener("DOMContentLoaded", (event) => {
+    const helperFn = () => {
         /**样式*/
         const style = document.createElement('style');
         // >>>>> 可以自定义的变量
@@ -787,5 +787,12 @@
                 gbinded = false
             }
         }
-    });
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", helperFn);
+    } else {
+        helperFn()
+    }
+
 })();
