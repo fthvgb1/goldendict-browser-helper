@@ -70,8 +70,18 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
+		t := timeout
+		times := r.Form.Get("timeout")
+		if times != "" {
+			duration, err := time.ParseDuration(times)
+			if err == nil {
+				t = duration
+			} else {
+				log.Println(times, err)
+			}
+		}
 
-		ctx, cancel := context.WithTimeout(context.TODO(), timeout)
+		ctx, cancel := context.WithTimeout(context.TODO(), t)
 		defer cancel()
 		ch := clipboard.Watch(ctx, clipboard.FmtText)
 		for {

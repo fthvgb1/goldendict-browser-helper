@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         goldenDict-browser-helper
 // @namespace    http://tampermonkey.net/
-// @version      0.6
+// @version      0.7
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1/goldendict-browser-helper
 // @match        http://*/*
@@ -21,22 +21,118 @@
     'use strict';
     const host = GM_getValue('host', 'http://127.0.0.1:9999')
     const copyKey = parseKey(GM_getValue('copykey', 'ctrl c,ctrl c'));
-    const ocrKey = parseKey(GM_getValue('ocrkey', navigator.userAgent.toLowerCase().indexOf('windows') > -1 ? 'cmd alt c' : 'alt c'));
-    GM_registerMenuCommand(
-        "ocr translate",
-        () => {
-            request({copy: copyKey, ocr: ocrKey}, 'ocr');
+    const ocrKey = parseKey(GM_getValue('ocrkey', ['windows', 'win32', 'win64'].filter(v => navigator.userAgent.toLowerCase().indexOf(v) > -1).length > 0 ? 'cmd alt c' : 'alt c'));
+
+    const menus = GM_getValue('menus', [
+        {
+            title: 'ocr translate',
+            action: {copy: copyKey, ocr: ocrKey},
+            key: 'h',
+            path: 'ocr'
         },
-        "h"
-    );
-    GM_registerMenuCommand(
-        "ocr",
-        () => {
-            request('keys=' + ocrKey);
+        {
+            title: "ocr",
+            action: ocrKey,
+            key: "k"
         },
-        "k"
-    );
+        {
+            title: "parse qrcode",
+            action: 'ctrl alt x',
+            key: "x"
+        }
+    ]);
+    menus.forEach(menu => {
+        let fn = menu.action;
+        if (typeof menu.action === 'string') {
+            fn = () => {
+                request('keys=' + parseKey(menu.action), menu.path)
+            }
+        } else if (menu.action instanceof Object) {
+            fn = () => {
+                request(menu.action, menu.path)
+            }
+        }
+        GM_registerMenuCommand(menu.title, fn, menu.key);
+    })
+
+    let speakText = '';
+    let selectText = '';
+    let gbinded = false;
+    let icon;
+
+    const iconArray = [
+        {
+            name: 'golden dict',
+            id: 'icon-golden-dict',
+            image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAABPlJREFUSEu1lQ9MlGUcxz/vHXAHHCUg4KGgxx8BRQv/lJSzrDUra1nTuTB16kQIbWlGizlzM6ebm06dZGXOOdlSNJdCaqEJk6GipiQM/yGoCdyd/Lnj7t4/d+/b7lRWgi3nfLZ377N339/38zy/3/t7HoGnPIQn9PfHhwM9j/J5IkD+68wdYGJsp4M9236nuj/IYwNiwJTzJtOyxmQumr5458Rw81h2FGbWLlhf/x7Q+jCkD2DjTDJQGCwEIT8Ql9agKV7CsoYzfOac2QsyJuU+NyhlYq/Xlk8sXZ9vbV4lqWx6JODbjzAbogfkvZRTvNQUbYlQJBeaqoKmasZgmbY77UJs4kjMKdl9MnHp3Akq9625c+zXisID5yn5pyCwg+IcItNeHlH5wvTFo0yx+fgAjwcUrxeP6MHR3c2pUzW8M3UqAyPD+gCutnQiOS5isK/l0K7jKz/b6V39QBQAbPyQ196aazmWkDUL/cDVSD09AWNJlvC4XNjtHVQc+405s2djsVj6AKx2D/UXDjIsciMHt5+//Ok2ZSZw0S8MADbnMGvSNHanvlJMUGQ+HrcTSfIgSSJulxub3c7hw4eZP38+ycnJ/f6RR46WkxBcSGVpg61gG/nA/l7AnpWJm7OyrUuGZFchhI1HcncjSRKyrNDT48RqtVJeXs7ChQtJSUnpF3C0ooZo30o6Lp+TCtZ0Fl2zsqEXUL4+dX/GqLsfxE9qQtM9gyQ6EUURxSvj6nHS3malrLyc3NzcRwKqT19Hay3C6D7Nl+tuban4Uy3yN6CwYQahI8bHnB+dPTw9buJJZElB8udfEhFlOVCDtra2wA7+C1DX0IazpZhw5y42bW35eWcVS4BbwuZ5xFiG0jz27QVhceO3I3q8KLILSRSRFQXXPwCLcnNJ7idFNpudphY7gvssuubllPzYfnLHCZY7PJwWvs8PnWBJ9NRkTvmKuKxVeDwyiiIGUiQrEq4ed+8O8vLySEpK6q1BXV0dtbW1tLe3k/n8BNKGmXDUvEv1GfHygWrX2qp6325h19KBeWlJ8jcj399L+OApgWCv14skyoFCO13OgEF5WRkfFxQQFxtLY2MjpaX7sNlsREdHMWr0aNIzMkkYmkrzT+O42tRl+6Xq9u4fKqSvhZJlkesyM2K/GPhGKUpEJpKjK1BcySMi+4vscmO327h04RyTX51IVfUZ6hvqMRpDSUhIJHFoImZzPFFRMQxOSkc8OYvWa2ddhyqbj2wqk1cIuwqE4xkp8ZOvK9k03LgLqgdNBVVTA0eFqqpIsohbNwSrKwyfrRZDSDDGUAPhocGEhhgICdGh00FUzBDGxd9G6WjkbKOzrmgPC4XieVyzdZHsNxWE+53n70DdvXmEAcwRIIVE0CqbMTqvYHWApEKw/t6j98cJ4FPvtW6UCUSNvwpLWCx8V2Ba0Salre7s6iYoyK/UPSiihgbhRkHzuTt1ekc7/nibG8LNqX6dD03T6XSCoN2P0FQNY3Awcc967/5Rf71qxwnvAWHvDPT7bzGvw81Y1Rfw6B0+Fc1kxDB+9LCp9u4gM3ojMSY3re32IxdvOK4Yg9AJ0LuiQOfq0d200XHDSrPi4+yD+8D/HgQEgX/d/xraGAvRL6ZHLDMY9PGXmpxXK+p8TRC4wVoAfT9nhx/aDTge50YzAGmACbgJ3O73UHro4+MA/o9fH81TB/wNCHBBieXFoj8AAAAASUVORK5CYII=',
+            trigger: (t) => {
+                selectText = t
+                navigator.clipboard.writeText(selectText).then(r => {
+                    goldenDict('')
+                }).catch((res) => {
+                    console.log(res)
+                    goldenDict(selectText)
+                }).finally(() => {
+                    if (!gbinded) {
+                        const ss = icon.querySelector('img[icon-id="icon-golden-dict"]');
+                        setTimeout(() => {
+                            ss.addEventListener('click', goldenDictEv, false)
+                            gbinded = true
+                        }, 100)
+                    }
+                })
+            },
+            hide: () => {
+                const ele = icon.querySelector('img[icon-id="icon-golden-dict"]');
+                if (ele) {
+                    ele.removeEventListener('click', goldenDictEv, false)
+                    gbinded = false
+                }
+            }
+        },
+        {
+            name: 'tts发音',
+            id: 'icon-speech',
+            image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAbCAYAAACJISRoAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAANsSURBVEhLlVY7aBRRFD1vN5vVJKtoosFI4icYEEHE+IckiBFJITaWFlpYiIWdFmKhoihYamWhkM7KylYUC+OfWAiCHxJFo0ENyWqya3a8n/f2vdmdgXjZ3fPOnTfvnnNn3syag8NRBPrAGCQiCPGfWLNOhrKaCJEm6oh+ZUDcYh2X8PM1HUctIooDJEU6ol8ZJHCLGv64puNci1gdiSjDep7mRCHObRGvqA7pkzERcjSzMRs566lOFLwjDj1HZXkMlOWyQOdSgxM7gFN7DLpbgYZMuhNNx9EK8wrsQH4X5yL0rwXODwID64DdXcDpPqBjSboTTce5bZfqYIUtjUAhb9DWDBzdanB8O6RV994Czz4DbU3AqkK6E4U4lyKG6vHiBzZEOLcXuEjKL+8H9nUDU7PA9ccRhl8CEzNAls7I0jVKcrJ+eYSeNl7UO+KQIrmswZEtwLFeQ/0HVrYA7fTlRS89AEbGDcoVmW8j2cmFQYNrQ9QRWk8PK0oRvmv61gCleeDqQ+AGKecYnwLGfgKVao9dqJNCPkIrta8hU3PczbcoRTJUsSUP/CkDoxPA96JTSKGSZOhDnZzcZUg90Nxolbtw10TtahFWxpSrahsDXY4HKSY8j28Cbm+eOhE/7J1w2CIxHRQBV0lOlI0EbkcSgRPGqpN4BFwlOVE2ErgdSQROGKtOmHBVVRjocjxIMVmoEw4pwnfPTIl3OLC5HVjRHOhSSRZdqJPRr8Cjj3TD/E13wiFFSvNGJufpOXWmX+8aDr6oXctoEiurVU78zmu63UeAYindCaMUKc/Tjn4F3Hoeyd74RpuQNyJvyLMDwM5OfQr7UCez5KBIHXD7aOwX8O4H8Yp3wmhfvzyinU/fPLWMqy8iPLxJH4zztNvvv9ei21YDV2jDPvlU7YYEn9NEjyZ6/GFmTnPusNWntEwK+NpMz0WYLAK3X0S4+ZTzwFAP0EsFJn8DX6bViV9GdRZLEZ3Lxb0TjqoT7rHkWFLA+X3SUQAObSSXDcDdN8AHagl12K0hYU9LxAX9W+E3Y5ZfVHTa34qRa8D5+uUs1qxj28UTUpA+lcjQ4noXUkclrzP8vBinhWXEhShi10RQhvVcxAd5HVlOBxO5nuSdVJWohHpuUaOGO+WcD7nFqpOYkpDLgLhFjQQeYuAkAvAPy4GovdmaNF4AAAAASUVORK5CYII=',
+            trigger: function (text) {
+                speakText = text;
+                if (vices.length < 1) {
+                    setTimeout(() => {
+                        vices = speechSynthesis.getVoices();
+                        if (vices.length > 0) {
+                            speak(speakText)
+                        }
+                    }, 450);
+                } else {
+                    speak(speakText)
+                }
+            },
+            hide: () => {
+                const k = icon.querySelector('img[icon-id="icon-speech"]');
+                speechSynthesis.cancel();
+                if (k) {
+                    k.removeEventListener('click', speech, false)
+                }
+            }
+        },
+        {
+            name: 'force copy',
+            id: 'icon-copy',
+            image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAABBRJREFUeF7tm0uoTlEUx3+XEFEG3mSghFLKABkpBsoj5FEeGQhlICVkQMpAxMCrFAbyyPtREkoykNeMkqKURB4D5U0e5/917nWcb5/77e/es/b9vnvPGn7fPmvt9d9rP9Z/7d1AB5eGDu4/PgD0AMYA/YEuxoC9BZ4Cr4ztNKlvDoCRUastwEyge6gOAX+AB8A24KK13SwAVgD7Aox4Jf/OAkuBL5UatvR/FwArgQMtVWjw3VVgOvDLQHfZGjACeFQDI5/2dQOwIwQAJ4EFFoZaqfMDMBT42Eo9ZZ8np4BW+/eOBe8NsAy4DvzMuwMpfaOAvcBkh535wJm87ScBmADccRiYBlzJ23Az+npGC9/zaBHuk2qzE1iXdz+SAMyK9vsLDgPdgB95G66g71K8/SabHQcW592PJAAKsVMOAz6Hpbz7dRqYl1Kq8Fcfc5UCgASctRQBRx3hfgxYkuvww3/ngFoCYBEgh5Oi+a91IFep1SkgJzcBq2Nv9wBbc/U8VlbLAFj4W6azAKBGF8Egoy8jRQQUEfAPAettcBgwI9rKhgP9jGNcR3clcXcB8QmZWWSIKTAEUCIjgNviWK1UWvTaLhepYg3AWOAyMNB4xH3UXwPmpOk1SwA08iI3B/j0LlCbsoTKEoBaZZcUBU1pvxUAWvCeZcx5cY5PjEe8a8RgTQT6OuzcB8Y3/m4FgM7wux3G12T8boGHmCWN9JSUctUdBgOvLQ9C+4FVKcMP4wqThbNZOsUxPnb8OQm4ZQmAmKU0e3MOmBvS+3gK/nbYFNukoovZUTgYpeUBqEI+LaL+1ccCAKtFsIiAUKxunlNAC5Sr8tIpLll72GpqUpcRoK3hpsNLbSXVHlzqEoBBwEvH6e0GoKrRpypCoC4BkH/3ojrgOIejKpreTpTIvsd5dhZNXbcAzAbOVzHSmzPo6roFQL67Op+FybsMdqeuAdA9AR1bp3pEQrsEQH53jni0tcBGoHczQLTLKZD0VymlIkGXJ8TsKM+WtNtF0CPqvZrU9Rrg5WGFRgUA9ZgL5DHyjTqKCCgiINAlJ4+w9WaEPHR5NymmQDEFiikQ5qKjx6RskzVAPMHCVOd0/VXESkjRNd9vDoNK+0uvUazq9boPoGQqKcocVTOshllqLVh67iPg06LaoGqEZgCo8lIqPKRE9Jrqhq5yVWudTX6vpE1J3EEHX/E5Lpp+tQSgF/CiQiqdp8PV6DoRvUzTTdSSWE0B6V4fPb7YXk3PArTV3aHR8dM8cwBEquh6jA+zFMD3konlwKGkMcsIkB3Ra0faoCqcBlQjr3L94fQf1gA02tO2o5dfotxD2ZRtvTfUdqcHoHqRWiYhOyPjui2me4J6hmspGnHdANF1nNJqnyWhAbB0ukW6OzwAfwEljPdBHsaHcAAAAABJRU5ErkJggg==',
+            trigger: (t, hideIcon) => {
+                request('text=' + t, '', () => {
+                    hideIcon();
+                });
+            },
+        }
+    ];
+
+    if (iconArray.length < 1) {
+        return
+    }
+
     let vices = [];
+    let engVice;
     let utterance;
     speechSynthesis.addEventListener("voiceschanged", () => {
         if (vices.length < 1) {
@@ -91,6 +187,61 @@
             return vv
         })
         return JSON.stringify(keys)
+    }
+
+    let vice;
+
+    function speech(event) {
+        var ss = icon.querySelector('img[icon-id="icon-speech"]');
+        if (event.target === ss) {
+            speechSynthesis.speak(utterance);
+        }
+    }
+
+    function goldenDict(text) {
+        request({keys: copyKey, text: text})
+    }
+
+    function goldenDictEv(e) {
+        const ele = icon.querySelector('img[icon-id="icon-golden-dict"]')
+        if (e.target !== ele) {
+            return
+        }
+        goldenDict(selectText);
+    }
+
+    function speak(t) {
+        const la = eld.detect(speakText).language;
+        console.log(la);
+        let vic = false;
+        vices.forEach(value => {
+            if (vic) {
+                return
+            }
+            const lang = value.lang.toLowerCase()
+            if (lang.indexOf(la) > -1) {
+                vice = value
+                vic = true
+            }
+            if (!engVice && lang.indexOf('en') > -1) {
+                engVice = value
+            }
+        });
+        if (!vice) {
+            if (!engVice) {
+                icon.querySelector('img[icon-id="icon-speech"]').title = '似乎无可用的tts,请先安装';
+                return
+            } else {
+                vice = engVice
+            }
+        }
+        utterance.voice = vice;
+        utterance.text = t;
+        speechSynthesis.speak(utterance);
+        setTimeout(() => {
+            const ss = icon.querySelector('img[icon-id="icon-speech"]');
+            ss.addEventListener('click', speech, false)
+        }, 100)
     }
 
     const helperFn = () => {
@@ -430,8 +581,8 @@
         let iframeWin = null;
         let iframeDoc = null;
         iframe.style.display = 'none';
-        let icon = document.createElement('tr-icon'), //翻译图标
-            content = document.createElement('tr-content'), // 内容面板
+        icon = document.createElement('tr-icon'); //翻译图标
+        let content = document.createElement('tr-content'), // 内容面板
             contentList = document.createElement('div'), //翻译内容结果集（HTML内容）列表
             selected, // 当前选中文本
             engineId, // 当前翻译引擎
@@ -446,111 +597,12 @@
         // 翻译引擎结果集
         let engineResult = {}; // id: DOM
         // 唯一 ID
-        let vice;
-        let ttt = '';
-        let text = '';
-        let gbinded = false;
 
-        function speech(event) {
-            var ss = icon.querySelector('img[icon-id="icon-speech"]');
-            if (event.target === ss) {
-                speechSynthesis.speak(utterance);
-            }
-        }
-
-        function goldenDict(text) {
-            request({keys: copyKey, text: text})
-        }
-
-        function goldenDictEv(e) {
-            const ele = icon.querySelector('img[icon-id="icon-golden-dict"]')
-            if (e.target !== ele) {
-                return
-            }
-            goldenDict(text);
-        }
-
-        function speak(t) {
-            const la = eld.detect(ttt).language;
-            console.log(la);
-            let vic = false;
-            vices.forEach(value => {
-                if (vic) {
-                    return
-                }
-                if (value.lang.toLowerCase().indexOf(la) > -1) {
-                    vice = value
-                    vic = true
-                }
-            });
-            if (!vice) {
-                icon.querySelector('img[icon-id="icon-speech"]').title = '似乎无可用的tts,请先安装';
-            } else {
-                utterance.voice = vice;
-                utterance.text = t;
-                speechSynthesis.speak(utterance);
-                setTimeout(() => {
-                    const ss = icon.querySelector('img[icon-id="icon-speech"]');
-                    ss.addEventListener('click', speech, false)
-                }, 100)
-            }
-        }
 
         // 绑定图标拖动事件
         const iconDrag = new Drag(icon);
         // 图标数组
-        const iconArray = [
-            {
-                name: 'golden dict',
-                id: 'icon-golden-dict',
-                image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAABPlJREFUSEu1lQ9MlGUcxz/vHXAHHCUg4KGgxx8BRQv/lJSzrDUra1nTuTB16kQIbWlGizlzM6ebm06dZGXOOdlSNJdCaqEJk6GipiQM/yGoCdyd/Lnj7t4/d+/b7lRWgi3nfLZ377N339/38zy/3/t7HoGnPIQn9PfHhwM9j/J5IkD+68wdYGJsp4M9236nuj/IYwNiwJTzJtOyxmQumr5458Rw81h2FGbWLlhf/x7Q+jCkD2DjTDJQGCwEIT8Ql9agKV7CsoYzfOac2QsyJuU+NyhlYq/Xlk8sXZ9vbV4lqWx6JODbjzAbogfkvZRTvNQUbYlQJBeaqoKmasZgmbY77UJs4kjMKdl9MnHp3Akq9625c+zXisID5yn5pyCwg+IcItNeHlH5wvTFo0yx+fgAjwcUrxeP6MHR3c2pUzW8M3UqAyPD+gCutnQiOS5isK/l0K7jKz/b6V39QBQAbPyQ196aazmWkDUL/cDVSD09AWNJlvC4XNjtHVQc+405s2djsVj6AKx2D/UXDjIsciMHt5+//Ok2ZSZw0S8MADbnMGvSNHanvlJMUGQ+HrcTSfIgSSJulxub3c7hw4eZP38+ycnJ/f6RR46WkxBcSGVpg61gG/nA/l7AnpWJm7OyrUuGZFchhI1HcncjSRKyrNDT48RqtVJeXs7ChQtJSUnpF3C0ooZo30o6Lp+TCtZ0Fl2zsqEXUL4+dX/GqLsfxE9qQtM9gyQ6EUURxSvj6nHS3malrLyc3NzcRwKqT19Hay3C6D7Nl+tuban4Uy3yN6CwYQahI8bHnB+dPTw9buJJZElB8udfEhFlOVCDtra2wA7+C1DX0IazpZhw5y42bW35eWcVS4BbwuZ5xFiG0jz27QVhceO3I3q8KLILSRSRFQXXPwCLcnNJ7idFNpudphY7gvssuubllPzYfnLHCZY7PJwWvs8PnWBJ9NRkTvmKuKxVeDwyiiIGUiQrEq4ed+8O8vLySEpK6q1BXV0dtbW1tLe3k/n8BNKGmXDUvEv1GfHygWrX2qp6325h19KBeWlJ8jcj399L+OApgWCv14skyoFCO13OgEF5WRkfFxQQFxtLY2MjpaX7sNlsREdHMWr0aNIzMkkYmkrzT+O42tRl+6Xq9u4fKqSvhZJlkesyM2K/GPhGKUpEJpKjK1BcySMi+4vscmO327h04RyTX51IVfUZ6hvqMRpDSUhIJHFoImZzPFFRMQxOSkc8OYvWa2ddhyqbj2wqk1cIuwqE4xkp8ZOvK9k03LgLqgdNBVVTA0eFqqpIsohbNwSrKwyfrRZDSDDGUAPhocGEhhgICdGh00FUzBDGxd9G6WjkbKOzrmgPC4XieVyzdZHsNxWE+53n70DdvXmEAcwRIIVE0CqbMTqvYHWApEKw/t6j98cJ4FPvtW6UCUSNvwpLWCx8V2Ba0Salre7s6iYoyK/UPSiihgbhRkHzuTt1ekc7/nibG8LNqX6dD03T6XSCoN2P0FQNY3Awcc967/5Rf71qxwnvAWHvDPT7bzGvw81Y1Rfw6B0+Fc1kxDB+9LCp9u4gM3ojMSY3re32IxdvOK4Yg9AJ0LuiQOfq0d200XHDSrPi4+yD+8D/HgQEgX/d/xraGAvRL6ZHLDMY9PGXmpxXK+p8TRC4wVoAfT9nhx/aDTge50YzAGmACbgJ3O73UHro4+MA/o9fH81TB/wNCHBBieXFoj8AAAAASUVORK5CYII=',
-                trigger: (t, time) => {
-                    text = t
-                    navigator.clipboard.writeText(text).then(r => {
-                        goldenDict('')
-                    }).catch((res) => {
-                        console.log(res)
-                        goldenDict(text)
-                    }).finally(() => {
-                        if (!gbinded) {
-                            const ss = icon.querySelector('img[icon-id="icon-golden-dict"]');
-                            setTimeout(() => {
-                                ss.addEventListener('click', goldenDictEv, false)
-                                gbinded = true
-                            }, 100)
-                        }
-                    })
-                }
-            },
-            {
-                name: 'tts发音',
-                id: 'icon-speech',
-                image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAbCAYAAACJISRoAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAANsSURBVEhLlVY7aBRRFD1vN5vVJKtoosFI4icYEEHE+IckiBFJITaWFlpYiIWdFmKhoihYamWhkM7KylYUC+OfWAiCHxJFo0ENyWqya3a8n/f2vdmdgXjZ3fPOnTfvnnNn3syag8NRBPrAGCQiCPGfWLNOhrKaCJEm6oh+ZUDcYh2X8PM1HUctIooDJEU6ol8ZJHCLGv64puNci1gdiSjDep7mRCHObRGvqA7pkzERcjSzMRs566lOFLwjDj1HZXkMlOWyQOdSgxM7gFN7DLpbgYZMuhNNx9EK8wrsQH4X5yL0rwXODwID64DdXcDpPqBjSboTTce5bZfqYIUtjUAhb9DWDBzdanB8O6RV994Czz4DbU3AqkK6E4U4lyKG6vHiBzZEOLcXuEjKL+8H9nUDU7PA9ccRhl8CEzNAls7I0jVKcrJ+eYSeNl7UO+KQIrmswZEtwLFeQ/0HVrYA7fTlRS89AEbGDcoVmW8j2cmFQYNrQ9QRWk8PK0oRvmv61gCleeDqQ+AGKecYnwLGfgKVao9dqJNCPkIrta8hU3PczbcoRTJUsSUP/CkDoxPA96JTSKGSZOhDnZzcZUg90Nxolbtw10TtahFWxpSrahsDXY4HKSY8j28Cbm+eOhE/7J1w2CIxHRQBV0lOlI0EbkcSgRPGqpN4BFwlOVE2ErgdSQROGKtOmHBVVRjocjxIMVmoEw4pwnfPTIl3OLC5HVjRHOhSSRZdqJPRr8Cjj3TD/E13wiFFSvNGJufpOXWmX+8aDr6oXctoEiurVU78zmu63UeAYindCaMUKc/Tjn4F3Hoeyd74RpuQNyJvyLMDwM5OfQr7UCez5KBIHXD7aOwX8O4H8Yp3wmhfvzyinU/fPLWMqy8iPLxJH4zztNvvv9ei21YDV2jDPvlU7YYEn9NEjyZ6/GFmTnPusNWntEwK+NpMz0WYLAK3X0S4+ZTzwFAP0EsFJn8DX6bViV9GdRZLEZ3Lxb0TjqoT7rHkWFLA+X3SUQAObSSXDcDdN8AHagl12K0hYU9LxAX9W+E3Y5ZfVHTa34qRa8D5+uUs1qxj28UTUpA+lcjQ4noXUkclrzP8vBinhWXEhShi10RQhvVcxAd5HVlOBxO5nuSdVJWohHpuUaOGO+WcD7nFqpOYkpDLgLhFjQQeYuAkAvAPy4GovdmaNF4AAAAASUVORK5CYII=',
-                trigger: function (text, time) {
-                    ttt = text;
-                    if (vices.length < 1) {
-                        setTimeout(() => {
-                            vices = speechSynthesis.getVoices();
-                            if (vices.length > 0) {
-                                speak(ttt)
-                            }
-                        }, 450);
-                    } else {
-                        speak(ttt)
-                    }
-                }
-            },
-            {
-                name: 'force copy',
-                id: 'icon-copy',
-                image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAABBRJREFUeF7tm0uoTlEUx3+XEFEG3mSghFLKABkpBsoj5FEeGQhlICVkQMpAxMCrFAbyyPtREkoykNeMkqKURB4D5U0e5/917nWcb5/77e/es/b9vnvPGn7fPmvt9d9rP9Z/7d1AB5eGDu4/PgD0AMYA/YEuxoC9BZ4Cr4ztNKlvDoCRUastwEyge6gOAX+AB8A24KK13SwAVgD7Aox4Jf/OAkuBL5UatvR/FwArgQMtVWjw3VVgOvDLQHfZGjACeFQDI5/2dQOwIwQAJ4EFFoZaqfMDMBT42Eo9ZZ8np4BW+/eOBe8NsAy4DvzMuwMpfaOAvcBkh535wJm87ScBmADccRiYBlzJ23Az+npGC9/zaBHuk2qzE1iXdz+SAMyK9vsLDgPdgB95G66g71K8/SabHQcW592PJAAKsVMOAz6Hpbz7dRqYl1Kq8Fcfc5UCgASctRQBRx3hfgxYkuvww3/ngFoCYBEgh5Oi+a91IFep1SkgJzcBq2Nv9wBbc/U8VlbLAFj4W6azAKBGF8Egoy8jRQQUEfAPAettcBgwI9rKhgP9jGNcR3clcXcB8QmZWWSIKTAEUCIjgNviWK1UWvTaLhepYg3AWOAyMNB4xH3UXwPmpOk1SwA08iI3B/j0LlCbsoTKEoBaZZcUBU1pvxUAWvCeZcx5cY5PjEe8a8RgTQT6OuzcB8Y3/m4FgM7wux3G12T8boGHmCWN9JSUctUdBgOvLQ9C+4FVKcMP4wqThbNZOsUxPnb8OQm4ZQmAmKU0e3MOmBvS+3gK/nbYFNukoovZUTgYpeUBqEI+LaL+1ccCAKtFsIiAUKxunlNAC5Sr8tIpLll72GpqUpcRoK3hpsNLbSXVHlzqEoBBwEvH6e0GoKrRpypCoC4BkH/3ojrgOIejKpreTpTIvsd5dhZNXbcAzAbOVzHSmzPo6roFQL67Op+FybsMdqeuAdA9AR1bp3pEQrsEQH53jni0tcBGoHczQLTLKZD0VymlIkGXJ8TsKM+WtNtF0CPqvZrU9Rrg5WGFRgUA9ZgL5DHyjTqKCCgiINAlJ4+w9WaEPHR5NymmQDEFiikQ5qKjx6RskzVAPMHCVOd0/VXESkjRNd9vDoNK+0uvUazq9boPoGQqKcocVTOshllqLVh67iPg06LaoGqEZgCo8lIqPKRE9Jrqhq5yVWudTX6vpE1J3EEHX/E5Lpp+tQSgF/CiQiqdp8PV6DoRvUzTTdSSWE0B6V4fPb7YXk3PArTV3aHR8dM8cwBEquh6jA+zFMD3konlwKGkMcsIkB3Ra0faoCqcBlQjr3L94fQf1gA02tO2o5dfotxD2ZRtvTfUdqcHoHqRWiYhOyPjui2me4J6hmspGnHdANF1nNJqnyWhAbB0ukW6OzwAfwEljPdBHsaHcAAAAABJRU5ErkJggg==',
-                trigger: (t) => {
-                    request('text=' + t, '', () => {
-                        hideIcon();
-                    });
-                },
-            }
-        ];
+        let hideCalls = []
         // 添加翻译引擎图标
         iconArray.forEach(function (obj) {
             // todo bypass icon maybe can't load within csp limited
@@ -569,10 +621,13 @@
                     engineActivateShow(); // 显示翻译引擎指示器
                     audioCache = {}; // 清空发音缓存
                     engineResult = {}; // 清空翻译引擎结果集
-                    obj.trigger(selected, engineTriggerTime); // 启动翻译引擎
+                    obj.trigger(selected, hideIcon, engineTriggerTime); // 启动翻译引擎
                 }
             });
             icon.appendChild(img);
+            if (obj.hide) {
+                hideCalls.push(obj.hide)
+            }
         });
         // 添加内容面板（放图标后面）
         icon.appendChild(content);
@@ -777,15 +832,10 @@
             if (s) {
                 s.parentNode.removeChild(s);
             }
-            const k = icon.querySelector('img[icon-id="icon-speech"]');
-            speechSynthesis.cancel();
-            if (k) {
-                k.removeEventListener('click', speech, false)
-            }
-            const ele = icon.querySelector('img[icon-id="icon-golden-dict"]');
-            if (ele) {
-                ele.removeEventListener('click', goldenDictEv, false)
-                gbinded = false
+            if (hideCalls.length > 0) {
+                hideCalls.forEach(fn => {
+                    fn()
+                })
             }
         }
     }
