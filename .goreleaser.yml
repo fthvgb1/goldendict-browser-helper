@@ -24,6 +24,9 @@ builds:
       - >-
         {{- if eq .Os "windows" }}
           {{- if eq .Arch "amd64" }}CC=x86_64-w64-mingw32-gcc{{- end }}
+        {{- end }}
+      - >-
+        {{- if eq .Os "windows" }}
           {{- if eq .Arch "amd64" }}CXX=x86_64-w64-mingw32-g+{{- end }}
         {{- end }}
     goos:
