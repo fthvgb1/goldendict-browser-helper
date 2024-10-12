@@ -11,6 +11,10 @@ before:
     # Clipboard:
     - sudo apt install xsel
     - sudo apt install xclip
+    # Other to windows
+    - sudo apt install gcc-multilib
+    - sudo apt install gcc-mingw-w64
+    - sudo apt install libz-mingw-w64-dev
 
 builds:
   - binary: goldenDictHelperServer
