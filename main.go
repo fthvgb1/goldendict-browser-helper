@@ -9,6 +9,7 @@ import (
 	"golang.design/x/clipboard"
 	"log"
 	"net/http"
+	"os/exec"
 	"strconv"
 	"strings"
 	"sync"
@@ -21,7 +22,7 @@ var timeout time.Duration
 
 func main() {
 	flag.StringVar(&addr, "p", "127.0.0.1:9999", "httpserver listen port")
-	flag.DurationVar(&timeout, "t", 10*time.Second, "ocr watch timeout")
+	flag.DurationVar(&timeout, "t", 15*time.Second, "ocr watch timeout")
 	flag.Parse()
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.RequestURI == "/favicon.ico" {
@@ -50,23 +51,24 @@ func main() {
 		}
 	})
 
-	http.HandleFunc("/ocr", func(w http.ResponseWriter, r *http.Request) {
+	// action copy action
+	http.HandleFunc("/aca", func(w http.ResponseWriter, r *http.Request) {
 		err := r.ParseForm()
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		copyKeys, err := parseKeyboard(r, "ocr")
+		actionPrev, err := parseKeyboard(r, "prev")
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		ocr, err := parseKeyboard(r, "copy")
+		actionNext, err := parseKeyboard(r, "next")
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		err = tapKeyboard(copyKeys)
+		err = tapKeyboard(actionPrev)
 		if err != nil {
 			panic(err)
 		}
@@ -87,6 +89,7 @@ func main() {
 		for {
 			select {
 			case <-ctx.Done():
+				log.Println("watch clipboard timeout")
 				return
 			case str := <-ch:
 				if len(str) < 1 {
@@ -94,16 +97,97 @@ func main() {
 				}
 				log.Println("copied:", string(str))
 				clipboard.Write(clipboard.FmtText, str)
-				err = tapKeyboard(ocr)
+				err = tapKeyboard(actionNext)
 				return
 			}
 		}
+	})
+
+	http.HandleFunc("/cmd", func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if re := recover(); re != nil {
+				log.Println(re)
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+		}()
+		err := r.ParseForm()
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		cmd := r.Form.Get("cmd")
+		if cmd == "" {
+			return
+		}
+		var args []string
+		if len(r.Form["args"]) > 1 {
+			args = r.Form["args"]
+		} else if len(r.Form["args"]) == 1 {
+			args = parseArgs(r.Form["args"][0])
+		}
+		_, err = w.Write(execCMD(cmd, args...))
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		a := append([]string{"executed cmd:", cmd}, args...)
+		log.Println(slice.ToAnySlice(a)...)
 	})
 	log.Println("http listened ", addr)
 	err := http.ListenAndServe(addr, nil)
 	if err != nil {
 		panic(err)
 	}
+}
+
+func execCMD(cmd string, args ...string) []byte {
+	cm := exec.Command(cmd, args...)
+	output, err := cm.CombinedOutput()
+	if err != nil {
+		log.Println(err)
+	}
+	return output
+}
+
+func parseArgs(a string) (r []string) {
+	if a == "" {
+		return
+	}
+	fn := func(s []rune) string {
+		if s[0] == '"' || s[0] == '\'' && s[0] == s[len(s)-1] {
+			return strings.Trim(string(s), string(s[0]))
+		}
+		return string(s)
+	}
+	s := []rune(a)
+	var arg []rune
+	var start bool
+	var quote rune
+	var quoteNum int
+	for i := 0; i < len(s); i++ {
+		if s[i] == ' ' && !start {
+			continue
+		}
+
+		if s[i] == ' ' && start && quote == 0 || i > 1 && s[i-1] == quote && i-1 != quoteNum {
+			start = false
+			r = append(r, fn(arg))
+			arg = arg[:0]
+			quote = 0
+			quoteNum = 0
+			continue
+		}
+		if quote == 0 && s[i] == '"' || s[i] == '\'' {
+			quote = s[i]
+			quoteNum = i
+		}
+		start = true
+		arg = append(arg, s[i])
+		if i == len(s)-1 {
+			r = append(r, fn(arg))
+		}
+	}
+	return
 }
 
 func parseKeyboard(r *http.Request, key string) ([]any, error) {

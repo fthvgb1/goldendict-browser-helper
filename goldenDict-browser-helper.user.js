@@ -8,7 +8,6 @@
 // @include      https://*/*
 // @include      file:///*
 // @connect      127.0.0.1
-// @connect      127.0.0.1:9999
 // @run-at       document-start
 // @grant        GM_xmlhttpRequest
 // @grant        GM_registerMenuCommand
@@ -21,15 +20,15 @@
     'use strict';
     const userAgent = navigator.userAgent.toLowerCase();
     const host = GM_getValue('host', 'http://127.0.0.1:9999')
-    const copyKey = parseKey(GM_getValue('copykey', 'ctrl c,ctrl c'));
-    const ocrKey = parseKey(GM_getValue('ocrkey', ['windows', 'win32', 'win64'].filter(v => userAgent.indexOf(v) > -1).length > 0 ? 'cmd alt c' : 'alt c'));
+    const goldDictKey = parseKey(GM_getValue('goldDictKey', 'ctrl c,ctrl c'));
+    const ocrKey = parseKey(GM_getValue('ocrKey', ['windows', 'win32', 'win64'].filter(v => userAgent.indexOf(v) > -1).length > 0 ? 'cmd alt c' : 'alt c'));
 
     const menus = GM_getValue('menus', [
         {
             title: 'ocr translate',
-            action: {copy: copyKey, ocr: ocrKey},
+            action: {next: goldDictKey, prev: ocrKey},
             key: 'h',
-            path: 'ocr'
+            path: 'aca'
         },
         {
             title: "ocr",
@@ -40,17 +39,26 @@
             title: "parse qrcode",
             action: 'ctrl alt x',
             key: "x"
-        }
+        },
+        /*{
+            title: "ls",
+            action: {cmd: "ls", args: ["-l", "/"]},
+            key: "e",
+            path: "cmd",
+            call: (res) => {
+                console.log(res.response)
+            },
+        }*/
     ]);
     menus.forEach(menu => {
         let fn = menu.action;
         if (typeof menu.action === 'string') {
             fn = () => {
-                request('keys=' + parseKey(menu.action), menu.path)
+                request('keys=' + parseKey(menu.action), menu.path, menu.hasOwnProperty('call') ? menu.call : null)
             }
         } else if (menu.action instanceof Object) {
             fn = () => {
-                request(menu.action, menu.path)
+                request(menu.action, menu.path, menu.hasOwnProperty('call') ? menu.call : null)
             }
         }
         GM_registerMenuCommand(menu.title, fn, menu.key);
@@ -142,14 +150,20 @@
         }
     });
 
-    function request(data, path = '', call = null) {
+    async function request(data, path = '', call = null) {
         if (data instanceof Object) {
-            data = Object.keys(data).map(k => k + '=' + data[k]).join('&');
+            data = Object.keys(data).map(k => {
+                if (data[k] instanceof Array) {
+                    return data[k].map(v => k + '=' + v).join('&')
+                }
+                return k + '=' + data[k]
+            }).join('&');
         }
         if (path !== '' && path[0] !== '/') {
             path = '/' + path;
         }
-        GM_xmlhttpRequest({
+
+        await GM_xmlhttpRequest({
             method: "POST",
             url: host + path,
             data: data,
@@ -158,9 +172,8 @@
             },
             onload: function (res) {
                 if (call) {
-                    call();
+                    call(res);
                 }
-                console.log(res);
             },
             onerror: function (res) {
                 console.log(res);
@@ -200,7 +213,7 @@
     }
 
     function goldenDict(text) {
-        request({keys: copyKey, text: text})
+        request({keys: goldDictKey, text: text})
     }
 
     function goldenDictEv(e) {
