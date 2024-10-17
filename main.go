@@ -9,6 +9,7 @@ import (
 	"golang.design/x/clipboard"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -19,11 +20,21 @@ import (
 var addr string
 var mux = sync.Mutex{}
 var timeout time.Duration
+var logfile string
 
 func main() {
 	flag.StringVar(&addr, "p", "127.0.0.1:9999", "httpserver listen port")
 	flag.DurationVar(&timeout, "t", 15*time.Second, "ocr watch timeout")
+	flag.StringVar(&logfile, "log", "stdout", "logfile path default stdout")
 	flag.Parse()
+	if logfile != "" && logfile != "stdout" {
+		f, err := os.OpenFile(logfile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0777)
+		if err != nil {
+			log.Println(err, "will use stdout")
+		} else {
+			log.SetOutput(f)
+		}
+	}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.RequestURI == "/favicon.ico" {
 			return

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         goldenDict-browser-helper
 // @namespace    http://tampermonkey.net/
-// @version      0.8
+// @version      0.9
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1/goldendict-browser-helper
 // @match        http://*/*
@@ -154,9 +154,9 @@
         if (data instanceof Object) {
             data = Object.keys(data).map(k => {
                 if (data[k] instanceof Array) {
-                    return data[k].map(v => k + '=' + v).join('&')
+                    return data[k].map(v => k + '=' + encodeURIComponent(v)).join('&')
                 }
-                return k + '=' + data[k]
+                return k + '=' + encodeURIComponent(data[k])
             }).join('&');
         }
         if (path !== '' && path[0] !== '/') {
