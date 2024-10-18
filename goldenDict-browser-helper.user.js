@@ -41,6 +41,20 @@
             key: "x"
         },
         /*{
+            title: "env",
+            action: {
+                cmd: ["env","grep","wc"],
+                args: [],
+                "1": ["PATH"],
+                "2": ["-l"]
+            },
+            key: "e",
+            path: "cmd",
+            call: (res) => {
+                console.log(res.response)
+            },
+        }*/
+        /*{
             title: "ls",
             action: {cmd: "ls", args: ["-l", "/"]},
             key: "e",

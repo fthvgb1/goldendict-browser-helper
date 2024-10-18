@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
+	"github.com/fthvgb1/wp-go/helper"
+	"github.com/fthvgb1/wp-go/helper/number"
 	"github.com/fthvgb1/wp-go/helper/slice"
 	"github.com/go-vgo/robotgo"
 	"golang.design/x/clipboard"
@@ -11,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -32,6 +37,7 @@ func main() {
 		if err != nil {
 			log.Println(err, "will use stdout")
 		} else {
+			defer f.Close()
 			log.SetOutput(f)
 		}
 	}
@@ -62,88 +68,9 @@ func main() {
 		}
 	})
 
-	// action copy action
-	http.HandleFunc("/aca", func(w http.ResponseWriter, r *http.Request) {
-		err := r.ParseForm()
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		actionPrev, err := parseKeyboard(r, "prev")
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		actionNext, err := parseKeyboard(r, "next")
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		err = tapKeyboard(actionPrev)
-		if err != nil {
-			panic(err)
-		}
-		t := timeout
-		times := r.Form.Get("timeout")
-		if times != "" {
-			duration, err := time.ParseDuration(times)
-			if err == nil {
-				t = duration
-			} else {
-				log.Println(times, err)
-			}
-		}
+	http.HandleFunc("/aca", ActionCopyAction)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), t)
-		defer cancel()
-		ch := clipboard.Watch(ctx, clipboard.FmtText)
-		for {
-			select {
-			case <-ctx.Done():
-				log.Println("watch clipboard timeout")
-				return
-			case str := <-ch:
-				if len(str) < 1 {
-					return
-				}
-				log.Println("copied:", string(str))
-				clipboard.Write(clipboard.FmtText, str)
-				err = tapKeyboard(actionNext)
-				return
-			}
-		}
-	})
-
-	http.HandleFunc("/cmd", func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if re := recover(); re != nil {
-				log.Println(re)
-				w.WriteHeader(http.StatusInternalServerError)
-			}
-		}()
-		err := r.ParseForm()
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		cmd := r.Form.Get("cmd")
-		if cmd == "" {
-			return
-		}
-		var args []string
-		if len(r.Form["args"]) > 1 {
-			args = r.Form["args"]
-		} else if len(r.Form["args"]) == 1 {
-			args = parseArgs(r.Form["args"][0])
-		}
-		_, err = w.Write(execCMD(cmd, args...))
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		a := append([]string{"executed cmd:", cmd}, args...)
-		log.Println(slice.ToAnySlice(a)...)
-	})
+	http.HandleFunc("/cmd", Cmd)
 	log.Println("http listened ", addr)
 	err := http.ListenAndServe(addr, nil)
 	if err != nil {
@@ -151,13 +78,213 @@ func main() {
 	}
 }
 
-func execCMD(cmd string, args ...string) []byte {
-	cm := exec.Command(cmd, args...)
-	output, err := cm.CombinedOutput()
+func ActionCopyAction(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
 	if err != nil {
 		log.Println(err)
+		return
 	}
-	return output
+	actionPrev, err := parseKeyboard(r, "prev")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	actionNext, err := parseKeyboard(r, "next")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	err = tapKeyboard(actionPrev)
+	if err != nil {
+		panic(err)
+	}
+	t := timeout
+	times := r.Form.Get("timeout")
+	if times != "" {
+		duration, err := time.ParseDuration(times)
+		if err == nil {
+			t = duration
+		} else {
+			log.Println(times, err)
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(context.TODO(), t)
+	defer cancel()
+	ch := clipboard.Watch(ctx, clipboard.FmtText)
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("watch clipboard timeout")
+			return
+		case str := <-ch:
+			if len(str) < 1 {
+				return
+			}
+			log.Println("copied:", string(str))
+			clipboard.Write(clipboard.FmtText, str)
+			err = tapKeyboard(actionNext)
+			return
+		}
+	}
+}
+
+func Cmd(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		if re := recover(); re != nil {
+			log.Println(re)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+	}()
+	err := r.ParseForm()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	var envFn []func()
+	defer func() {
+		if len(envFn) > 0 {
+			for _, f := range envFn {
+				f()
+			}
+		}
+	}()
+	if len(r.Form["env"]) > 0 {
+		path := os.Getenv("PATH")
+		split := helper.Or(strings.ToLower(runtime.GOOS) == "windows", ";", ":")
+		for _, s := range r.Form["env"] {
+			v := strings.Split(s, "=")
+			if v[0] == "PATH" {
+				v[1] = os.ExpandEnv(fmt.Sprintf("$PATH%s%s", split, v[1]))
+				envFn = append(envFn, func() {
+					err = os.Setenv("PATH", path)
+					if err != nil {
+						log.Println(err)
+					}
+				})
+			} else {
+				envFn = append(envFn, func() {
+					err = os.Unsetenv(v[0])
+					if err != nil {
+						log.Println(err)
+					}
+				})
+			}
+			err = os.Setenv(v[0], v[1])
+			if err != nil {
+				log.Println(err)
+				return
+			}
+		}
+	}
+	var res bool
+	if helper.Defaults(r.Form.Get("res"), "1") == "1" {
+		res = true
+	}
+	if len(r.Form["cmd"]) > 1 {
+		b, err := execCMDs(r.Form["cmd"], res, r.Form)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		_, err = w.Write(b)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		return
+	}
+	cmd := r.Form.Get("cmd")
+	if cmd == "" {
+		return
+	}
+	var args []string
+	if len(r.Form["args"]) > 1 {
+		args = r.Form["args"]
+	} else if len(r.Form["args"]) == 1 {
+		args = parseArgs(r.Form["args"][0])
+	}
+
+	re, err := execCMD(cmd, res, args...)
+	if err != nil {
+		log.Println("execute cmd:", cmd, "err:", err)
+		return
+	}
+	_, err = w.Write(re)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	a := append([]string{"executed cmd:", cmd}, args...)
+	log.Println(slice.ToAnySlice(a)...)
+}
+
+func execCMDs(cmds []string, res bool, args map[string][]string) ([]byte, error) {
+	var b bytes.Buffer
+	var i = 0
+	var commands []*exec.Cmd
+
+	fmt.Println(os.Environ())
+	cm := slice.Reduce(cmds[1:], func(t string, r *exec.Cmd) *exec.Cmd {
+		if r == nil {
+			return nil
+		}
+		i++
+		commands = append(commands, r)
+		cmd := exec.Command(cmds[i], args[number.IntToString(i)]...)
+		out, err := r.StdoutPipe()
+		if err != nil {
+			log.Println(err)
+			return nil
+		}
+		cmd.Stdin = out
+		if i == len(cmds)-1 {
+			cmd.Stdout = &b
+		}
+		return cmd
+	}, exec.Command(cmds[0], args["0"]...))
+	commands = append(commands, cm)
+	var err error
+	for _, command := range commands {
+		err = command.Start()
+		if err != nil {
+			return nil, err
+		}
+	}
+	for j, command := range commands {
+		err = command.Wait()
+		if err != nil {
+			return nil, err
+		}
+		if j == len(commands)-1 && !res {
+			go func() {
+				err = command.Wait()
+				if err != nil {
+					log.Println(err)
+				}
+			}()
+			return nil, nil
+		}
+	}
+	return b.Bytes(), err
+}
+
+func execCMD(cmd string, res bool, args ...string) ([]byte, error) {
+	cm := exec.Command(cmd, args...)
+	if res {
+		return cm.CombinedOutput()
+	}
+	err := cm.Start()
+	if err != nil {
+		return nil, err
+	}
+	go func() {
+		err = cm.Wait()
+		if err != nil {
+			log.Println(err)
+		}
+	}()
+	return nil, nil
 }
 
 func parseArgs(a string) (r []string) {
