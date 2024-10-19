@@ -1,21 +1,17 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
-	"fmt"
+	"github.com/fthvgb1/goldendict-browser-helper/executecmd"
 	"github.com/fthvgb1/wp-go/helper"
-	"github.com/fthvgb1/wp-go/helper/number"
 	"github.com/fthvgb1/wp-go/helper/slice"
 	"github.com/go-vgo/robotgo"
 	"golang.design/x/clipboard"
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -33,7 +29,7 @@ func main() {
 	flag.StringVar(&logfile, "log", "stdout", "logfile path default stdout")
 	flag.Parse()
 	if logfile != "" && logfile != "stdout" {
-		f, err := os.OpenFile(logfile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0777)
+		f, err := os.OpenFile(logfile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 		if err != nil {
 			log.Println(err, "will use stdout")
 		} else {
@@ -41,36 +37,9 @@ func main() {
 			log.SetOutput(f)
 		}
 	}
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.RequestURI == "/favicon.ico" {
-			return
-		}
-		err := r.ParseForm()
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		text := r.Form.Get("text")
-		if text != "" {
-			log.Println("copied:", text)
-			clipboard.Write(clipboard.FmtText, []byte(text))
-		}
-		keys, err := parseKeyboard(r, "keys")
-		if err != nil {
-			log.Println(err)
-		}
-		if len(keys) < 1 {
-			return
-		}
-		err = tapKeyboard(keys)
-		if err != nil {
-			panic(err)
-		}
-	})
-
+	http.HandleFunc("/", tapKeyboardAndCopy)
 	http.HandleFunc("/aca", ActionCopyAction)
-
-	http.HandleFunc("/cmd", Cmd)
+	http.HandleFunc("/cmd", executeCmd)
 	log.Println("http listened ", addr)
 	err := http.ListenAndServe(addr, nil)
 	if err != nil {
@@ -78,7 +47,34 @@ func main() {
 	}
 }
 
-func ActionCopyAction(w http.ResponseWriter, r *http.Request) {
+func tapKeyboardAndCopy(w http.ResponseWriter, r *http.Request) {
+	if r.RequestURI == "/favicon.ico" {
+		return
+	}
+	err := r.ParseForm()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	text := r.Form.Get("text")
+	if text != "" {
+		log.Println("copied:", text)
+		clipboard.Write(clipboard.FmtText, []byte(text))
+	}
+	keys, err := parseKeyboard(r, "keys")
+	if err != nil {
+		log.Println(err)
+	}
+	if len(keys) < 1 {
+		return
+	}
+	err = tapKeyboard(keys)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func ActionCopyAction(_ http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		log.Println(err)
@@ -129,11 +125,21 @@ func ActionCopyAction(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Cmd(w http.ResponseWriter, r *http.Request) {
+func executeCmd(w http.ResponseWriter, r *http.Request) {
+	var envFn []func()
 	defer func() {
 		if re := recover(); re != nil {
 			log.Println(re)
 			w.WriteHeader(http.StatusInternalServerError)
+		}
+		if len(envFn) > 0 {
+			defer func() {
+				envMutex.Unlock()
+			}()
+			envMutex.Lock()
+			for _, f := range envFn {
+				f()
+			}
 		}
 	}()
 	err := r.ParseForm()
@@ -141,71 +147,42 @@ func Cmd(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	var envFn []func()
-	defer func() {
-		if len(envFn) > 0 {
-			for _, f := range envFn {
-				f()
-			}
-		}
-	}()
+
 	if len(r.Form["env"]) > 0 {
-		path := os.Getenv("PATH")
-		split := helper.Or(strings.ToLower(runtime.GOOS) == "windows", ";", ":")
-		for _, s := range r.Form["env"] {
-			v := strings.Split(s, "=")
-			if v[0] == "PATH" {
-				v[1] = os.ExpandEnv(fmt.Sprintf("$PATH%s%s", split, v[1]))
-				envFn = append(envFn, func() {
-					err = os.Setenv("PATH", path)
-					if err != nil {
-						log.Println(err)
-					}
-				})
-			} else {
-				envFn = append(envFn, func() {
-					err = os.Unsetenv(v[0])
-					if err != nil {
-						log.Println(err)
-					}
-				})
-			}
-			err = os.Setenv(v[0], v[1])
-			if err != nil {
-				log.Println(err)
-				return
-			}
+		err = setEnv(&envFn, r.Form["env"])
+		if err != nil {
+			log.Println(err)
+			return
 		}
 	}
 	var res bool
 	if helper.Defaults(r.Form.Get("res"), "1") == "1" {
 		res = true
 	}
-	if len(r.Form["cmd"]) > 1 {
-		b, err := execCMDs(r.Form["cmd"], res, r.Form)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		_, err = w.Write(b)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		return
-	}
-	cmd := r.Form.Get("cmd")
-	if cmd == "" {
-		return
-	}
+	var cmd string
 	var args []string
-	if len(r.Form["args"]) > 1 {
-		args = r.Form["args"]
-	} else if len(r.Form["args"]) == 1 {
-		args = parseArgs(r.Form["args"][0])
+	var re []byte
+	if len(r.Form["cmd"]) > 1 {
+		cmd, re, err = executecmd.PipeExecCMDs(r.Form["cmd"], res, r.Form)
+	} else if len(r.Form["cmd"]) == 1 {
+		cmd = r.Form.Get("cmd")
+		if cmd == "" {
+			return
+		}
+		if len(r.Form["args"]) > 1 {
+			args = r.Form["args"]
+		} else if len(r.Form["args"]) == 1 {
+			args = executecmd.ParseArgs(r.Form["args"][0])
+		}
+		if r.Form.Get("sh") == "1" {
+			re, err = executecmd.ShellCmd(cmd, res, r.Form["args"])
+		} else {
+			re, err = executecmd.ExecCMD(cmd, res, nil, args...)
+		}
+	} else {
+		return
 	}
 
-	re, err := execCMD(cmd, res, args...)
 	if err != nil {
 		log.Println("execute cmd:", cmd, "err:", err)
 		return
@@ -219,113 +196,33 @@ func Cmd(w http.ResponseWriter, r *http.Request) {
 	log.Println(slice.ToAnySlice(a)...)
 }
 
-func execCMDs(cmds []string, res bool, args map[string][]string) ([]byte, error) {
-	var b bytes.Buffer
-	var i = 0
-	var commands []*exec.Cmd
+var envMutex sync.Mutex
 
-	fmt.Println(os.Environ())
-	cm := slice.Reduce(cmds[1:], func(t string, r *exec.Cmd) *exec.Cmd {
-		if r == nil {
-			return nil
-		}
-		i++
-		commands = append(commands, r)
-		cmd := exec.Command(cmds[i], args[number.IntToString(i)]...)
-		out, err := r.StdoutPipe()
-		if err != nil {
-			log.Println(err)
-			return nil
-		}
-		cmd.Stdin = out
-		if i == len(cmds)-1 {
-			cmd.Stdout = &b
-		}
-		return cmd
-	}, exec.Command(cmds[0], args["0"]...))
-	commands = append(commands, cm)
-	var err error
-	for _, command := range commands {
-		err = command.Start()
-		if err != nil {
-			return nil, err
-		}
-	}
-	for j, command := range commands {
-		err = command.Wait()
-		if err != nil {
-			return nil, err
-		}
-		if j == len(commands)-1 && !res {
-			go func() {
-				err = command.Wait()
-				if err != nil {
-					log.Println(err)
-				}
-			}()
-			return nil, nil
-		}
-	}
-	return b.Bytes(), err
-}
-
-func execCMD(cmd string, res bool, args ...string) ([]byte, error) {
-	cm := exec.Command(cmd, args...)
-	if res {
-		return cm.CombinedOutput()
-	}
-	err := cm.Start()
-	if err != nil {
-		return nil, err
-	}
-	go func() {
-		err = cm.Wait()
-		if err != nil {
-			log.Println(err)
-		}
+func setEnv(fn *[]func(), envs []string) error {
+	defer func() {
+		envMutex.Unlock()
 	}()
-	return nil, nil
-}
-
-func parseArgs(a string) (r []string) {
-	if a == "" {
-		return
-	}
-	fn := func(s []rune) string {
-		if s[0] == '"' || s[0] == '\'' && s[0] == s[len(s)-1] {
-			return strings.Trim(string(s), string(s[0]))
-		}
-		return string(s)
-	}
-	s := []rune(a)
-	var arg []rune
-	var start bool
-	var quote rune
-	var quoteNum int
-	for i := 0; i < len(s); i++ {
-		if s[i] == ' ' && !start {
-			continue
-		}
-
-		if s[i] == ' ' && start && quote == 0 || i > 1 && s[i-1] == quote && i-1 != quoteNum {
-			start = false
-			r = append(r, fn(arg))
-			arg = arg[:0]
-			quote = 0
-			quoteNum = 0
-			continue
-		}
-		if quote == 0 && s[i] == '"' || s[i] == '\'' {
-			quote = s[i]
-			quoteNum = i
-		}
-		start = true
-		arg = append(arg, s[i])
-		if i == len(s)-1 {
-			r = append(r, fn(arg))
+	envMutex.Lock()
+	for _, env := range envs {
+		v := strings.Split(env, "=")
+		old := os.Getenv(v[0])
+		*fn = append(*fn, func() {
+			var err error
+			if old != "" {
+				err = os.Setenv(v[0], old)
+			} else {
+				err = os.Unsetenv(v[0])
+			}
+			if err != nil {
+				log.Println(err)
+			}
+		})
+		err := os.Setenv(v[0], os.ExpandEnv(v[1]))
+		if err != nil {
+			return err
 		}
 	}
-	return
+	return nil
 }
 
 func parseKeyboard(r *http.Request, key string) ([]any, error) {

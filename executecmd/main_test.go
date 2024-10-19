@@ -1,4 +1,4 @@
-package main
+package executecmd
 
 import (
 	"reflect"
@@ -27,7 +27,7 @@ func TestParseArgs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotR := parseArgs(tt.args.a); !reflect.DeepEqual(gotR, tt.wantR) {
+			if gotR := ParseArgs(tt.args.a); !reflect.DeepEqual(gotR, tt.wantR) {
 				t.Errorf("parseArgs() = %v, want %v", gotR, tt.wantR)
 			}
 		})

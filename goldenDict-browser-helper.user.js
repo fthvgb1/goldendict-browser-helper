@@ -41,12 +41,24 @@
             key: "x"
         },
         /*{
+            title: "sh",
+            action: {
+                cmd: "ls -l /var/log/!*.log",
+            },
+            key: "e",
+            path: "cmd",
+            call: (res) => {
+                console.log(res.response)
+            },
+        }*/
+        /*{
             title: "env",
             action: {
                 cmd: ["env","grep","wc"],
                 args: [],
                 "1": ["PATH"],
-                "2": ["-l"]
+                "2": ["-l"],
+                env: ["PATH=$PATH:/home/xing"]
             },
             key: "e",
             path: "cmd",
