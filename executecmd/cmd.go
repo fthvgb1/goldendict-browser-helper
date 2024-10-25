@@ -71,22 +71,24 @@ func PipeExecCMDs(cmds []string, res bool, args map[string][]string) (string, []
 	return cmdStr, b.Bytes(), err
 }
 
-func ExecCMD(cmd string, res bool, fn func(), args ...string) ([]byte, error) {
+func ExecCMD(cmd string, res bool, fn func([]byte, error), args ...string) ([]byte, error) {
 	cm := exec.Command(cmd, args...)
 	if res {
 		return cm.CombinedOutput()
 	}
+	var b bytes.Buffer
+	cm.Stdout = &b
+	cm.Stderr = &b
 	err := cm.Start()
 	if err != nil {
 		return nil, err
 	}
 	go func() {
 		err = cm.Wait()
-		if err != nil {
-			log.Println(err)
-		}
 		if fn != nil {
-			fn()
+			fn(b.Bytes(), err)
+		} else {
+			log.Println(string(b.Bytes()), err)
 		}
 	}()
 	return nil, nil
@@ -98,7 +100,8 @@ func ShellCmd(cmd string, res bool, args []string) ([]byte, error) {
 		return nil, err
 	}
 	dir := helper.Defaults(os.Getenv("shPath"), filepath.Dir(ex))
-	sh := filepath.Join(dir, fmt.Sprintf("tmp%d.sh", time.Now().UnixNano()))
+	suffix := helper.Defaults(os.Getenv("shSuffix"), "sh")
+	sh := filepath.Join(dir, fmt.Sprintf("tmp%d.%s", time.Now().UnixNano(), suffix))
 	file, err := os.OpenFile(sh, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0766)
 	if err != nil {
 		return nil, err
@@ -113,7 +116,7 @@ func ShellCmd(cmd string, res bool, args []string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	var def func()
+	var def func([]byte, error)
 	fn := func() {
 		err = os.Remove(sh)
 		if err != nil {
@@ -121,7 +124,10 @@ func ShellCmd(cmd string, res bool, args []string) ([]byte, error) {
 		}
 	}
 	if !res {
-		def = fn
+		def = func(b []byte, err2 error) {
+			log.Println(string(b), err2)
+			fn()
+		}
 	} else {
 		defer fn()
 	}
