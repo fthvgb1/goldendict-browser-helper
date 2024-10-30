@@ -82,7 +82,7 @@
             fn = () => {
                 request('keys=' + parseKey(menu.action), menu.path, menu.hasOwnProperty('call') ? menu.call : null)
             }
-        } else if (menu.action instanceof Object) {
+        } else if (typeof menu.action === 'object') {
             fn = () => {
                 request(menu.action, menu.path, menu.hasOwnProperty('call') ? menu.call : null)
             }
@@ -177,7 +177,7 @@
     });
 
     async function request(data, path = '', call = null) {
-        if (data instanceof Object) {
+        if (typeof data === 'object') {
             data = Object.keys(data).map(k => {
                 if (data[k] instanceof Array) {
                     return data[k].map(v => k + '=' + encodeURIComponent(v)).join('&')
