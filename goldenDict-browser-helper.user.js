@@ -25,12 +25,8 @@
     const goldDictKey = parseKey(GM_getValue('goldDictKey', 'ctrl c,ctrl c'));
     const ocrKey = parseKey(GM_getValue('ocrKey', ['windows', 'win32', 'win64'].filter(v => userAgent.indexOf(v) > -1).length > 0 ? 'cmd alt c' : 'alt c'));
     let shadowRoot;
-    let modal;
-    // 外部样式表
-    const links = [
-        '',
-        //'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css'
-    ];
+    const eles = [];
+    const styles = [];
 
     const menus = GM_getValue('menus', [
         {
@@ -59,21 +55,47 @@
             action: async () => {
                 const r = await anki('deckNames', {});
                 const ops = r.result.map(v => `<option value="${v}">${v}</option>`).join('\n');
-                const select = `<select id="decks" class="swal2-select">${ops}</select>`;
                 const {value: formValues} = await Swal.fire({
                     title: "添加到anki",
                     showCancelButton: true,
                     html: `
-    ${select}
-    <input id="front" placeholder="正面" class="swal2-input">
-    <textarea id="backend" aria-label="Type your message here" class="swal2-textarea" placeholder="背面" style="display: flex;"></textarea>
+<style>
+    .form-item {display: grid; grid-template-columns: 0fr auto;align-items: center }
+    .form-label { width: 50px}
+    .mock-textarea {
+    box-sizing: border-box;
+    width: auto;
+    transition: border-color .1s, box-shadow .1s;
+    border: 1px solid hsl(0, 0%, 85%);
+    border-radius: .1875em;
+    background: rgba(0, 0, 0, 0);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .06), 0 0 0 3px rgba(0, 0, 0, 0);
+    color: inherit;
+    overflow: hidden;
+    display: flex;
+    font-size: 1.125em;}
+</style>
+    <div class="form-item">
+        <label for="decks" class="form-label">牌组</label>
+        <select id="decks" class="swal2-select">${ops}</select>
+    </div>
+    
+    <div class="form-item">
+        <label for="front" class="form-label">正面</label>
+        <input id="front" placeholder="正面" class="swal2-input">
+    </div>
+    
+    <div class="form-item">
+        <label for="backend" class="form-label">背面</label>
+        <div contenteditable="true" class="mock-textarea swal2-textarea" id="backend" ></div>
+    </div>
   `,
                     focusConfirm: false,
                     preConfirm: () => {
                         return {
                             deckName: document.getElementById("decks").value,
                             front: document.getElementById("front").value,
-                            backend: document.getElementById("backend").value
+                            backend: document.getElementById("backend").innerHTML
                         };
                     }
                 });
@@ -92,23 +114,10 @@
                     if (r.error === null) {
                         Swal.fire({
                             html: "添加成功",
-                            timer: 200,
+                            timer: 1000,
                         });
                     }
                 }
-
-                /*anki('addNote', {
-                    "note": {
-                        "deckName": "生词",
-                        "modelName": "问答题",
-                        "fields": {
-                            "正面": "grave",
-                            "背面": ``
-                        },
-                    }
-                }).then(r => {
-                    console.log(r)
-                })*/
             },
             key: "jj"
         },
@@ -771,18 +780,22 @@
         shadow.appendChild(iframe);
         iframeWin = iframe.contentWindow;
         iframeDoc = iframe.contentDocument;
-        // 外部样式表
-        links.forEach(v => {
-            if (v === '') {
-                return
-            }
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = v
-            link.crossOrigin = 'anonymous'
-            //document.head.appendChild(link)
-            shadow.appendChild(link)
-        });
+
+
+        if (styles.length > 0) {
+            styles.forEach(v => {
+                const st = document.createElement('style');
+                st.textContent = v;
+                shadow.appendChild(st);
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.type = 'text/css';
+                link.href = createObjectURLWithTry(new Blob(['\ufeff', v], {
+                    type: 'text/css;charset=UTF-8'
+                }));
+                shadow.appendChild(link);
+            })
+        }
 
         const link = document.createElement('link');
         link.rel = 'stylesheet';
@@ -796,6 +809,12 @@
         shadow.appendChild(link); // 外部样式表
         // 翻译图标加入 Shadow
         shadow.appendChild(icon);
+
+        if (eles.length > 0) {
+            eles.forEach(ele => {
+                shadow.appendChild(ele)
+            })
+        }
         // 鼠标事件：防止选中的文本消失
         document.addEventListener('mousedown', function (e) {
             log('mousedown event:', e);
