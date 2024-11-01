@@ -14,14 +14,23 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @require      https://raw.githubusercontent.com/nitotm/efficient-language-detector-js/main/minified/eld.M60.min.js
+// @require      https://cdn.jsdelivr.net/npm/sweetalert2@11
 // ==/UserScript==
 
 (function () {
     'use strict';
     const userAgent = navigator.userAgent.toLowerCase();
-    const host = GM_getValue('host', 'http://127.0.0.1:9999')
+    const host = GM_getValue('host', 'http://127.0.0.1:9999');
+    const ankiHost = GM_getValue('host', 'http://127.0.0.1:8765');
     const goldDictKey = parseKey(GM_getValue('goldDictKey', 'ctrl c,ctrl c'));
     const ocrKey = parseKey(GM_getValue('ocrKey', ['windows', 'win32', 'win64'].filter(v => userAgent.indexOf(v) > -1).length > 0 ? 'cmd alt c' : 'alt c'));
+    let shadowRoot;
+    let modal;
+    // 外部样式表
+    const links = [
+        '',
+        //'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css'
+    ];
 
     const menus = GM_getValue('menus', [
         {
@@ -39,6 +48,69 @@
             title: "parse qrcode",
             action: 'ctrl alt x',
             key: "x"
+        },
+        {
+            title: "debug",
+            action: 'f12',
+            key: 'd'
+        },
+        {
+            title: "anki",
+            action: async () => {
+                const r = await anki('deckNames', {});
+                const ops = r.result.map(v => `<option value="${v}">${v}</option>`).join('\n');
+                const select = `<select id="decks" class="swal2-select">${ops}</select>`;
+                const {value: formValues} = await Swal.fire({
+                    title: "添加到anki",
+                    showCancelButton: true,
+                    html: `
+    ${select}
+    <input id="front" placeholder="正面" class="swal2-input">
+    <textarea id="backend" aria-label="Type your message here" class="swal2-textarea" placeholder="背面" style="display: flex;"></textarea>
+  `,
+                    focusConfirm: false,
+                    preConfirm: () => {
+                        return {
+                            deckName: document.getElementById("decks").value,
+                            front: document.getElementById("front").value,
+                            backend: document.getElementById("backend").value
+                        };
+                    }
+                });
+                if (formValues) {
+                    const r = await anki('addNote', {
+                        "note": {
+                            "deckName": formValues.deckName,
+                            "modelName": "问答题",
+                            "fields": {
+                                "正面": formValues.front,
+                                "背面": formValues.backend
+                            },
+                        }
+                    });
+                    console.log(r);
+                    if (r.error === null) {
+                        Swal.fire({
+                            html: "添加成功",
+                            timer: 200,
+                        });
+                    }
+                }
+
+                /*anki('addNote', {
+                    "note": {
+                        "deckName": "生词",
+                        "modelName": "问答题",
+                        "fields": {
+                            "正面": "grave",
+                            "背面": ``
+                        },
+                    }
+                }).then(r => {
+                    console.log(r)
+                })*/
+            },
+            key: "jj"
         },
         /*{
             title: "sh",
@@ -175,6 +247,23 @@
             utterance = new SpeechSynthesisUtterance();
         }
     });
+
+    function anki(action, params) {
+        return new Promise(async (resolve, reject) => {
+            await GM_xmlhttpRequest({
+                method: 'POST',
+                url: ankiHost,
+                data: JSON.stringify({action, params, version: 6}),
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                onload: (res) => {
+                    resolve(JSON.parse(res.responseText));
+                },
+                onerror: reject,
+            })
+        })
+    }
 
     async function request(data, path = '', call = null) {
         if (typeof data === 'object') {
@@ -677,11 +766,24 @@
         const shadow = root.attachShadow({
             mode: 'closed'
         });
+        shadowRoot = shadow
         // iframe 工具库加入 Shadow
         shadow.appendChild(iframe);
         iframeWin = iframe.contentWindow;
         iframeDoc = iframe.contentDocument;
         // 外部样式表
+        links.forEach(v => {
+            if (v === '') {
+                return
+            }
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = v
+            link.crossOrigin = 'anonymous'
+            //document.head.appendChild(link)
+            shadow.appendChild(link)
+        });
+
         const link = document.createElement('link');
         link.rel = 'stylesheet';
         link.type = 'text/css';
