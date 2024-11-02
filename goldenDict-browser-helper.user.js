@@ -58,7 +58,7 @@
                 const deckNameOptions = buildOption(deckNames, deckName);
                 const modelOptions = buildOption(models, model)
                 Swal.fire({
-                    title: "添加到anki",
+                    title: "添加到anki(需要先装anki connector插件)",
                     showCancelButton: true,
                     html: `
 <style>
