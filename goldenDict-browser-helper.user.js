@@ -53,9 +53,16 @@
         {
             title: "anki",
             action: async () => {
-                const r = await anki('deckNames', {});
-                const ops = r.result.map(v => `<option value="${v}">${v}</option>`).join('\n');
-                const {value: formValues} = await Swal.fire({
+                const {result: deckNames} = await anki('deckNames');
+                const {result: models} = await anki('modelNames');
+                const model = GM_getValue('model', '问答题')
+                const deckName = GM_getValue('deckName', '');
+                const frontField = GM_getValue('frontField', '正面');
+                const backendField = GM_getValue('backendField', '背面');
+                const lastValues = {model, deckName, frontField, backendField}
+                const deckNameOptions = buildOption(deckNames, deckName);
+                const modelOptions = buildOption(models, model)
+                Swal.fire({
                     title: "添加到anki",
                     showCancelButton: true,
                     html: `
@@ -71,18 +78,33 @@
     background: rgba(0, 0, 0, 0);
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, .06), 0 0 0 3px rgba(0, 0, 0, 0);
     color: inherit;
-    overflow: hidden;
-    display: flex;
+    overflow: auto;
+    text-align: left;
+    margin: 1em 2em 3px;
     font-size: 1.125em;}
 </style>
     <div class="form-item">
-        <label for="decks" class="form-label">牌组</label>
-        <select id="decks" class="swal2-select">${ops}</select>
+        <label for="deckName" class="form-label">牌组</label>
+        <select id="deckName" class="swal2-select">${deckNameOptions}</select>
+    </div>
+    <div class="form-item">
+        <label for="model" class="form-label">模板</label>
+        <select id="model" class="swal2-select">${modelOptions}</select>
+    </div>
+    
+     <div class="form-item">
+        <label for="frontField" class="form-label">正面字段</label>
+        <input id="frontField" value="${frontField}" placeholder="正面字段" class="swal2-input"><br>
     </div>
     
     <div class="form-item">
         <label for="front" class="form-label">正面</label>
-        <input id="front" placeholder="正面" class="swal2-input">
+        <input id="front"  placeholder="正面" class="swal2-input">
+    </div>
+   
+    <div class="form-item">
+        <label for="backendField" class="form-label">背面字段</label>
+        <input id="backendField" value="${backendField}" placeholder="背面字段" class="swal2-input"><br>
     </div>
     
     <div class="form-item">
@@ -91,35 +113,48 @@
     </div>
   `,
                     focusConfirm: false,
-                    preConfirm: () => {
-                        return {
-                            deckName: document.getElementById("decks").value,
-                            front: document.getElementById("front").value,
-                            backend: document.getElementById("backend").innerHTML
-                        };
-                    }
-                });
-                if (formValues) {
-                    const r = await anki('addNote', {
-                        "note": {
-                            "deckName": formValues.deckName,
-                            "modelName": "问答题",
-                            "fields": {
-                                "正面": formValues.front,
-                                "背面": formValues.backend
-                            },
+                    preConfirm: async () => {
+                        let form = {};
+                        Object.keys(lastValues).forEach(field => {
+                            form[field] = document.getElementById(field).value;
+                        })
+                        form.front = document.getElementById('front').value;
+                        form.backend = document.getElementById("backend").innerHTML;
+
+                        if (Object.values(form).map(v => v === '' ? 0 : 1).reduce((p, c) => p + c, 0) < Object.keys(form).length) {
+                            Swal.showValidationMessage('还有参数为空!请检查！');
+                            return
                         }
-                    });
-                    console.log(r);
-                    if (r.error === null) {
+                        let fields = {};
+                        fields[form.frontField] = form.front;
+                        fields[form.backendField] = form.backend;
+                        const params = {
+                            "note": {
+                                "deckName": form.deckName,
+                                "modelName": form.model,
+                                "fields": fields,
+                            }
+                        }
+                        const res = await anki('addNote', params);
+                        console.log(form, params, res);
+
+                        if (res.error !== null) {
+                            Swal.showValidationMessage('添加出错：' + res.error);
+                            return
+                        }
+                        Object.keys(lastValues).forEach(k => {
+                            if (lastValues[k] !== form[k]) {
+                                GM_setValue(k, form[k])
+                            }
+                        })
                         Swal.fire({
                             html: "添加成功",
                             timer: 1000,
                         });
                     }
-                }
+                });
             },
-            key: "jj"
+            key: "a"
         },
         /*{
             title: "sh",
@@ -257,7 +292,26 @@
         }
     });
 
-    function anki(action, params) {
+    function buildOption(arr, select = '', key = 'k', val = 'v') {
+        return arr.map(v => {
+            if (typeof v === 'string') {
+                let sel = '';
+                if (v === select) {
+                    sel = 'selected'
+                }
+                return `<option ${sel} value="${v}">${v}</option>`
+            } else if (typeof v === 'object') {
+                let sel = '';
+                if (v[key] === select) {
+                    sel = 'selected'
+                }
+                return `<option ${sel} value="${v[key]}">${v[val]}</option>`
+            }
+            return ''
+        }).join('\n');
+    }
+
+    function anki(action, params = {}) {
         return new Promise(async (resolve, reject) => {
             await GM_xmlhttpRequest({
                 method: 'POST',
