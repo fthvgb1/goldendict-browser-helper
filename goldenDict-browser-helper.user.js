@@ -47,108 +47,7 @@
         },
         {
             title: "anki",
-            action: async () => {
-                const {result: deckNames} = await anki('deckNames');
-                const {result: models} = await anki('modelNames');
-                const model = GM_getValue('model', '问答题')
-                const deckName = GM_getValue('deckName', '');
-                const frontField = GM_getValue('frontField', '正面');
-                const backendField = GM_getValue('backendField', '背面');
-                const lastValues = {model, deckName, frontField, backendField}
-                const deckNameOptions = buildOption(deckNames, deckName);
-                const modelOptions = buildOption(models, model)
-                Swal.fire({
-                    title: "添加到anki(需要先装anki connector插件)",
-                    showCancelButton: true,
-                    html: `
-<style>
-    .form-item {display: grid; grid-template-columns: 0fr auto;align-items: center }
-    .form-label { width: 50px}
-    .mock-textarea {
-    box-sizing: border-box;
-    width: auto;
-    transition: border-color .1s, box-shadow .1s;
-    border: 1px solid hsl(0, 0%, 85%);
-    border-radius: .1875em;
-    background: rgba(0, 0, 0, 0);
-    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .06), 0 0 0 3px rgba(0, 0, 0, 0);
-    color: inherit;
-    overflow: auto;
-    text-align: left;
-    margin: 1em 2em 3px;
-    font-size: 1.125em;}
-</style>
-    <div class="form-item">
-        <label for="deckName" class="form-label">牌组</label>
-        <select id="deckName" class="swal2-select">${deckNameOptions}</select>
-    </div>
-    <div class="form-item">
-        <label for="model" class="form-label">模板</label>
-        <select id="model" class="swal2-select">${modelOptions}</select>
-    </div>
-    
-     <div class="form-item">
-        <label for="frontField" class="form-label">正面字段</label>
-        <input id="frontField" value="${frontField}" placeholder="正面字段" class="swal2-input"><br>
-    </div>
-    
-    <div class="form-item">
-        <label for="front" class="form-label">正面</label>
-        <input id="front"  placeholder="正面" class="swal2-input">
-    </div>
-   
-    <div class="form-item">
-        <label for="backendField" class="form-label">背面字段</label>
-        <input id="backendField" value="${backendField}" placeholder="背面字段" class="swal2-input"><br>
-    </div>
-    
-    <div class="form-item">
-        <label for="backend" class="form-label">背面</label>
-        <div contenteditable="true" class="mock-textarea swal2-textarea" id="backend" ></div>
-    </div>
-  `,
-                    focusConfirm: false,
-                    preConfirm: async () => {
-                        let form = {};
-                        Object.keys(lastValues).forEach(field => {
-                            form[field] = document.getElementById(field).value;
-                        })
-                        form.front = document.getElementById('front').value;
-                        form.backend = document.getElementById("backend").innerHTML;
-
-                        if (Object.values(form).map(v => v === '' ? 0 : 1).reduce((p, c) => p + c, 0) < Object.keys(form).length) {
-                            Swal.showValidationMessage('还有参数为空!请检查！');
-                            return
-                        }
-                        let fields = {};
-                        fields[form.frontField] = form.front;
-                        fields[form.backendField] = form.backend;
-                        const params = {
-                            "note": {
-                                "deckName": form.deckName,
-                                "modelName": form.model,
-                                "fields": fields,
-                            }
-                        }
-                        const res = await anki('addNote', params);
-                        console.log(form, params, res);
-
-                        if (res.error !== null) {
-                            Swal.showValidationMessage('添加出错：' + res.error);
-                            return
-                        }
-                        Object.keys(lastValues).forEach(k => {
-                            if (lastValues[k] !== form[k]) {
-                                GM_setValue(k, form[k])
-                            }
-                        })
-                        Swal.fire({
-                            html: "添加成功",
-                            timer: 1000,
-                        });
-                    }
-                });
-            },
+            action: addAnki,
             key: "a"
         },
         /*{
@@ -270,6 +169,14 @@
                     hideIcon();
                 });
             },
+        },
+        {
+            name: 'anki',
+            icon: 'icon-anki',
+            image: 'https://ankiweb.net/logo.png',
+            trigger: (t) => {
+                addAnki('', t).catch(res => console.log(res))
+            }
         }
     ];
 
@@ -304,6 +211,108 @@
             }
             return ''
         }).join('\n');
+    }
+
+    async function addAnki(preFront = '', preBackend = '') {
+        const {result: deckNames} = await anki('deckNames');
+        const {result: models} = await anki('modelNames');
+        const model = GM_getValue('model', '问答题')
+        const deckName = GM_getValue('deckName', '');
+        const frontField = GM_getValue('frontField', '正面');
+        const backendField = GM_getValue('backendField', '背面');
+        const lastValues = {model, deckName, frontField, backendField}
+        const deckNameOptions = buildOption(deckNames, deckName);
+        const modelOptions = buildOption(models, model)
+        await Swal.fire({
+            title: "添加到anki(需要先装anki connector插件)",
+            showCancelButton: true,
+            html: `
+<style>
+    .form-item {display: grid; grid-template-columns: 0fr auto;align-items: center }
+    .form-label { width: 50px}
+    .mock-textarea {
+    box-sizing: border-box;
+    width: auto;
+    transition: border-color .1s, box-shadow .1s;
+    border: 1px solid hsl(0, 0%, 85%);
+    border-radius: .1875em;
+    background: rgba(0, 0, 0, 0);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .06), 0 0 0 3px rgba(0, 0, 0, 0);
+    color: inherit;
+    overflow: auto;
+    text-align: left;
+    margin: 1em 2em 3px;
+    font-size: 1.125em;}
+</style>
+    <div class="form-item">
+        <label for="deckName" class="form-label">牌组</label>
+        <select id="deckName" class="swal2-select">${deckNameOptions}</select>
+    </div>
+    <div class="form-item">
+        <label for="model" class="form-label">模板</label>
+        <select id="model" class="swal2-select">${modelOptions}</select>
+    </div>
+    
+     <div class="form-item">
+        <label for="frontField" class="form-label">正面字段</label>
+        <input id="frontField" value="${frontField}" placeholder="正面字段" class="swal2-input"><br>
+    </div>
+    
+    <div class="form-item">
+        <label for="front" class="form-label">正面</label>
+        <input id="front"  value="${preFront}" placeholder="正面" class="swal2-input">
+    </div>
+   
+    <div class="form-item">
+        <label for="backendField" class="form-label">背面字段</label>
+        <input id="backendField" value="${backendField}" placeholder="背面字段" class="swal2-input"><br>
+    </div>
+    
+    <div class="form-item">
+        <label for="backend" class="form-label">背面</label>
+        <div contenteditable="true" class="mock-textarea swal2-textarea" id="backend" >${preBackend}</div>
+    </div>
+  `,
+            focusConfirm: false,
+            preConfirm: async () => {
+                let form = {};
+                Object.keys(lastValues).forEach(field => {
+                    form[field] = document.getElementById(field).value;
+                })
+                form.front = document.getElementById('front').value;
+                form.backend = document.getElementById("backend").innerHTML;
+
+                if (Object.values(form).map(v => v === '' ? 0 : 1).reduce((p, c) => p + c, 0) < Object.keys(form).length) {
+                    Swal.showValidationMessage('还有参数为空!请检查！');
+                    return
+                }
+                let fields = {};
+                fields[form.frontField] = form.front;
+                fields[form.backendField] = form.backend;
+                const params = {
+                    "note": {
+                        "deckName": form.deckName,
+                        "modelName": form.model,
+                        "fields": fields,
+                    }
+                }
+                const res = await anki('addNote', params);
+                console.log(form, params, res);
+                if (res.error !== null) {
+                    Swal.showValidationMessage('添加出错：' + res.error);
+                    return
+                }
+                Object.keys(lastValues).forEach(k => {
+                    if (lastValues[k] !== form[k]) {
+                        GM_setValue(k, form[k])
+                    }
+                })
+                Swal.fire({
+                    html: "添加成功",
+                    timer: 1000,
+                });
+            }
+        });
     }
 
     function anki(action, params = {}) {
