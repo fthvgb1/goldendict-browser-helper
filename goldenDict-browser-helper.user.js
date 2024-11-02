@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         goldenDict-browser-helper
 // @namespace    http://tampermonkey.net/
-// @version      0.9
+// @version      0.91
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1/goldendict-browser-helper
 // @match        http://*/*
@@ -44,11 +44,6 @@
             title: "parse qrcode",
             action: 'ctrl alt x',
             key: "x"
-        },
-        {
-            title: "debug",
-            action: 'f12',
-            key: 'd'
         },
         {
             title: "anki",
@@ -300,7 +295,7 @@
                     sel = 'selected'
                 }
                 return `<option ${sel} value="${v}">${v}</option>`
-            } else if (typeof v === 'object') {
+            } else if (typeof v === 'object' || v instanceof Array) {
                 let sel = '';
                 if (v[key] === select) {
                     sel = 'selected'
