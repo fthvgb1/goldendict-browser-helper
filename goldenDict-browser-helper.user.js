@@ -21,7 +21,7 @@
     'use strict';
     const userAgent = navigator.userAgent.toLowerCase();
     const host = GM_getValue('host', 'http://127.0.0.1:9999');
-    const ankiHost = GM_getValue('host', 'http://127.0.0.1:8765');
+    const ankiHost = GM_getValue('ankiHost', 'http://127.0.0.1:8765');
     const goldDictKey = parseKey(GM_getValue('goldDictKey', 'ctrl c,ctrl c'));
     const ocrKey = parseKey(GM_getValue('ocrKey', ['windows', 'win32', 'win64'].filter(v => userAgent.indexOf(v) > -1).length > 0 ? 'cmd alt c' : 'alt c'));
     let shadowRoot;
@@ -222,16 +222,18 @@
         const deckName = GM_getValue('deckName', '');
         const frontField = GM_getValue('frontField', '正面');
         const backendField = GM_getValue('backendField', '背面');
-        const lastValues = {model, deckName, frontField, backendField}
+        const lastValues = {ankiHost, model, deckName, frontField, backendField}
         const deckNameOptions = buildOption(deckNames, deckName);
         const modelOptions = buildOption(models, model)
         await Swal.fire({
             title: "添加到anki(需要先装anki connector插件)",
             showCancelButton: true,
+            width: 600,
             html: `
 <style>
     .form-item {display: grid; grid-template-columns: 0fr auto;align-items: center }
-    .form-label { width: 50px}
+    .form-label { width: 8rem}
+    .swal2-input,.swal2-select {margin: 1em 1em 3px;}
     .mock-textarea {
     box-sizing: border-box;
     width: auto;
@@ -243,9 +245,13 @@
     color: inherit;
     overflow: auto;
     text-align: left;
-    margin: 1em 2em 3px;
+    
     font-size: 1.125em;}
 </style>
+    <div class="form-item">
+        <label for="ankiHost" class="form-label">ankiConnector监听地址</label>
+        <input id="ankiHost" value="${ankiHost}" placeholder="ankiConnector监听地址" class="swal2-input">
+    </div>
     <div class="form-item">
         <label for="deckName" class="form-label">牌组</label>
         <select id="deckName" class="swal2-select">${deckNameOptions}</select>
@@ -257,7 +263,7 @@
     
      <div class="form-item">
         <label for="frontField" class="form-label">正面字段</label>
-        <input id="frontField" value="${frontField}" placeholder="正面字段" class="swal2-input"><br>
+        <input id="frontField" value="${frontField}" placeholder="正面字段" class="swal2-input">
     </div>
     
     <div class="form-item">
@@ -267,12 +273,12 @@
    
     <div class="form-item">
         <label for="backendField" class="form-label">背面字段</label>
-        <input id="backendField" value="${backendField}" placeholder="背面字段" class="swal2-input"><br>
+        <input id="backendField" value="${backendField}" placeholder="背面字段" class="swal2-input">
     </div>
     
     <div class="form-item">
         <label for="backend" class="form-label">背面</label>
-        <div contenteditable="true" class="mock-textarea swal2-textarea" id="backend" >${preBackend}</div>
+        <div contenteditable="true" class="mock-textarea swal2-textarea swal2-input" id="backend" >${preBackend}</div>
     </div>
   `,
             focusConfirm: false,
