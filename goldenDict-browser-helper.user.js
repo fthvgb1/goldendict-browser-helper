@@ -47,7 +47,9 @@
         },
         {
             title: "anki",
-            action: addAnki,
+            action: () => {
+                addAnki()
+            },
             key: "a"
         },
         /*{
