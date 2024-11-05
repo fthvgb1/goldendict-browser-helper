@@ -249,7 +249,10 @@
         const {result: deckNames} = await anki('deckNames');
         const {result: models} = await anki('modelNames');
         const model = GM_getValue('model', '问答题');
-        const modelFields = GM_getValue('modelFields-' + model, [])
+        let modelFields = GM_getValue('modelFields-' + model, []);
+        if (modelFields.length === 0 && model === '问答题') {
+            modelFields = [[0, '正面'], [1, '背面']];
+        }
         const deckName = GM_getValue('deckName', '');
         const lastValues = {ankiHost, model, deckName,}
         const deckNameOptions = buildOption(deckNames, deckName);
