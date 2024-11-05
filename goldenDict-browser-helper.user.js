@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         goldenDict-browser-helper
 // @namespace    http://tampermonkey.net/
-// @version      0.91
+// @version      0.92
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1/goldendict-browser-helper
 // @match        http://*/*
@@ -215,25 +215,94 @@
         }).join('\n');
     }
 
+    function buildInput(rawStr = false, field = '', value = '') {
+        const li = document.createElement('div');
+        li.className = 'form-item'
+        li.innerHTML = `
+            <input name="shadow-form-field[]" placeholder="字段名" value="${field}" class="swal2-input field-name">
+            <input name="shadow-form-value[]" value="${value}" placeholder="字段值" class="swal2-input field-value"> 
+            <button class="minus">➖</button>
+
+        `;
+        if (rawStr) {
+            return li.outerHTML
+        }
+        document.querySelector('#shadowFields ol').appendChild(li)
+    }
+
+    function buildTextarea(rawStr = false, field = '', value = '') {
+        const li = document.createElement('div');
+        li.className = 'form-item'
+        li.innerHTML = `
+            <input name="shadow-form-field[]" placeholder="字段名" value="${field}" class="swal2-input field-name">
+            <div contenteditable="true" placeholder="字段值" class="mock-textarea swal2-textarea swal2-input" >${value}</div>
+            <button class="minus">➖</button>
+        `;
+        if (rawStr) {
+            return li.outerHTML
+        }
+        document.querySelector('#shadowFields ol').appendChild(li);
+    }
+
+
     async function addAnki(preFront = '', preBackend = '') {
         const {result: deckNames} = await anki('deckNames');
         const {result: models} = await anki('modelNames');
-        const model = GM_getValue('model', '问答题')
+        const model = GM_getValue('model', '问答题');
+        const modelFields = GM_getValue('modelFields-' + model, [])
         const deckName = GM_getValue('deckName', '');
-        const frontField = GM_getValue('frontField', '正面');
-        const backendField = GM_getValue('backendField', '背面');
-        const lastValues = {ankiHost, model, deckName, frontField, backendField}
+        const lastValues = {ankiHost, model, deckName,}
         const deckNameOptions = buildOption(deckNames, deckName);
-        const modelOptions = buildOption(models, model)
+        const modelOptions = buildOption(models, model);
+        const fieldFn = ['', buildInput, buildTextarea];
+        const changeFn = ev => {
+            if (ev.target.id !== 'model') {
+                return
+            }
+            const modelField = GM_getValue('modelFields-' + ev.target.value, []);
+            document.querySelector('#shadowFields ol').innerHTML = '';
+            if (modelField.length > 0) {
+                modelField.forEach(v => {
+                    fieldFn[v[0]](false, v[1]);
+                })
+            }
+        }
+        document.addEventListener('change', changeFn)
+        const clickFn = ev => {
+            if (ev.target.id === 'shadowAddField') {
+                const type = parseInt(document.getElementById('shadowField').value);
+                fieldFn[type]()
+                ev.stopPropagation();
+                return
+            }
+            if (ev.target.className === 'minus') {
+                ev.target.parentElement.parentElement.removeChild(ev.target.parentElement)
+                ev.stopPropagation()
+            }
+
+        }
+        document.addEventListener('click', clickFn)
+        let ol = '';
+        if (modelFields.length > 0) {
+            ol = modelFields.map(v => {
+                return fieldFn[v[0]](true, v[1])
+            }).join('\n')
+        }
         await Swal.fire({
             title: "添加到anki(需要先装anki connector插件)",
             showCancelButton: true,
-            width: 600,
+            width: 650,
             html: `
 <style>
-    .form-item {display: grid; grid-template-columns: 0fr auto;align-items: center }
+    .form-item {display: grid; grid-template-columns: 0fr auto 0fr;align-items: center }
     .form-label { width: 8rem}
+    .form-item ol {margin-left: -50px}
+    .form-item ol .form-item .swal2-input{padding: 5px;margin: 1em 5px 3px;}
+    .form-item ol .form-item .field-name{width: 8rem}
+    .form-item ol .form-item .field-value{width: 27rem}
+    .form-item ol .form-item .mock-textarea{width: 27rem;padding: 5px;min-height: 17rem}
     .swal2-input,.swal2-select {margin: 1em 1em 3px;}
+    .btn-add-field{ width: 2rem; height: 2rem; margin-top: 1.5rem; }
     .mock-textarea {
     box-sizing: border-box;
     width: auto;
@@ -260,26 +329,19 @@
         <label for="model" class="form-label">模板</label>
         <select id="model" class="swal2-select">${modelOptions}</select>
     </div>
-    
-     <div class="form-item">
-        <label for="frontField" class="form-label">正面字段</label>
-        <input id="frontField" value="${frontField}" placeholder="正面字段" class="swal2-input">
-    </div>
-    
     <div class="form-item">
-        <label for="front" class="form-label">正面</label>
-        <input id="front"  value="${preFront}" placeholder="正面" class="swal2-input">
-    </div>
-   
-    <div class="form-item">
-        <label for="backendField" class="form-label">背面字段</label>
-        <input id="backendField" value="${backendField}" placeholder="背面字段" class="swal2-input">
+        <label for="shadowField" class="form-label">字段</label>
+        <select id="shadowField" class="swal2-select">
+            <option value="1">文本</option>
+            <option value="2">富文本</option>
+        </select>
+        <button class="btn-add-field" id="shadowAddField">➕</button>
     </div>
     
-    <div class="form-item">
-        <label for="backend" class="form-label">背面</label>
-        <div contenteditable="true" class="mock-textarea swal2-textarea swal2-input" id="backend" >${preBackend}</div>
+    <div class="form-item" id="shadowFields">
+        <ol>${ol}</ol>
     </div>
+    
   `,
             focusConfirm: false,
             preConfirm: async () => {
@@ -287,16 +349,21 @@
                 Object.keys(lastValues).forEach(field => {
                     form[field] = document.getElementById(field).value;
                 })
-                form.front = document.getElementById('front').value;
-                form.backend = document.getElementById("backend").innerHTML;
+                let fields = {};
+                let modelField = [];
+                [...document.querySelectorAll('#shadowFields ol >div')].forEach(div => {
+                    const name = div.children[0].value;
+                    if (name === '') {
+                        return
+                    }
+                    modelField.push([div.children[1].tagName === 'INPUT' ? 1 : 2, name]);
+                    fields[name] = div.children[1].tagName === 'INPUT' ? div.children[1].value : div.children[1].innerHTML
+                })
 
                 if (Object.values(form).map(v => v === '' ? 0 : 1).reduce((p, c) => p + c, 0) < Object.keys(form).length) {
                     Swal.showValidationMessage('还有参数为空!请检查！');
                     return
                 }
-                let fields = {};
-                fields[form.frontField] = form.front;
-                fields[form.backendField] = form.backend;
                 const params = {
                     "note": {
                         "deckName": form.deckName,
@@ -315,10 +382,16 @@
                         GM_setValue(k, form[k])
                     }
                 })
+                if (modelField.length !== modelFields.length || !modelField.every((v, i) => v === modelFields[i])) {
+                    GM_setValue('modelFields-' + form.model, modelField)
+                }
                 Swal.fire({
                     html: "添加成功",
                     timer: 1000,
                 });
+                document.removeEventListener('click', clickFn);
+                document.removeEventListener('change', changeFn)
+
             }
         });
     }
