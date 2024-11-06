@@ -249,6 +249,8 @@
             <div class="field-operate">
                 <button class="minus">➖</button>
                 <input type="radio" ${checkeds} name="shadow-form-defaut[]">
+                <button class="paste-html" title="粘贴剪切板的文本">✍️</button>
+                <button class="text-clean" title="清空">🧹</button>
             </div>
         `;
         if (rawStr) {
@@ -287,8 +289,17 @@
                 fieldFn[type]()
                 return
             }
-            if (ev.target.className === 'minus') {
-                ev.target.parentElement.parentElement.parentElement.removeChild(ev.target.parentElement.parentElement)
+            switch (ev.target.className) {
+                case 'text-clean':
+                    ev.target.parentElement.previousElementSibling.innerHTML = '';
+                    break;
+                case 'paste-html':
+                    ev.target.parentElement.previousElementSibling.focus();
+                    request('keys=' + parseKey('ctrl v'));
+                    break
+                case 'minus':
+                    ev.target.parentElement.parentElement.parentElement.removeChild(ev.target.parentElement.parentElement);
+                    break
             }
         }
         document.addEventListener('click', clickFn)
