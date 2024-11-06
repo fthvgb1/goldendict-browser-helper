@@ -177,7 +177,7 @@
             icon: 'icon-anki',
             image: 'https://ankiweb.net/logo.png',
             trigger: (t) => {
-                addAnki('', t).catch(res => console.log(res))
+                addAnki(t).catch(res => console.log(res))
             }
         }
     ];
@@ -215,14 +215,17 @@
         }).join('\n');
     }
 
-    function buildInput(rawStr = false, field = '', value = '') {
+    function buildInput(rawStr = false, field = '', value = '', checked = false) {
         const li = document.createElement('div');
+        const checkeds = checked ? 'checked' : '';
         li.className = 'form-item'
         li.innerHTML = `
             <input name="shadow-form-field[]" placeholder="字段名" value="${field}" class="swal2-input field-name">
             <input name="shadow-form-value[]" value="${value}" placeholder="字段值" class="swal2-input field-value"> 
-            <button class="minus">➖</button>
-
+            <div class="field-operate">
+                <button class="minus">➖</button>
+                <input type="radio" ${checkeds} name="shadow-form-defaut[]">
+            </div>
         `;
         if (rawStr) {
             return li.outerHTML
@@ -230,13 +233,17 @@
         document.querySelector('#shadowFields ol').appendChild(li)
     }
 
-    function buildTextarea(rawStr = false, field = '', value = '') {
+    function buildTextarea(rawStr = false, field = '', value = '', checked = false) {
         const li = document.createElement('div');
+        const checkeds = checked ? 'checked' : '';
         li.className = 'form-item'
         li.innerHTML = `
             <input name="shadow-form-field[]" placeholder="字段名" value="${field}" class="swal2-input field-name">
             <div contenteditable="true" placeholder="字段值" class="mock-textarea swal2-textarea swal2-input" >${value}</div>
-            <button class="minus">➖</button>
+            <div class="field-operate">
+                <button class="minus">➖</button>
+                <input type="radio" ${checkeds} name="shadow-form-defaut[]">
+            </div>
         `;
         if (rawStr) {
             return li.outerHTML
@@ -245,14 +252,11 @@
     }
 
 
-    async function addAnki(preFront = '', preBackend = '') {
+    async function addAnki(value = '') {
         const {result: deckNames} = await anki('deckNames');
         const {result: models} = await anki('modelNames');
         const model = GM_getValue('model', '问答题');
-        let modelFields = GM_getValue('modelFields-' + model, []);
-        if (modelFields.length === 0 && model === '问答题') {
-            modelFields = [[0, '正面'], [1, '背面']];
-        }
+        let modelFields = GM_getValue('modelFields-' + model, [[1, '正面', false], [2, '背面', false]]);
         const deckName = GM_getValue('deckName', '');
         const lastValues = {ankiHost, model, deckName,}
         const deckNameOptions = buildOption(deckNames, deckName);
@@ -262,11 +266,11 @@
             if (ev.target.id !== 'model') {
                 return
             }
-            const modelField = GM_getValue('modelFields-' + ev.target.value, []);
+            const modelField = GM_getValue('modelFields-' + ev.target.value, [[1, '正面', false], [2, '背面', false]]);
             document.querySelector('#shadowFields ol').innerHTML = '';
             if (modelField.length > 0) {
                 modelField.forEach(v => {
-                    fieldFn[v[0]](false, v[1]);
+                    fieldFn[v[0]](false, v[1], v[2] ? value : '', v[2]);
                 })
             }
         }
@@ -275,20 +279,17 @@
             if (ev.target.id === 'shadowAddField') {
                 const type = parseInt(document.getElementById('shadowField').value);
                 fieldFn[type]()
-                ev.stopPropagation();
                 return
             }
             if (ev.target.className === 'minus') {
-                ev.target.parentElement.parentElement.removeChild(ev.target.parentElement)
-                ev.stopPropagation()
+                ev.target.parentElement.parentElement.parentElement.removeChild(ev.target.parentElement.parentElement)
             }
-
         }
         document.addEventListener('click', clickFn)
         let ol = '';
         if (modelFields.length > 0) {
             ol = modelFields.map(v => {
-                return fieldFn[v[0]](true, v[1])
+                return fieldFn[v[0]](true, v[1], v[2] ? value : '', v[2])
             }).join('\n')
         }
         await Swal.fire({
@@ -359,7 +360,11 @@
                     if (name === '') {
                         return
                     }
-                    modelField.push([div.children[1].tagName === 'INPUT' ? 1 : 2, name]);
+                    modelField.push([
+                        div.children[1].tagName === 'INPUT' ? 1 : 2,
+                        name,
+                        div.children[2].children[1].checked
+                    ]);
                     fields[name] = div.children[1].tagName === 'INPUT' ? div.children[1].value : div.children[1].innerHTML
                 })
 
