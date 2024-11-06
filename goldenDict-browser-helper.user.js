@@ -355,7 +355,7 @@
                 })
                 let fields = {};
                 let modelField = [];
-                [...document.querySelectorAll('#shadowFields ol >div')].forEach(div => {
+                [...document.querySelectorAll('#shadowFields > ol > div')].forEach(div => {
                     const name = div.children[0].value;
                     if (name === '') {
                         return
