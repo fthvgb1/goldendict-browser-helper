@@ -295,12 +295,12 @@
         await Swal.fire({
             title: "添加到anki(需要先装anki connector插件)",
             showCancelButton: true,
-            width: 650,
+            width: 700,
             html: `
 <style>
     .form-item {display: grid; grid-template-columns: 0fr auto 0fr;align-items: center }
     .form-label { width: 8rem}
-    .form-item ol {margin-left: -50px}
+    
     .form-item ol .form-item .swal2-input{padding: 5px;margin: 1em 5px 3px;}
     .form-item ol .form-item .field-name{width: 8rem}
     .form-item ol .form-item .field-value{width: 27rem}
