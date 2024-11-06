@@ -177,7 +177,13 @@
             icon: 'icon-anki',
             image: 'https://ankiweb.net/logo.png',
             trigger: (t) => {
-                addAnki(t).catch(res => console.log(res))
+                const selectionObj = window.getSelection();
+                const rangeObj = selectionObj.getRangeAt(0);
+                const docFragment = rangeObj.cloneContents();
+                const htmlDivElement = document.createElement("div");
+                htmlDivElement.appendChild(docFragment);
+                const selectHtml = htmlDivElement.innerHTML;
+                addAnki(selectHtml).catch(res => console.log(res))
             }
         }
     ];
