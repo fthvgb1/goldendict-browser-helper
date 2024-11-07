@@ -177,13 +177,7 @@
             icon: 'icon-anki',
             image: 'https://ankiweb.net/logo.png',
             trigger: (t) => {
-                const selectionObj = window.getSelection();
-                const rangeObj = selectionObj.getRangeAt(0);
-                const docFragment = rangeObj.cloneContents();
-                const htmlDivElement = document.createElement("div");
-                htmlDivElement.appendChild(docFragment);
-                const selectHtml = htmlDivElement.innerHTML;
-                addAnki(selectHtml).catch(res => console.log(res))
+                addAnki(getSelectionElement()).catch(res => console.log(res))
             }
         }
     ];
@@ -201,6 +195,15 @@
             utterance = new SpeechSynthesisUtterance();
         }
     });
+
+    function getSelectionElement() {
+        const selectionObj = window.getSelection();
+        const rangeObj = selectionObj.getRangeAt(0);
+        const docFragment = rangeObj.cloneContents();
+        const div = document.createElement("div");
+        div.appendChild(docFragment);
+        return div
+    }
 
     function buildOption(arr, select = '', key = 'k', val = 'v') {
         return arr.map(v => {
@@ -259,6 +262,23 @@
         document.querySelector('#shadowFields ol').appendChild(li);
     }
 
+    const entityMap = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+        '/': '&#x2F;',
+        '`': '&#x60;',
+        '=': '&#x3D;'
+    };
+
+    function htmlSpecial(string) {
+        return String(string).replace(/[&<>"'`=\/]/g, function (s) {
+            return entityMap[s];
+        });
+    }
+
 
     async function addAnki(value = '') {
         const {result: deckNames} = await anki('deckNames');
@@ -278,7 +298,11 @@
             document.querySelector('#shadowFields ol').innerHTML = '';
             if (modelField.length > 0) {
                 modelField.forEach(v => {
-                    fieldFn[v[0]](false, v[1], v[2] ? value : '', v[2]);
+                    let t = value
+                    if (value instanceof HTMLElement) {
+                        t = v[0] === 2 ? value.innerHTML : htmlSpecial(value.innerText);
+                    }
+                    fieldFn[v[0]](false, v[1], v[2] ? t : '', v[2]);
                 })
             }
         }
@@ -295,7 +319,7 @@
                     break;
                 case 'paste-html':
                     ev.target.parentElement.previousElementSibling.focus();
-                    request('keys=' + parseKey('ctrl v'));
+                    tapKeyboard('ctrl v')
                     break
                 case 'minus':
                     ev.target.parentElement.parentElement.parentElement.removeChild(ev.target.parentElement.parentElement);
@@ -306,7 +330,11 @@
         let ol = '';
         if (modelFields.length > 0) {
             ol = modelFields.map(v => {
-                return fieldFn[v[0]](true, v[1], v[2] ? value : '', v[2])
+                let t = value
+                if (value instanceof HTMLElement) {
+                    t = v[0] === 2 ? value.innerHTML : htmlSpecial(value.innerText);
+                }
+                return fieldFn[v[0]](true, v[1], v[2] ? t : '', v[2])
             }).join('\n')
         }
         await Swal.fire({
@@ -435,6 +463,10 @@
                 onerror: reject,
             })
         })
+    }
+
+    async function tapKeyboard(keys) {
+        await request('keys=' + parseKey(keys))
     }
 
     async function request(data, path = '', call = null) {
@@ -1005,7 +1037,7 @@
 
         /**日志输出*/
         function log() {
-            var debug = false;
+            const debug = false;
             if (!debug) {
                 return;
             }
