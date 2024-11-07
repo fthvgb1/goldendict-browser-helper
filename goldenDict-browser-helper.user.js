@@ -414,11 +414,10 @@
                     html: "添加成功",
                     timer: 1000,
                 });
-                document.removeEventListener('click', clickFn);
-                document.removeEventListener('change', changeFn)
-
             }
         });
+        document.removeEventListener('click', clickFn);
+        document.removeEventListener('change', changeFn);
     }
 
     function anki(action, params = {}) {
