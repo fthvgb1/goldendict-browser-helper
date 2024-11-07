@@ -9,6 +9,18 @@
         return canvas.toDataURL()
     }
 
+    function getBase64(img) {
+        const image = new Image()
+        image.crossOrigin = ''
+        image.src = img
+        return new Promise((resolve, reject) => {
+            image.onload = function () {
+                const base64Data = getBase64Image(image)
+                resolve(base64Data)
+            }
+        })
+    }
+
 
     const fn = () => {
         try {
@@ -35,29 +47,51 @@
                     } else {
                         dict = dict.parentElement
                     }
-                    [...dict.querySelectorAll('img')].forEach(img => {
-                        try {
-                            img.src = getBase64Image(img);
-                        } catch (e) {
-                            console.log(e);
-                        }
+                    const srcChecker = /url\(\s*?['"]?\s*?(\S+?)\s*?["']?\s*?\)/i;
 
-                    })
-                    //range.selectNode和range.selectNodeContents。其中selectNode表示选中整个节点而selectNodeContents表示选中节点中的内容，针对文字的复制需要选中节点的内容，而图片的复制需要选中节点本身。
-                    range.selectNode(dict);
-                    let selection = window.getSelection() //获取selection对象
-                    if (selection.rangeCount > 0) {
-                        //如果有已经选中的区域，直接全部去除
-                        selection.removeAllRanges()
+                    const copyFn = async () => {
+                        for (const node of [...dict.querySelectorAll('*')]) {
+                            let prop = window.getComputedStyle(node)
+                                .getPropertyValue('background-image'); // 从样式中获取background-image属性值。
+                            if (prop === 'none') {
+                                continue
+                            }
+                            let match = srcChecker.exec(prop);
+                            try {
+                                const b = await getBase64(match[1]);
+                                if (typeof b === 'string') {
+                                    node.style.cssText = `background-image:url('${b}')`
+                                }
+                            } catch (e) {
+                                console.log(e);
+                            }
+                        }
+                        [...dict.querySelectorAll('img')].forEach(img => {
+                            try {
+                                img.src = getBase64Image(img);
+                            } catch (e) {
+                                console.log(e);
+                            }
+
+                        })
+                        //range.selectNode和range.selectNodeContents。其中selectNode表示选中整个节点而selectNodeContents表示选中节点中的内容，针对文字的复制需要选中节点的内容，而图片的复制需要选中节点本身。
+                        range.selectNode(dict);
+                        let selection = window.getSelection() //获取selection对象
+                        if (selection.rangeCount > 0) {
+                            //如果有已经选中的区域，直接全部去除
+                            selection.removeAllRanges()
+                        }
+                        selection.addRange(range); //加入到选区中
+                        if (document.queryCommandSupported && document.queryCommandSupported('copy')) {
+                            //先检测是否支持document.queryCommandSupported和copy指令
+                            //如果都支持直接执行指令
+                            document.execCommand('copy')
+                            //去除选中区域，取消拖蓝效果
+                            selection.removeAllRanges()
+                        }
                     }
-                    selection.addRange(range); //加入到选区中
-                    if (document.queryCommandSupported && document.queryCommandSupported('copy')) {
-                        //先检测是否支持document.queryCommandSupported和copy指令
-                        //如果都支持直接执行指令
-                        document.execCommand('copy')
-                        //去除选中区域，取消拖蓝效果
-                        selection.removeAllRanges()
-                    }
+                    copyFn().catch(r => console.log(r))
+
                 })
                 el.insertBefore(a, el.querySelector('.gddictnamebodyseparator').nextElementSibling)
 
