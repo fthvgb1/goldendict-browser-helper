@@ -13,7 +13,7 @@
         const image = new Image()
         image.crossOrigin = ''
         image.src = img
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             image.onload = function () {
                 const base64Data = getBase64Image(image)
                 resolve(base64Data)
@@ -39,9 +39,11 @@
 
 
     const fn = () => {
+        let map = {};
         try {
             [...document.querySelectorAll('.gdarticle')].forEach(el => {
                 const a = document.createElement('a');
+                a.title = 'copy';
                 a.style.cssText = `
         float: right;
     display: grid;
@@ -74,10 +76,15 @@
                             }
 
                             let match = srcChecker.exec(prop);
+                            if (map.hasOwnProperty(match[1])) {
+                                node.style.cssText = `background-image:url('${map[match[1]]}')`;
+                                continue;
+                            }
                             try {
                                 const b = await getBase64(match[1]);
                                 if (typeof b === 'string') {
-                                    node.style.cssText = `background-image:url('${b}')`
+                                    node.style.cssText = `background-image:url('${b}')`;
+                                    map[match[1]] = b;
                                 }
                             } catch (e) {
                                 console.log(e);
