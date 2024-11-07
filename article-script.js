@@ -21,6 +21,22 @@
         })
     }
 
+    function isVisible(el) {
+        let loopable = true,
+            visible = getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
+
+        while (loopable && visible) {
+            el = el.parentNode;
+            if (el && el !== document.body) {
+                visible = getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
+            } else {
+                loopable = false;
+            }
+        }
+
+        return visible;
+    }
+
 
     const fn = () => {
         try {
@@ -51,11 +67,12 @@
 
                     const copyFn = async () => {
                         for (const node of [...dict.querySelectorAll('*')]) {
-                            let prop = window.getComputedStyle(node)
-                                .getPropertyValue('background-image'); // 从样式中获取background-image属性值。
-                            if (prop === 'none') {
+                            const style = getComputedStyle(node);
+                            let prop = style.getPropertyValue('background-image'); // 从样式中获取background-image属性值。
+                            if (prop === 'none' || !isVisible(node)) {
                                 continue
                             }
+
                             let match = srcChecker.exec(prop);
                             try {
                                 const b = await getBase64(match[1]);
