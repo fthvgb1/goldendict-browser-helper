@@ -273,12 +273,22 @@
         '=': '&#x3D;'
     };
 
+    const entityMap2 = Object.keys(entityMap).reduce((pre, cur) => {
+        pre[entityMap[cur]] = cur
+        return pre
+    }, {});
+
     function htmlSpecial(string) {
         return String(string).replace(/[&<>"'`=\/]/g, function (s) {
             return entityMap[s];
         });
     }
 
+    function decodeHtmlSpecial(string) {
+        return String(string).replace(/&(amp|lt|gt|quot|#39|#x2F|#x60|#x3D);/ig, function (s) {
+            return entityMap2[s];
+        });
+    }
 
     async function addAnki(value = '') {
         const {result: deckNames} = await anki('deckNames');
@@ -410,7 +420,7 @@
                         name,
                         div.children[2].children[1].checked
                     ]);
-                    fields[name] = div.children[1].tagName === 'INPUT' ? div.children[1].value : div.children[1].innerHTML
+                    fields[name] = div.children[1].tagName === 'INPUT' ? decodeHtmlSpecial(div.children[1].value) : div.children[1].innerHTML
                 })
 
                 if (Object.values(form).map(v => v === '' ? 0 : 1).reduce((p, c) => p + c, 0) < Object.keys(form).length) {
