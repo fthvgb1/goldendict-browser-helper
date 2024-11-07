@@ -32,6 +32,8 @@
                         if (!dict) {
                             return
                         }
+                    } else {
+                        dict = dict.parentElement
                     }
                     [...dict.querySelectorAll('img')].forEach(img => {
                         try {
