@@ -233,7 +233,7 @@
             <input name="shadow-form-value[]" value="${value}" placeholder="字段值" class="swal2-input field-value"> 
             <div class="field-operate">
                 <button class="minus">➖</button>
-                <input type="radio" ${checkeds} name="shadow-form-defaut[]">
+                <input type="radio" title="选中赋值" ${checkeds} name="shadow-form-defaut[]">
             </div>
         `;
         if (rawStr) {
@@ -248,11 +248,11 @@
         li.className = 'form-item'
         li.innerHTML = `
             <input name="shadow-form-field[]" placeholder="字段名" value="${field}" class="swal2-input field-name">
-            <div contenteditable="true" placeholder="字段值" class="mock-textarea swal2-textarea swal2-input" >${value}</div>
+            <div contenteditable="true"  class="mock-textarea swal2-textarea swal2-input" >${value}</div>
             <div class="field-operate">
                 <button class="minus">➖</button>
-                <input type="radio" ${checkeds} name="shadow-form-defaut[]">
-                <button class="paste-html" title="粘贴剪切板的文本">✍️</button>
+                <input type="radio" title="选中赋值" ${checkeds} name="shadow-form-defaut[]">
+                <button class="paste-html" title="粘贴">✍️</button>
                 <button class="text-clean" title="清空">🧹</button>
             </div>
         `;
@@ -360,6 +360,9 @@
     .form-item ol .form-item .field-name{width: 8rem}
     .form-item ol .form-item .field-value{width: 27rem}
     .form-item ol .form-item .mock-textarea{width: 27rem;padding: 5px;min-height: 17rem}
+    #shadowAddField,.form-item > .field-operate > button,.form-item > .field-operate > input{
+        cursor: pointer;
+    }
     .swal2-input,.swal2-select {margin: 1em 1em 3px;}
     .btn-add-field{ width: 2rem; height: 2rem; margin-top: 1.5rem; }
     .mock-textarea {
@@ -377,7 +380,7 @@
     font-size: 1.125em;}
 </style>
     <div class="form-item">
-        <label for="ankiHost" class="form-label">ankiConnector监听地址</label>
+        <label for="ankiHost" class="form-label">ankiConnect监听地址</label>
         <input id="ankiHost" value="${ankiHost}" placeholder="ankiConnector监听地址" class="swal2-input">
     </div>
     <div class="form-item">
