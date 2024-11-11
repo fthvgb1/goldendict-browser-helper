@@ -465,6 +465,10 @@
                     Swal.showValidationMessage('还有参数为空!请检查！');
                     return
                 }
+                if (fields['正面'] === '' && fields['例句'] !== '') {
+                    fields['正面'] = fields['例句'];
+                    fields['例句'] = ''
+                }
                 const params = {
                     "note": {
                         "deckName": form.deckName,
