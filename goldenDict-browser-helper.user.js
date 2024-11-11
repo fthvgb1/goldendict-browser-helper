@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         goldenDict-browser-helper
 // @namespace    http://tampermonkey.net/
-// @version      0.92
+// @version      0.93
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1/goldendict-browser-helper
 // @match        http://*/*
@@ -21,7 +21,7 @@
     'use strict';
     const userAgent = navigator.userAgent.toLowerCase();
     const host = GM_getValue('host', 'http://127.0.0.1:9999');
-    const ankiHost = GM_getValue('ankiHost', 'http://127.0.0.1:8765');
+    let ankiHost = GM_getValue('ankiHost', 'http://127.0.0.1:8765');
     const goldDictKey = parseKey(GM_getValue('goldDictKey', 'ctrl c,ctrl c'));
     const ocrKey = parseKey(GM_getValue('ocrKey', ['windows', 'win32', 'win64'].filter(v => userAgent.indexOf(v) > -1).length > 0 ? 'cmd alt c' : 'alt c'));
     let shadowRoot;
@@ -291,8 +291,20 @@
     }
 
     async function addAnki(value = '') {
-        const {result: deckNames} = await anki('deckNames');
-        const {result: models} = await anki('modelNames');
+        let deckNames, models;
+        try {
+            const {result: deck} = await anki('deckNames');
+            const {result: modelss} = await anki('modelNames');
+            deckNames = deck;
+            models = modelss;
+        } catch (e) {
+            console.log(e);
+            deckNames = [];
+            models = [];
+            setTimeout(() => {
+                Swal.showValidationMessage('无法获取anki的数据，请检查ankiconnect是否启动或者重新设置地址再点🔨');
+            }, 1000);
+        }
         const model = GM_getValue('model', '问答题');
         let modelFields = GM_getValue('modelFields-' + model, [[1, '正面', false], [2, '背面', false]]);
         const deckName = GM_getValue('deckName', '');
@@ -301,10 +313,14 @@
         const modelOptions = buildOption(models, model);
         const fieldFn = ['', buildInput, buildTextarea];
         const changeFn = ev => {
-            if (ev.target.id !== 'model') {
+            if (ev.target.id !== 'model' && ev.target.id !== 'ankiHost') {
                 return
             }
-            const modelField = GM_getValue('modelFields-' + ev.target.value, [[1, '正面', false], [2, '背面', false]]);
+            const filed = ev.target.id === 'model' ? ev.target.value : ev.target.parentElement.nextElementSibling.nextElementSibling.querySelector('#model').value;
+            if (filed === '') {
+                return;
+            }
+            const modelField = GM_getValue('modelFields-' + filed, [[1, '正面', false], [2, '背面', false]]);
             document.querySelector('#shadowFields ol').innerHTML = '';
             if (modelField.length > 0) {
                 modelField.forEach(v => {
@@ -316,8 +332,8 @@
                 })
             }
         }
-        document.addEventListener('change', changeFn)
-        const clickFn = ev => {
+        document.addEventListener('change', changeFn);
+        const clickFn = async ev => {
             if (ev.target.id === 'shadowAddField') {
                 const type = parseInt(document.getElementById('shadowField').value);
                 fieldFn[type]()
@@ -334,6 +350,22 @@
                 case 'minus':
                     ev.target.parentElement.parentElement.parentElement.removeChild(ev.target.parentElement.parentElement);
                     break
+                case 'hammer':
+                    ankiHost = ev.target.parentElement.previousElementSibling.value;
+                    GM_setValue('ankiHost', ankiHost);
+                    try {
+                        const {result: deck} = await anki('deckNames');
+                        const {result: modelss} = await anki('modelNames');
+                        deckNames = deck;
+                        models = modelss;
+                        ev.target.parentElement.parentElement.nextElementSibling.querySelector('#deckName').innerHTML = buildOption(deckNames, deckName);
+                        ev.target.parentElement.parentElement.nextElementSibling.nextElementSibling.querySelector('#model').innerHTML = buildOption(models, model);
+                        Swal.resetValidationMessage();
+                    } catch (e) {
+                        Swal.showValidationMessage('无法获取anki的数据，请检查ankiconnect是否启动或者重新设置地址再点🔨');
+                        console.log(e);
+                    }
+                    break;
             }
         }
         document.addEventListener('click', clickFn)
@@ -382,6 +414,9 @@
     <div class="form-item">
         <label for="ankiHost" class="form-label">ankiConnect监听地址</label>
         <input id="ankiHost" value="${ankiHost}" placeholder="ankiConnector监听地址" class="swal2-input">
+        <div class="field-operate">
+                <button class="hammer">🔨</button>
+            </div>
     </div>
     <div class="form-item">
         <label for="deckName" class="form-label">牌组</label>
