@@ -172,10 +172,12 @@
                     'text/html': new Blob([el.innerHTML], {type: 'text/html'}),
                     'text/plain': new Blob([el.innerText], {type: 'text/plain'}),
                 })
-                navigator.clipboard.write([item]).catch(console.log)
-                /*request('text=' + t, '', () => {
-                    hideIcon();
-                });*/
+                navigator.clipboard.write([item]).catch((err) => {
+                    console.log(err);
+                    request('text=' + t, '', () => {
+                        hideIcon();
+                    }).catch(console.log);
+                });
             },
         },
         {
