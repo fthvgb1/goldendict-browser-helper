@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         goldenDict-browser-helper
 // @namespace    http://tampermonkey.net/
-// @version      0.93
+// @version      0.94
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1/goldendict-browser-helper
 // @match        http://*/*
@@ -167,9 +167,15 @@
             id: 'icon-copy',
             image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAABBRJREFUeF7tm0uoTlEUx3+XEFEG3mSghFLKABkpBsoj5FEeGQhlICVkQMpAxMCrFAbyyPtREkoykNeMkqKURB4D5U0e5/917nWcb5/77e/es/b9vnvPGn7fPmvt9d9rP9Z/7d1AB5eGDu4/PgD0AMYA/YEuxoC9BZ4Cr4ztNKlvDoCRUastwEyge6gOAX+AB8A24KK13SwAVgD7Aox4Jf/OAkuBL5UatvR/FwArgQMtVWjw3VVgOvDLQHfZGjACeFQDI5/2dQOwIwQAJ4EFFoZaqfMDMBT42Eo9ZZ8np4BW+/eOBe8NsAy4DvzMuwMpfaOAvcBkh535wJm87ScBmADccRiYBlzJ23Az+npGC9/zaBHuk2qzE1iXdz+SAMyK9vsLDgPdgB95G66g71K8/SabHQcW592PJAAKsVMOAz6Hpbz7dRqYl1Kq8Fcfc5UCgASctRQBRx3hfgxYkuvww3/ngFoCYBEgh5Oi+a91IFep1SkgJzcBq2Nv9wBbc/U8VlbLAFj4W6azAKBGF8Egoy8jRQQUEfAPAettcBgwI9rKhgP9jGNcR3clcXcB8QmZWWSIKTAEUCIjgNviWK1UWvTaLhepYg3AWOAyMNB4xH3UXwPmpOk1SwA08iI3B/j0LlCbsoTKEoBaZZcUBU1pvxUAWvCeZcx5cY5PjEe8a8RgTQT6OuzcB8Y3/m4FgM7wux3G12T8boGHmCWN9JSUctUdBgOvLQ9C+4FVKcMP4wqThbNZOsUxPnb8OQm4ZQmAmKU0e3MOmBvS+3gK/nbYFNukoovZUTgYpeUBqEI+LaL+1ccCAKtFsIiAUKxunlNAC5Sr8tIpLll72GpqUpcRoK3hpsNLbSXVHlzqEoBBwEvH6e0GoKrRpypCoC4BkH/3ojrgOIejKpreTpTIvsd5dhZNXbcAzAbOVzHSmzPo6roFQL67Op+FybsMdqeuAdA9AR1bp3pEQrsEQH53jni0tcBGoHczQLTLKZD0VymlIkGXJ8TsKM+WtNtF0CPqvZrU9Rrg5WGFRgUA9ZgL5DHyjTqKCCgiINAlJ4+w9WaEPHR5NymmQDEFiikQ5qKjx6RskzVAPMHCVOd0/VXESkjRNd9vDoNK+0uvUazq9boPoGQqKcocVTOshllqLVh67iPg06LaoGqEZgCo8lIqPKRE9Jrqhq5yVWudTX6vpE1J3EEHX/E5Lpp+tQSgF/CiQiqdp8PV6DoRvUzTTdSSWE0B6V4fPb7YXk3PArTV3aHR8dM8cwBEquh6jA+zFMD3konlwKGkMcsIkB3Ra0faoCqcBlQjr3L94fQf1gA02tO2o5dfotxD2ZRtvTfUdqcHoHqRWiYhOyPjui2me4J6hmspGnHdANF1nNJqnyWhAbB0ukW6OzwAfwEljPdBHsaHcAAAAABJRU5ErkJggg==',
             trigger: (t, hideIcon) => {
-                request('text=' + t, '', () => {
+                const el = getSelectionElement();
+                const item = new ClipboardItem({
+                    'text/html': new Blob([el.innerHTML], {type: 'text/html'}),
+                    'text/plain': new Blob([el.innerText], {type: 'text/plain'}),
+                })
+                navigator.clipboard.write([item]).catch(console.log)
+                /*request('text=' + t, '', () => {
                     hideIcon();
-                });
+                });*/
             },
         },
         {
@@ -464,10 +470,6 @@
                 if (Object.values(form).map(v => v === '' ? 0 : 1).reduce((p, c) => p + c, 0) < Object.keys(form).length) {
                     Swal.showValidationMessage('还有参数为空!请检查！');
                     return
-                }
-                if (fields['正面'] === '' && fields['例句'] !== '') {
-                    fields['正面'] = fields['例句'];
-                    fields['例句'] = ''
                 }
                 const params = {
                     "note": {
