@@ -172,10 +172,12 @@
                     'text/html': new Blob([el.innerHTML], {type: 'text/html'}),
                     'text/plain': new Blob([el.innerText], {type: 'text/plain'}),
                 })
-                navigator.clipboard.write([item]).catch(console.log)
-                /*request('text=' + t, '', () => {
-                    hideIcon();
-                });*/
+                navigator.clipboard.write([item]).catch((err) => {
+                    console.log(err);
+                    request('text=' + t, '', () => {
+                        hideIcon();
+                    }).catch(console.log);
+                });
             },
         },
         {
@@ -298,6 +300,9 @@
 
     async function addAnki(value = '') {
         let deckNames, models;
+        if (typeof value === 'string') {
+            value = value.trim();
+        }
         try {
             const {result: deck} = await anki('deckNames');
             const {result: modelss} = await anki('modelNames');
@@ -471,10 +476,6 @@
                     Swal.showValidationMessage('还有参数为空!请检查！');
                     return
                 }
-                if (fields['正面'] === '' && fields['例句'] !== '') {
-                    fields['正面'] = fields['例句'];
-                    fields['例句'] = ''
-                }
                 const params = {
                     "note": {
                         "deckName": form.deckName,
@@ -498,7 +499,7 @@
                 }
                 Swal.fire({
                     html: "添加成功",
-                    timer: 1000,
+                    timer: 500,
                 });
             }
         });
