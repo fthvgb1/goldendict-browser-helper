@@ -300,6 +300,9 @@
 
     async function addAnki(value = '') {
         let deckNames, models;
+        if (typeof value === 'string') {
+            value = value.trim();
+        }
         try {
             const {result: deck} = await anki('deckNames');
             const {result: modelss} = await anki('modelNames');
@@ -496,7 +499,7 @@
                 }
                 Swal.fire({
                     html: "添加成功",
-                    timer: 1000,
+                    timer: 500,
                 });
             }
         });
