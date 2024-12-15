@@ -7,6 +7,7 @@ import (
 	"github.com/fthvgb1/goldendict-browser-helper/executecmd"
 	"github.com/fthvgb1/wp-go/helper"
 	"github.com/fthvgb1/wp-go/helper/slice"
+	str "github.com/fthvgb1/wp-go/helper/strings"
 	"github.com/go-vgo/robotgo"
 	"golang.design/x/clipboard"
 	"log"
@@ -40,10 +41,44 @@ func main() {
 	http.HandleFunc("/", tapKeyboardAndCopy)
 	http.HandleFunc("/aca", ActionCopyAction)
 	http.HandleFunc("/cmd", executeCmd)
+	http.HandleFunc("/clipboard", ReadClipboard)
+	http.HandleFunc("/typeStr", typeStr)
 	log.Println("http listened ", addr)
 	err := http.ListenAndServe(addr, nil)
 	if err != nil {
 		panic(err)
+	}
+}
+
+func typeStr(_ http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	text := r.Form.Get("text")
+	if text == "" {
+		return
+	}
+	pids := r.Form.Get("pid")
+	pid := str.ToInteger[int](pids, 0)
+	if pid > 0 {
+		robotgo.TypeStr(text, pid)
+	} else {
+		robotgo.TypeStr(text)
+	}
+
+}
+
+func ReadClipboard(w http.ResponseWriter, r *http.Request) {
+	s := r.URL.Query().Get("type")
+	format := clipboard.FmtText
+	if s == "img" {
+		format = clipboard.FmtImage
+	}
+	_, err := w.Write(clipboard.Read(format))
+	if err != nil {
+		log.Println(err)
 	}
 }
 

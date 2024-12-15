@@ -525,7 +525,31 @@ ${style}
         await request('keys=' + parseKey(keys))
     }
 
-    async function request(data, path = '', call = null) {
+    async function readClipboard(type = 0) {
+        const {responseText: text} = await requestEx(host + '/clipboard?type=' + (type === 1 ? 'img' : 'text'));
+        return text
+    }
+
+    async function requestEx(url, data = '', options = {}) {
+        data = buildData(data)
+        return new Promise((resolve, reject) => {
+            GM_xmlhttpRequest({
+                url: url,
+                data: data,
+                method: 'GET',
+                onload: function (res) {
+                    return resolve(res)
+                },
+                onerror: function (res) {
+                    reject(res)
+                },
+                ...options
+            });
+        })
+
+    }
+
+    function buildData(data) {
         if (typeof data === 'object') {
             data = Object.keys(data).map(k => {
                 if (data[k] instanceof Array) {
@@ -534,10 +558,14 @@ ${style}
                 return k + '=' + encodeURIComponent(data[k])
             }).join('&');
         }
+        return data
+    }
+
+    async function request(data, path = '', call = null) {
+        data = data ? buildData(data, path) : '';
         if (path !== '' && path[0] !== '/') {
             path = '/' + path;
         }
-
         await GM_xmlhttpRequest({
             method: "POST",
             url: host + path,
