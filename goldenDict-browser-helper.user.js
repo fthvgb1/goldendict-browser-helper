@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         goldenDict-browser-helper
 // @namespace    http://tampermonkey.net/
-// @version      0.95
+// @version      0.96
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1/goldendict-browser-helper
 // @match        http://*/*
@@ -18,6 +18,8 @@
 // @grant        GM_getResourceURL
 // @require      https://raw.githubusercontent.com/nitotm/efficient-language-detector-js/main/minified/eld.M60.min.js
 // @require      https://cdn.jsdelivr.net/npm/sweetalert2@11
+// @require      https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/js/spell.js
+// @resource spell-css https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/css/spell.css
 // @resource frame-css https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/css/frame.css
 // @resource icon-anki https://github.com/fthvgb1/goldendict-browser-helper/blob/master/icon/anki.png?raw=true
 // @resource icon-copy https://github.com/fthvgb1/goldendict-browser-helper/blob/master/icon/copy.png?raw=true
@@ -25,6 +27,8 @@
 // @resource icon-speak https://github.com/fthvgb1/goldendict-browser-helper/blob/master/icon/speak.png?raw=true
 // @resource style https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/css/style.css?raw=true
 // @resource diag-style https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/css/diag.css?raw=true
+// @resource spell-icons-ttf https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/font/spell-icons.ttf
+// @resource spell-icons-woff https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/font/spell-icons.woff
 // ==/UserScript==
 
 (function () {
@@ -214,7 +218,7 @@
     if (iconArray.length < 1) {
         return
     }
-
+    let richTexts = [];
     let vices = [];
     let engVice;
     let utterance;
@@ -274,10 +278,12 @@
     function buildTextarea(rawStr = false, field = '', value = '', checked = false) {
         const li = document.createElement('div');
         const checkeds = checked ? 'checked' : '';
+        const richText = spell();
+        //             <div contenteditable="true"  class="mock-textarea swal2-textarea swal2-input" >${value}</div>
         li.className = 'form-item'
         li.innerHTML = `
             <input name="shadow-form-field[]" placeholder="字段名" value="${field}" class="swal2-input field-name">
-            <div contenteditable="true"  class="mock-textarea swal2-textarea swal2-input" >${value}</div>
+            <div class="wait-replace"></div>            
             <div class="field-operate">
                 <button class="minus">➖</button>
                 <input type="radio" title="选中赋值" ${checkeds} name="shadow-form-defaut[]">
@@ -286,8 +292,14 @@
             </div>
         `;
         if (rawStr) {
+            richTexts.push((ele) => {
+                richText.querySelector('.spell-content').innerHTML = value;
+                ele.parentElement.replaceChild(richText, ele);
+            })
             return li.outerHTML
         }
+        richText.querySelector('.spell-content').innerHTML = value;
+        li.insertBefore(richText, li.querySelector('.field-operate'));
         document.querySelector('#shadowFields ol').appendChild(li);
     }
 
@@ -373,10 +385,10 @@
             }
             switch (ev.target.className) {
                 case 'text-clean':
-                    ev.target.parentElement.previousElementSibling.innerHTML = '';
+                    ev.target.parentElement.previousElementSibling.querySelector('.spell-content').innerHTML = '';
                     break;
                 case 'paste-html':
-                    ev.target.parentElement.previousElementSibling.focus();
+                    ev.target.parentElement.previousElementSibling.querySelector('.spell-content').focus();
                     tapKeyboard('ctrl v')
                     break
                 case 'minus':
@@ -411,9 +423,21 @@
                 return fieldFn[v[0]](true, v[1], v[2] ? t : '', v[2])
             }).join('\n')
         }
+        const spellIconsTtf = GM_getResourceURL('spell-icons-ttf');
+        const spellIconsWoff = GM_getResourceURL('spell-icons-woff');
+        const spellCss = GM_getResourceText("spell-css")
+            .replace('chrome-extension://__MSG_@@extension_id__/fg/font/spell-icons.ttf', spellIconsTtf)
+            .replace('chrome-extension://__MSG_@@extension_id__/fg/font/spell-icons.woff', spellIconsWoff);
+        const frameCss = GM_getResourceText("frame-css");
         const st = GM_getResourceText('diag-style');
-        const style = `<style>${st}</style>`;
+        const style = `<style>${frameCss} ${spellCss} ${st}</style>`;
         await Swal.fire({
+            didRender: () => {
+                const eles = document.querySelectorAll('.wait-replace');
+                if (eles.length > 0) {
+                    richTexts.forEach((fn, index) => fn(eles[index]))
+                }
+            },
             title: "添加到anki(需要先装anki connector插件)",
             showCancelButton: true,
             width: 700,
@@ -466,12 +490,16 @@ ${style}
                         name,
                         div.children[2].children[1].checked
                     ]);
-                    fields[name] = div.children[1].tagName === 'INPUT' ? decodeHtmlSpecial(div.children[1].value) : div.children[1].innerHTML
+                    fields[name] = div.children[1].tagName === 'INPUT' ? decodeHtmlSpecial(div.children[1].value) : div.querySelector('.spell-content').innerHTML
                 })
 
                 if (Object.values(form).map(v => v === '' ? 0 : 1).reduce((p, c) => p + c, 0) < Object.keys(form).length) {
                     Swal.showValidationMessage('还有参数为空!请检查！');
                     return
+                }
+                if (fields['正面'] === '' && fields['例句'] !== '') {
+                    fields['正面'] = fields['例句'];
+                    fields['例句'] = ''
                 }
                 const params = {
                     "note": {
@@ -500,6 +528,7 @@ ${style}
                 });
             }
         });
+        richTexts = [];
         document.removeEventListener('click', clickFn);
         document.removeEventListener('change', changeFn);
     }
