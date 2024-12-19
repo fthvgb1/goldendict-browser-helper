@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         goldenDict-browser-helper
 // @namespace    http://tampermonkey.net/
-// @version      0.96
+// @version      0.97
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1/goldendict-browser-helper
 // @match        http://*/*
@@ -18,6 +18,7 @@
 // @grant        GM_getResourceURL
 // @require      https://raw.githubusercontent.com/nitotm/efficient-language-detector-js/main/minified/eld.M60.min.js
 // @require      https://cdn.jsdelivr.net/npm/sweetalert2@11
+// @require      https://cdnjs.cloudflare.com/ajax/libs/js-sha1/0.6.0/sha1.min.js
 // @require      https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/js/spell.js
 // @resource spell-css https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/css/spell.css
 // @resource frame-css https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/css/frame.css
@@ -303,6 +304,46 @@
         document.querySelector('#shadowFields ol').appendChild(li);
     }
 
+    const base64Reg = /"data:image\/(.*?);base64,(.*?)"/;
+
+    function base64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding)
+            .replace(/\-/g, '+')
+            .replace(/_/g, '/');
+
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+
+    async function checkAndStoreMedia(text) {
+        while (true) {
+            const r = base64Reg.exec(text);
+            if (!r) {
+                break
+            }
+            const md5hash = sha1(base64ToUint8Array(r[2]));
+            const file = 'paste-' + md5hash + '.' + r[1];
+            try {
+                await anki("storeMediaFile", {
+                    filename: file,
+                    data: r[2],
+                    deleteExisting: false,
+                })
+                text = text.replace(r[0], file);
+            } catch (e) {
+                console.log(e);
+                return text
+            }
+        }
+        return text
+    }
+
     const entityMap = {
         '&': '&amp;',
         '<': '&lt;',
@@ -480,18 +521,18 @@ ${style}
                 })
                 let fields = {};
                 let modelField = [];
-                [...document.querySelectorAll('#shadowFields > ol > div')].forEach(div => {
+                for (const div of [...document.querySelectorAll('#shadowFields > ol > div')]) {
                     const name = div.children[0].value;
                     if (name === '') {
-                        return
+                        continue;
                     }
                     modelField.push([
                         div.children[1].tagName === 'INPUT' ? 1 : 2,
                         name,
                         div.children[2].children[1].checked
                     ]);
-                    fields[name] = div.children[1].tagName === 'INPUT' ? decodeHtmlSpecial(div.children[1].value) : div.querySelector('.spell-content').innerHTML
-                })
+                    fields[name] = div.children[1].tagName === 'INPUT' ? decodeHtmlSpecial(div.children[1].value) : await checkAndStoreMedia(div.querySelector('.spell-content').innerHTML);
+                }
 
                 if (Object.values(form).map(v => v === '' ? 0 : 1).reduce((p, c) => p + c, 0) < Object.keys(form).length) {
                     Swal.showValidationMessage('还有参数为空!请检查！');

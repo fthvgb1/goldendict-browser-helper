@@ -34,6 +34,8 @@
 .form-item .spell-content {
     text-align: left;
     height: 17rem;
+    width: 28rem;
+    resize: both;
 }
 
 #shadowAddField, .form-item > .field-operate > button, .form-item > .field-operate > input {
