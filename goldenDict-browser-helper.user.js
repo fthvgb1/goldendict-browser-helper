@@ -304,12 +304,12 @@
         document.querySelector('#shadowFields ol').appendChild(li);
     }
 
-    const base64Reg = /"data:image\/(.*?);base64,(.*?)"/;
+    const base64Reg = /(data:(.*?)\/(.*?);base64,(.*?)?)[^0-9a-zA-Z=\/+]/i;
 
     function base64ToUint8Array(base64String) {
         const padding = '='.repeat((4 - base64String.length % 4) % 4);
         const base64 = (base64String + padding)
-            .replace(/\-/g, '+')
+            .replace(/-/g, '+')
             .replace(/_/g, '/');
 
         const rawData = window.atob(base64);
@@ -327,19 +327,18 @@
             if (!r) {
                 break
             }
-            const md5hash = sha1(base64ToUint8Array(r[2]));
-            const file = 'paste-' + md5hash + '.' + r[1];
-            try {
-                await anki("storeMediaFile", {
+            const sha = sha1(base64ToUint8Array(r[4]));
+            const file = 'paste-' + sha + '.' + r[3];
+            const {error: err} = await anki("storeMediaFile", {
                     filename: file,
-                    data: r[2],
+                    data: r[4],
                     deleteExisting: false,
-                })
-                text = text.replace(r[0], file);
-            } catch (e) {
-                console.log(e);
-                return text
+                }
+            )
+            if (err) {
+                throw err;
             }
+            text = text.replace(r[1], file);
         }
         return text
     }
@@ -531,7 +530,13 @@ ${style}
                         name,
                         div.children[2].children[1].checked
                     ]);
-                    fields[name] = div.children[1].tagName === 'INPUT' ? decodeHtmlSpecial(div.children[1].value) : await checkAndStoreMedia(div.querySelector('.spell-content').innerHTML);
+                    try {
+                        fields[name] = div.children[1].tagName === 'INPUT' ? decodeHtmlSpecial(div.children[1].value) : await checkAndStoreMedia(div.querySelector('.spell-content').innerHTML);
+
+                    } catch (e) {
+                        Swal.showValidationMessage(e);
+                        return
+                    }
                 }
 
                 if (Object.values(form).map(v => v === '' ? 0 : 1).reduce((p, c) => p + c, 0) < Object.keys(form).length) {
