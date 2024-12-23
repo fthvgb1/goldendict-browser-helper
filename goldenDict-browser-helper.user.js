@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         goldenDict-browser-helper
 // @namespace    http://tampermonkey.net/
-// @version      0.97
+// @version      0.98
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1/goldendict-browser-helper
 // @match        http://*/*
@@ -290,6 +290,7 @@
                 <input type="radio" title="选中赋值" ${checkeds} name="shadow-form-defaut[]">
                 <button class="paste-html" title="粘贴">✍️</button>
                 <button class="text-clean" title="清空">🧹</button>
+                <button class="fetch-picture" title="提取图片到anki">🖼️</button>
             </div>
         `;
         if (rawStr) {
@@ -433,6 +434,10 @@
                     break
                 case 'minus':
                     ev.target.parentElement.parentElement.parentElement.removeChild(ev.target.parentElement.parentElement);
+                    break
+                case "fetch-picture":
+                    const ele = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
+                    ele.innerHTML = await checkAndStoreMedia(ele.innerHTML)
                     break
                 case 'hammer':
                     ankiHost = ev.target.parentElement.previousElementSibling.value;
