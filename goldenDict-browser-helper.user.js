@@ -290,7 +290,7 @@
                 <input type="radio" title="选中赋值" ${checkeds} name="shadow-form-defaut[]">
                 <button class="paste-html" title="粘贴">✍️</button>
                 <button class="text-clean" title="清空">🧹</button>
-                <button class="fetch-picture" title="提取图片到anki">🖼️</button>
+                <button class="action-copy" title="复制innerHTML">⭕</button>
             </div>
         `;
         if (rawStr) {
@@ -435,9 +435,14 @@
                 case 'minus':
                     ev.target.parentElement.parentElement.parentElement.removeChild(ev.target.parentElement.parentElement);
                     break
-                case "fetch-picture":
+                case "action-copy":
                     const ele = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
-                    ele.innerHTML = await checkAndStoreMedia(ele.innerHTML)
+                    const html = await checkAndStoreMedia(ele.innerHTML);
+                    const item = new ClipboardItem({
+                        'text/html': new Blob([html], {type: 'text/html'}),
+                        'text/plain': new Blob([html], {type: 'text/plain'}),
+                    })
+                    await navigator.clipboard.write([item]).catch(console.log)
                     break
                 case 'hammer':
                     ankiHost = ev.target.parentElement.previousElementSibling.value;
