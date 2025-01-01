@@ -194,9 +194,10 @@
             image: GM_getResourceURL('icon-copy'),
             trigger: (t, hideIcon) => {
                 const el = getSelectionElement();
+                const html = el.innerHTML ? el.innerHTML : t;
                 const item = new ClipboardItem({
-                    'text/html': new Blob([el.innerHTML], {type: 'text/html'}),
-                    'text/plain': new Blob([el.innerText], {type: 'text/plain'}),
+                    'text/html': new Blob([html], {type: 'text/html'}),
+                    'text/plain': new Blob([t], {type: 'text/plain'}),
                 })
                 navigator.clipboard.write([item]).catch((err) => {
                     console.log(err);
