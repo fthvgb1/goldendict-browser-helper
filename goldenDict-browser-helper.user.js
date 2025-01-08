@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         goldenDict-browser-helper
 // @namespace    http://tampermonkey.net/
-// @version      0.98
+// @version      0.99
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1/goldendict-browser-helper
 // @match        http://*/*
@@ -20,6 +20,7 @@
 // @require      https://cdn.jsdelivr.net/npm/sweetalert2@11
 // @require      https://cdnjs.cloudflare.com/ajax/libs/js-sha1/0.6.0/sha1.min.js
 // @require      https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/js/spell.js
+// @require      https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/js/text.js
 // @resource spell-css https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/css/spell.css
 // @resource frame-css https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/css/frame.css
 // @resource icon-anki https://github.com/fthvgb1/goldendict-browser-helper/blob/master/icon/anki.png?raw=true
@@ -394,6 +395,7 @@
         const model = GM_getValue('model', '问答题');
         let modelFields = GM_getValue('modelFields-' + model, [[1, '正面', false], [2, '背面', false]]);
         const deckName = GM_getValue('deckName', '');
+        const sentenceNum = GM_getValue('sentenceNum', 1);
         const lastValues = {ankiHost, model, deckName,}
         const deckNameOptions = buildOption(deckNames, deckName);
         const modelOptions = buildOption(models, model);
@@ -487,6 +489,18 @@
                 const eles = document.querySelectorAll('.wait-replace');
                 if (eles.length > 0) {
                     richTexts.forEach((fn, index) => fn(eles[index]))
+                }
+                const sa = document.querySelector('input[value="例句"]');
+                if (!sa) {
+                    return;
+                }
+                const sample = sa.nextElementSibling;
+                if (sample.tagName === 'INPUT') {
+                    const div = document.createElement('div');
+                    div.innerHTML = getSentence(sentenceNum);
+                    sample.value = div.innerText;
+                } else {
+                    sample.querySelector('.spell-content').innerHTML = getSentence(sentenceNum);
                 }
             },
             title: "添加到anki(需要先装anki connector插件)",
