@@ -302,6 +302,7 @@
             })
             return li.outerHTML
         }
+        li.removeChild(li.querySelector('.wait-replace'));
         richText.querySelector('.spell-content').innerHTML = value;
         li.insertBefore(richText, li.querySelector('.field-operate'));
         document.querySelector('#shadowFields ol').appendChild(li);
