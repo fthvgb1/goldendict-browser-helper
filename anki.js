@@ -440,7 +440,7 @@ ${style}
 
             [
                 [enableSentence, 'enableSentence'],
-                [sentenceNum, 'sentenceNum'],
+                //[sentenceNum, 'sentenceNum'],
                 [document.querySelector('#sentence_field').value, 'sentenceField']
             ].forEach(v => {
                 if (v[0] !== GM_getValue(v[1])) {
