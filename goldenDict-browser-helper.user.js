@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name         goldenDict-browser-helper
-// @namespace    https://github.com/fthvgb1/goldendict-browser-helper
+// @namespace    https://github.com/fthvgb1
+// @homepage     https://github.com/fthvgb1/goldendict-browser-helper
 // @version      0.99
 // @description  调用goldendict
-// @author       https://github.com/fthvgb1/goldendict-browser-helper
+// @author       https://github.com/fthvgb1
 // @match        http://*/*
 // @include      https://*/*
 // @include      file:///*
