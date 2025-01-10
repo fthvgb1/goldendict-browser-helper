@@ -21,6 +21,7 @@
 // @require      https://cdnjs.cloudflare.com/ajax/libs/js-sha1/0.6.0/sha1.min.js
 // @require      https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/js/spell.js
 // @require      https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/js/text.js
+// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/anki.js
 // @resource spell-css https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/css/spell.css
 // @resource frame-css https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/css/frame.css
 // @resource icon-anki https://github.com/fthvgb1/goldendict-browser-helper/blob/master/icon/anki.png?raw=true
