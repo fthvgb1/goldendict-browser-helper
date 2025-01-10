@@ -324,8 +324,11 @@ async function addAnki(value = '', tapKeyboard = null) {
             const se = document.querySelector('.sentence_setting .wait-replace');
             if (se) {
                 const editor = spell();
-                editor.querySelector('.spell-content').innerHTML = getSentence(sentenceNum);
-                se.parentElement.replaceChild(editor, se)
+                let html = getSentence(sentenceNum);
+                html = html ? html : '';
+                editor.querySelector('.spell-content').innerHTML = html;
+                se.parentElement.replaceChild(editor, se);
+
             }
             if (!enableSentence) {
                 document.querySelector('.sample-sentence').style.display = 'none';
