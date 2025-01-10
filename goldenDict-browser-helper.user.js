@@ -375,6 +375,38 @@
         });
     }
 
+    function calSentence() {
+        let sentence = '';
+        let offset = 0;
+        const upNum = 4;
+
+        const selection = window.getSelection();
+        let word = (selection.toString() || '').trim();
+
+        if (selection.rangeCount < 1)
+            return;
+
+        let node = selection.getRangeAt(0).commonAncestorContainer;
+
+        if (['INPUT', 'TEXTAREA'].indexOf(node.tagName) !== -1) {
+            return;
+        }
+
+        if (isPDFJSPage()) {
+            let pdfcontext = getPDFNode(node);
+            sentence = escapeHtmlTag(pdfcontext.sentence);
+            offset = pdfcontext.offset;
+        } else {
+            node = getWebNode(node, upNum);
+
+            if (node !== document) {
+                sentence = escapeHtmlTag(node.textContent);
+                offset = getSelectionOffset(node).start;
+            }
+        }
+        return {sentence, offset, word}
+    }
+
     async function addAnki(value = '') {
         let deckNames, models;
         if (typeof value === 'string') {
@@ -396,12 +428,33 @@
         const model = GM_getValue('model', '问答题');
         let modelFields = GM_getValue('modelFields-' + model, [[1, '正面', false], [2, '背面', false]]);
         const deckName = GM_getValue('deckName', '');
-        const sentenceNum = GM_getValue('sentenceNum', 1);
+        let enableSentence = GM_getValue('enableSentence', true)
+        const sentenceFiled = GM_getValue('sentenceField', '例句');
+        let sentenceNum = GM_getValue('sentenceNum', 1);
         const lastValues = {ankiHost, model, deckName,}
         const deckNameOptions = buildOption(deckNames, deckName);
         const modelOptions = buildOption(models, model);
+        let sentenceBackup = {};
+        const sentenceHtml = `<div class="wait-replace"></div>            
+            <div class="field-operate">
+                <button class="paste-html" title="粘贴">✍️</button>
+                <button class="text-clean" title="清空">🧹</button>
+                <button class="action-copy" title="复制innerHTML">⭕</button>
+            </div>`
         const fieldFn = ['', buildInput, buildTextarea];
         const changeFn = ev => {
+            if (ev.target.id === 'auto-sentence') {
+                document.querySelector('.sample-sentence').style.display = ev.target.checked ? 'grid' : 'none';
+                enableSentence = ev.target.checked
+                return;
+            }
+            if (ev.target.id === 'sentence_num') {
+                const {sentence, offset, word} = sentenceBackup;
+                const num = parseInt(ev.target.value);
+                document.querySelector('.sample-sentence .spell-content').innerHTML = cutSentence(word, offset, sentence, num);
+                sentenceNum = num
+                return;
+            }
             if (ev.target.id !== 'model' && ev.target.id !== 'ankiHost') {
                 return
             }
@@ -491,18 +544,16 @@
                 if (eles.length > 0) {
                     richTexts.forEach((fn, index) => fn(eles[index]))
                 }
-                const sa = document.querySelector('input[value="例句"]');
-                if (!sa) {
-                    return;
+                const se = document.querySelector('.sentence_setting .wait-replace');
+                if (se) {
+                    const editor = spell();
+                    editor.querySelector('.spell-content').innerHTML = getSentence(sentenceNum);
+                    se.parentElement.replaceChild(editor, se)
                 }
-                const sample = sa.nextElementSibling;
-                if (sample.tagName === 'INPUT') {
-                    const div = document.createElement('div');
-                    div.innerHTML = getSentence(sentenceNum);
-                    sample.value = div.innerText;
-                } else {
-                    sample.querySelector('.spell-content').innerHTML = getSentence(sentenceNum);
+                if (!enableSentence) {
+                    document.querySelector('.sample-sentence').style.display = 'none';
                 }
+                sentenceBackup = calSentence();
             },
             title: "添加到anki(需要先装anki connector插件)",
             showCancelButton: true,
@@ -524,8 +575,14 @@ ${style}
         <label for="model" class="form-label">模板</label>
         <select id="model" class="swal2-select">${modelOptions}</select>
     </div>
+    
     <div class="form-item">
-        <label for="shadowField" class="form-label">字段</label>
+        <label for="auto-sentence" class="form-label">自动提取例句</label>
+        <input type="checkbox" ${enableSentence ? 'checked' : ''} class="swal2-checkbox" name="auto-sentence" id="auto-sentence">
+    </div>
+    
+    <div class="form-item">
+        <label for="shadowField" class="form-label">字段格式</label>
         <select id="shadowField" class="swal2-select">
             <option value="1">文本</option>
             <option value="2">富文本</option>
@@ -535,6 +592,16 @@ ${style}
     
     <div class="form-item" id="shadowFields">
         <ol>${ol}</ol>
+    </div>
+    <div class="form-item sample-sentence">
+        <label class="form-label">例句</label>
+        <div class="sentence_setting">   
+            <label for="sentence_field" class="form-label">字段</label>
+            <input type="text" value="${sentenceFiled}" id="sentence_field" placeholder="例句字段" class="swal2-input sentence_field" name="sentence_field" >       
+            <label for="sentence_num">例句数量</label>
+            <input type="number" id="sentence_num" value="${sentenceNum}" class="swal2-input sentence_field" placeholder="提取的例句数量">
+            ${sentenceHtml}
+        </div>
     </div>
     
   `,
@@ -569,9 +636,8 @@ ${style}
                     Swal.showValidationMessage('还有参数为空!请检查！');
                     return
                 }
-                if (fields['正面'] === '' && fields['例句'] !== '') {
-                    fields['正面'] = fields['例句'];
-                    fields['例句'] = ''
+                if (enableSentence) {
+                    fields[document.querySelector('#sentence_field').value] = document.querySelector('.sentence_setting .spell-content').innerHTML;
                 }
                 const params = {
                     "note": {
@@ -589,6 +655,16 @@ ${style}
                 Object.keys(lastValues).forEach(k => {
                     if (lastValues[k] !== form[k]) {
                         GM_setValue(k, form[k])
+                    }
+                });
+
+                [
+                    [enableSentence, 'enableSentence'],
+                    [sentenceNum, 'sentenceNum'],
+                    [document.querySelector('#sentence_field').value, 'sentenceField']
+                ].forEach(v => {
+                    if (v[0] !== GM_getValue(v[1])) {
+                        GM_setValue(v[1], v[0])
                     }
                 })
                 if (modelField.length !== modelFields.length || !modelField.every((v, i) => v === modelFields[i])) {
