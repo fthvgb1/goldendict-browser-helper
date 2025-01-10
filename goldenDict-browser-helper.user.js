@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         goldenDict-browser-helper
-// @namespace    http://tampermonkey.net/
+// @namespace    https://github.com/fthvgb1/goldendict-browser-helper
 // @version      0.99
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1/goldendict-browser-helper
