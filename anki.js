@@ -379,7 +379,7 @@ ${style}
             <label for="sentence_field" class="form-label">字段</label>
             <input type="text" value="${sentenceFiled}" id="sentence_field" placeholder="例句字段" class="swal2-input sentence_field" name="sentence_field" >       
             <label for="sentence_num">例句数量</label>
-            <input type="number" id="sentence_num" value="${sentenceNum}" class="swal2-input sentence_field" placeholder="提取的例句数量">
+            <input type="number" min="0" id="sentence_num" value="${sentenceNum}" class="swal2-input sentence_field" placeholder="提取的例句数量">
             ${sentenceHtml}
         </div>
     </div>
