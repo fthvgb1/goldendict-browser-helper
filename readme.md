@@ -46,3 +46,8 @@ CreateObject("WScript.Shell").Run "goldenDictHelperServer.exe",0
 若要开机自启动，鼠标右键上面创建的.vbs文件，创建快捷方式，再**windows+r**输入**shell:startup**回车后会打开一个文件夹，将快捷方式拖入这个文件夹即可。
 
 没想到windows居然可以后台运行，不晓得linux要怎么操作哟。。。。。
+
+### 安装此脚本
+
+[clink here](https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/goldenDict-browser-helper.user.js)
+由于涉及到要装个后台服务所以没有放到其它脚本托管平台
