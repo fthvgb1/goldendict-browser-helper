@@ -27,7 +27,7 @@ ps3: 其实还可以弄些其它骚操作，反正其实就是调些 [快捷键]
 
 - 可以将词典中词带样式和图片添加到anki中，要使用此功能得在anki里先安装 [ankiconnect](https://ankiweb.net/shared/info/2055492159)
 插件，再把`article-script.js`复制到goldendict-ng的配置文本夹（goldendict-ng->帮助->配置文本夹）下，或者将`article-script.js`
-的里内容复制到配置文本夹下的`article-script.js`里（如果已有了`article-script.js`的话）
+的里内容复制到配置文本夹下的`article-script.js`里（如果已有了`article-script.js`的话）。当然也可以不用`article-script.js`，直接在词典里手动ctrl+c复制内容也可以，这个只是这样不能复制出图片
 - 可以在编辑器中添加图片，输入图片地址或者base64,并且可以调整图片尺寸
 - 添加时自动提取选中词所在的句子，先得在anki中添加一个句子的字段并在添加时设置为这个字段名
   ![img](example/anki.webp)
