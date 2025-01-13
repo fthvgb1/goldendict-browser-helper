@@ -229,7 +229,7 @@ async function addAnki(value = '', tapKeyboard = null) {
         }, 1000);
     }
     const model = GM_getValue('model', '问答题');
-    let modelFields = GM_getValue('modelFields-' + model, [[1, '正面', false], [2, '背面', false]]);
+    let modelFields = GM_getValue('modelFields-' + model, [[1, '正面', true], [2, '背面', false]]);
     const deckName = GM_getValue('deckName', '');
     let enableSentence = GM_getValue('enableSentence', true)
     const sentenceFiled = GM_getValue('sentenceField', '例句');
