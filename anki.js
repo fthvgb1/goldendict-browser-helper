@@ -42,7 +42,6 @@ function buildTextarea(rawStr = false, field = '', value = '', checked = false) 
     const li = document.createElement('div');
     const checkeds = checked ? 'checked' : '';
     const richText = spell();
-    //             <div contenteditable="true"  class="mock-textarea swal2-textarea swal2-input" >${value}</div>
     li.className = 'form-item'
     li.innerHTML = `
             <input name="shadow-form-field[]" placeholder="字段名" value="${field}" class="swal2-input field-name">
@@ -55,15 +54,20 @@ function buildTextarea(rawStr = false, field = '', value = '', checked = false) 
                 <button class="action-copy" title="复制innerHTML">⭕</button>
             </div>
         `;
+    const editor = richText.querySelector('.spell-content');
+
     if (rawStr) {
         richTexts.push((ele) => {
-            richText.querySelector('.spell-content').innerHTML = value;
+            editor.innerHTML = value;
+            enableImageResizeInDiv(editor);
+
             ele.parentElement.replaceChild(richText, ele);
         })
         return li.outerHTML
     }
     li.removeChild(li.querySelector('.wait-replace'));
-    richText.querySelector('.spell-content').innerHTML = value;
+    enableImageResizeInDiv(editor);
+    editor.innerHTML = value;
     li.insertBefore(richText, li.querySelector('.field-operate'));
     document.querySelector('#shadowFields ol').appendChild(li);
 }
@@ -85,7 +89,29 @@ function base64ToUint8Array(base64String) {
     return outputArray;
 }
 
+async function fetchImg(html) {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const reg = /^https?:/
+    for (const img of div.querySelectorAll('img')) {
+        if (reg.test(img.src)) {
+            const name = img.src.split('/').pop();
+            const {error: err} = await anki('storeMediaFile', {
+                filename: name,
+                url: img.src,
+                deleteExisting: false,
+            })
+            if (err) {
+                throw err
+            }
+            img.src = name
+        }
+    }
+    return div.innerHTML
+}
+
 async function checkAndStoreMedia(text) {
+    text = await fetchImg(text);
     while (true) {
         const r = base64Reg.exec(text);
         if (!r) {
@@ -328,7 +354,7 @@ async function addAnki(value = '', tapKeyboard = null) {
                 html = html ? html : '';
                 editor.querySelector('.spell-content').innerHTML = html;
                 se.parentElement.replaceChild(editor, se);
-
+                enableImageResizeInDiv(editor.querySelector('.spell-content'))
             }
             if (!enableSentence) {
                 document.querySelector('.sample-sentence').style.display = 'none';

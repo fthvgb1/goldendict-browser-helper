@@ -2,7 +2,7 @@
 // @name         goldenDict-browser-helper
 // @namespace    https://github.com/fthvgb1
 // @homepage     https://github.com/fthvgb1/goldendict-browser-helper
-// @version      0.99
+// @version      1.00
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1
 // @match        http://*/*
@@ -20,7 +20,8 @@
 // @require      https://raw.githubusercontent.com/nitotm/efficient-language-detector-js/main/minified/eld.M60.min.js
 // @require      https://cdn.jsdelivr.net/npm/sweetalert2@11
 // @require      https://cdnjs.cloudflare.com/ajax/libs/js-sha1/0.6.0/sha1.min.js
-// @require      https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/js/spell.js
+// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/resizeimg.js
+// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/spell.js
 // @require      https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/js/text.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/anki.js
 // @resource spell-css https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/css/spell.css
