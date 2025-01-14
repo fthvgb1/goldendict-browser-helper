@@ -232,7 +232,7 @@ async function addAnki(value = '', tapKeyboard = null) {
     let modelFields = GM_getValue('modelFields-' + model, [[1, '正面', true], [2, '背面', false]]);
     const deckName = GM_getValue('deckName', '');
     let enableSentence = GM_getValue('enableSentence', true)
-    const sentenceFiled = GM_getValue('sentenceField', '例句');
+    const sentenceFiled = GM_getValue('sentenceField', '句子');
     let sentenceNum = GM_getValue('sentenceNum', 1);
     const lastValues = {ankiHost, model, deckName,}
     const deckNameOptions = buildOption(deckNames, deckName);
@@ -383,7 +383,7 @@ ${style}
     </div>
     
     <div class="form-item">
-        <label for="auto-sentence" class="form-label">自动提取例句</label>
+        <label for="auto-sentence" class="form-label">自动提取句子</label>
         <input type="checkbox" ${enableSentence ? 'checked' : ''} class="swal2-checkbox" name="auto-sentence" id="auto-sentence">
     </div>
     
@@ -400,12 +400,12 @@ ${style}
         <ol>${ol}</ol>
     </div>
     <div class="form-item sample-sentence">
-        <label class="form-label">例句</label>
+        <label class="form-label">句子</label>
         <div class="sentence_setting">   
             <label for="sentence_field" class="form-label">字段</label>
-            <input type="text" value="${sentenceFiled}" id="sentence_field" placeholder="例句字段" class="swal2-input sentence_field" name="sentence_field" >       
-            <label for="sentence_num">例句数量</label>
-            <input type="number" min="0" id="sentence_num" value="${sentenceNum}" class="swal2-input sentence_field" placeholder="提取的例句数量">
+            <input type="text" value="${sentenceFiled}" id="sentence_field" placeholder="句子字段" class="swal2-input sentence_field" name="sentence_field" >       
+            <label for="sentence_num">句子数量</label>
+            <input type="number" min="0" id="sentence_num" value="${sentenceNum}" class="swal2-input sentence_field" placeholder="提取的句子数量">
             ${sentenceHtml}
         </div>
     </div>
