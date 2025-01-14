@@ -1,6 +1,14 @@
 let ankiHost = GM_getValue('ankiHost', 'http://127.0.0.1:8765');
 let richTexts = [];
 
+let createHtml = html => html;
+if (window.trustedTypes && window.trustedTypes.createPolicy) {
+    window.trustedTypes.createPolicy('default', {
+        createHTML: (string, sink) => string
+    });
+    createHtml = html => window.trustedTypes.defaultPolicy.createHTML(html);
+}
+
 function buildOption(arr, select = '', key = 'k', val = 'v') {
     return arr.map(v => {
         if (typeof v === 'string') {
@@ -24,14 +32,14 @@ function buildInput(rawStr = false, field = '', value = '', checked = false) {
     const li = document.createElement('div');
     const checkeds = checked ? 'checked' : '';
     li.className = 'form-item'
-    li.innerHTML = `
+    li.innerHTML = createHtml(`
             <input name="shadow-form-field[]" placeholder="字段名" value="${field}" class="swal2-input field-name">
             <input name="shadow-form-value[]" value="${value}" placeholder="字段值" class="swal2-input field-value"> 
             <div class="field-operate">
                 <button class="minus">➖</button>
                 <input type="radio" title="选中赋值" ${checkeds} name="shadow-form-defaut[]">
             </div>
-        `;
+        `);
     if (rawStr) {
         return li.outerHTML
     }
@@ -43,7 +51,7 @@ function buildTextarea(rawStr = false, field = '', value = '', checked = false) 
     const checkeds = checked ? 'checked' : '';
     const richText = spell();
     li.className = 'form-item'
-    li.innerHTML = `
+    li.innerHTML = createHtml(`
             <input name="shadow-form-field[]" placeholder="字段名" value="${field}" class="swal2-input field-name">
             <div class="wait-replace"></div>            
             <div class="field-operate">
@@ -53,7 +61,7 @@ function buildTextarea(rawStr = false, field = '', value = '', checked = false) 
                 <button class="text-clean" title="清空">🧹</button>
                 <button class="action-copy" title="复制innerHTML">⭕</button>
             </div>
-        `;
+        `);
     const editor = richText.querySelector('.spell-content');
 
     if (rawStr) {
