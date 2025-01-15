@@ -176,14 +176,14 @@ function calSentence() {
 
     const selection = window.getSelection();
     let word = (selection.toString() || '').trim();
-
+    const res = {sentence, offset, word}
     if (selection.rangeCount < 1)
-        return;
+        return res;
 
     let node = selection.getRangeAt(0).commonAncestorContainer;
 
     if (['INPUT', 'TEXTAREA'].indexOf(node.tagName) !== -1) {
-        return;
+        return res;
     }
 
     if (isPDFJSPage()) {
@@ -358,7 +358,8 @@ async function addAnki(value = '', tapKeyboard = null) {
             const se = document.querySelector('.sentence_setting .wait-replace');
             if (se) {
                 const editor = spell();
-                let html = getSentence(sentenceNum);
+                const {word} = calSentence();
+                let html = word !== '' ? getSentence(sentenceNum) : '';
                 html = html ? html : '';
                 editor.querySelector('.spell-content').innerHTML = html;
                 se.parentElement.replaceChild(editor, se);
