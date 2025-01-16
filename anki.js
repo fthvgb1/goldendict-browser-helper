@@ -100,10 +100,9 @@ function base64ToUint8Array(base64String) {
 async function fetchImg(html) {
     const div = document.createElement('div');
     div.innerHTML = html;
-    const reg = /^https?:/
     for (const img of div.querySelectorAll('img')) {
-        if (reg.test(img.src)) {
-            const name = img.src.split('/').pop();
+        if (img.src.indexOf('http') === 0) {
+            const name = img.src.split('/').pop().split('&')[0];
             const {error: err} = await anki('storeMediaFile', {
                 filename: name,
                 url: img.src,
@@ -452,7 +451,7 @@ ${style}
                 return
             }
             if (enableSentence) {
-                fields[document.querySelector('#sentence_field').value] = document.querySelector('.sentence_setting .spell-content').innerHTML;
+                fields[document.querySelector('#sentence_field').value] = await checkAndStoreMedia(document.querySelector('.sentence_setting .spell-content').innerHTML);
             }
             const params = {
                 "note": {
