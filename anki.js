@@ -349,7 +349,7 @@ async function addAnki(value = '', tapKeyboard = null) {
             }
             sentenceBackup = calSentence();
         },
-        title: "添加到anki(需要先装anki connector插件)",
+        title: "anki制卡",
         showCancelButton: true,
         width: 700,
         html: `
