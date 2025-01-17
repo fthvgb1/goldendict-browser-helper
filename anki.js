@@ -60,6 +60,7 @@ function buildTextarea(rawStr = false, field = '', value = '', checked = false) 
                 <button class="paste-html" title="粘贴">✍️</button>
                 <button class="text-clean" title="清空">🧹</button>
                 <button class="action-copy" title="复制innerHTML">⭕</button>
+                <button class="action-switch-text" title="切换为textrea">🖺</button>
             </div>
         `);
     const editor = richText.querySelector('.spell-content');
@@ -251,6 +252,7 @@ async function addAnki(value = '', tapKeyboard = null) {
                 <button class="paste-html" title="粘贴">✍️</button>
                 <button class="text-clean" title="清空">🧹</button>
                 <button class="action-copy" title="复制innerHTML">⭕</button>
+                <button class="action-switch-text" title="切换为textrea">🖺</button>
             </div>`
     const fieldFn = ['', buildInput, buildTextarea];
     const changeFn = ev => {
@@ -299,6 +301,18 @@ async function addAnki(value = '', tapKeyboard = null) {
             case 'paste-html':
                 ev.target.parentElement.previousElementSibling.querySelector('.spell-content').focus();
                 tapKeyboard && tapKeyboard('ctrl v')
+                break
+            case 'action-switch-text':
+                const el = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
+                if (el.tagName === 'DIV') {
+                    const text = el.innerHTML
+                    el.outerHTML = `<textarea class="${el.className}">${text}</textarea>`;
+                    ev.target.title = '切换为富文本'
+                } else {
+                    const text = el.value
+                    el.outerHTML = `<div class="${el.className}" contenteditable="true">${text}</div>`;
+                    ev.target.title = '切换为textarea'
+                }
                 break
             case 'minus':
                 ev.target.parentElement.parentElement.parentElement.removeChild(ev.target.parentElement.parentElement);
@@ -439,7 +453,12 @@ ${style}
                     div.children[2].children[1].checked
                 ]);
                 try {
-                    fields[name] = div.children[1].tagName === 'INPUT' ? decodeHtmlSpecial(div.children[1].value) : await checkAndStoreMedia(div.querySelector('.spell-content').innerHTML);
+                    if (div.children[1].tagName === 'INPUT') {
+                        fields[name] = decodeHtmlSpecial(div.children[1].value);
+                    } else {
+                        const el = div.querySelector('.spell-content');
+                        fields[name] = await checkAndStoreMedia(el.tagName === 'DIV' ? el.innerHTML : el.value)
+                    }
 
                 } catch (e) {
                     Swal.showValidationMessage(e);
@@ -452,7 +471,8 @@ ${style}
                 return
             }
             if (enableSentence) {
-                fields[document.querySelector('#sentence_field').value] = await checkAndStoreMedia(document.querySelector('.sentence_setting .spell-content').innerHTML);
+                const el = document.querySelector('.sentence_setting .spell-content');
+                fields[document.querySelector('#sentence_field').value] = await checkAndStoreMedia(el.tagName === 'DIV' ? el.innerHTML : el.value);
             }
             const params = {
                 "note": {
