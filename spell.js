@@ -36,13 +36,7 @@ function spell() {
         ],
         [
             ['createLink', 'link', ensureHTTP],
-            ['insertImage', 'image', img => {
-                const prefix = GM_getValue('proxyPrefix', '')
-                if (img.indexOf('http') === 0 && prefix) {
-                    return prefix + img
-                }
-                return img
-            }]
+            ['insertImage', 'image', img => img]
         ].map(([cmd, type, t]) => [type, url => (url = prompt(`Enter the ${type} URL`)) && exec(cmd, t(url))]),
         [
             ['undo'],

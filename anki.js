@@ -103,9 +103,10 @@ async function fetchImg(html) {
     for (const img of div.querySelectorAll('img')) {
         if (img.src.indexOf('http') === 0) {
             const name = img.src.split('/').pop().split('&')[0];
+            const prefix = GM_getValue('proxyPrefix', '')
             const {error: err} = await anki('storeMediaFile', {
                 filename: name,
-                url: img.src,
+                url: prefix + encodeURIComponent(img.src),
                 deleteExisting: false,
             })
             if (err) {
