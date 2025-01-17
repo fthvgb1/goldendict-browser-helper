@@ -65,7 +65,7 @@ function cutSentence(word, offset, sentence, sentenceNum) {
         let arr = sentence.match(/((?![.!?;:。！？]['"’”]?\s).|\n)*[.!?;:。！？]['"’”]?(\s|.*$)/g);
         if (arr && arr.length > 1) {
             arr = arr.reduceRight((accumulation, current) => {
-                if (current.search(/\.\w{0,3}\.\s$/g) != -1) {
+                if (current.search(/\.\w{0,3}\.\s$/g) !== -1) {
                     accumulation[0] = current + accumulation[0];
                 } else {
                     accumulation.unshift(current);
@@ -78,13 +78,13 @@ function cutSentence(word, offset, sentence, sentenceNum) {
         }
 
         let index = arr.findIndex(ele => { //try to exactly match to word based on offset.
-            if (ele.indexOf(word) !== -1 && ele.searchAll(word).indexOf(offset) != -1)
+            if (ele.indexOf(word) !== -1 && ele.searchAll(word).indexOf(offset) !== -1)
                 return true;
             else
                 offset -= ele.length;
         });
 
-        if (index == -1) // fallback if can not exactly find word.
+        if (index === -1) // fallback if can not exactly find word.
             index = arr.findIndex(ele => ele.indexOf(word) !== -1);
 
         let left = Math.ceil((sentenceNum - 1) / 2);
@@ -168,21 +168,21 @@ function getPDFNode(node) {
     return {sentence, offset};
 }
 
-function getSentence(sentenceNum) {
+function calSentence() {
     let sentence = '';
     let offset = 0;
     const upNum = 4;
 
     const selection = window.getSelection();
     let word = (selection.toString() || '').trim();
-
+    const res = {sentence, offset, word}
     if (selection.rangeCount < 1)
-        return;
+        return res;
 
     let node = selection.getRangeAt(0).commonAncestorContainer;
 
     if (['INPUT', 'TEXTAREA'].indexOf(node.tagName) !== -1) {
-        return;
+        return res;
     }
 
     if (isPDFJSPage()) {
@@ -197,7 +197,14 @@ function getSentence(sentenceNum) {
             offset = getSelectionOffset(node).start;
         }
     }
+    return {sentence, offset, word}
+}
 
+function getSentence(sentenceNum) {
+    const {word, offset, sentence} = calSentence()
+    if (word === '') {
+        return '';
+    }
     return cutSentence(word, offset, sentence, sentenceNum);
 }
 

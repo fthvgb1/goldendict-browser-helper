@@ -107,7 +107,7 @@ async function fetchImg(html) {
             const prefix = GM_getValue('proxyPrefix', '')
             const {error: err} = await anki('storeMediaFile', {
                 filename: name,
-                url: prefix + encodeURIComponent(img.src),
+                url: prefix ? (prefix + encodeURIComponent(img.src)) : img.src,
                 deleteExisting: false,
             })
             if (err) {
@@ -168,38 +168,6 @@ function decodeHtmlSpecial(string) {
     return String(string).replace(/&(amp|lt|gt|quot|#39|#x2F|#x60|#x3D);/ig, function (s) {
         return entityMap2[s];
     });
-}
-
-function calSentence() {
-    let sentence = '';
-    let offset = 0;
-    const upNum = 4;
-
-    const selection = window.getSelection();
-    let word = (selection.toString() || '').trim();
-    const res = {sentence, offset, word}
-    if (selection.rangeCount < 1)
-        return res;
-
-    let node = selection.getRangeAt(0).commonAncestorContainer;
-
-    if (['INPUT', 'TEXTAREA'].indexOf(node.tagName) !== -1) {
-        return res;
-    }
-
-    if (isPDFJSPage()) {
-        let pdfcontext = getPDFNode(node);
-        sentence = escapeHtmlTag(pdfcontext.sentence);
-        offset = pdfcontext.offset;
-    } else {
-        node = getWebNode(node, upNum);
-
-        if (node !== document) {
-            sentence = escapeHtmlTag(node.textContent);
-            offset = getSelectionOffset(node).start;
-        }
-    }
-    return {sentence, offset, word}
 }
 
 function anki(action, params = {}) {
@@ -372,10 +340,7 @@ async function addAnki(value = '', tapKeyboard = null) {
             const se = document.querySelector('.sentence_setting .wait-replace');
             if (se) {
                 const editor = spell();
-                const {word} = calSentence();
-                let html = word !== '' ? getSentence(sentenceNum) : '';
-                html = html ? html : '';
-                editor.querySelector('.spell-content').innerHTML = html;
+                editor.querySelector('.spell-content').innerHTML = getSentence(sentenceNum);
                 se.parentElement.replaceChild(editor, se);
                 enableImageResizeInDiv(editor.querySelector('.spell-content'))
             }
