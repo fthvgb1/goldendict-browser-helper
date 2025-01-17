@@ -209,7 +209,7 @@ function getSentence(sentenceNum) {
 }
 
 function getWebNode(node, deep) {
-    const blockTags = ['LI', 'P', 'DIV', 'BODY'];
+    const blockTags = ['LI', 'P', 'DIV', 'BODY', 'PRE', 'CODE'];
     const nodeName = node.nodeName.toUpperCase();
     if (blockTags.includes(nodeName) || deep === 0) {
         return node;
