@@ -8,6 +8,10 @@
     width: 8rem
 }
 
+.form-item ol {
+    padding-inline-start: 0;
+}
+
 .form-item ol .form-item .swal2-input {
     padding: 5px;
     margin: 1em 5px 3px;
@@ -34,7 +38,7 @@
 .form-item .spell-content {
     text-align: left;
     height: 17rem;
-    width: 28rem;
+    width: 30rem;
     resize: both;
 }
 
@@ -66,5 +70,5 @@
 
 .sentence_setting .spell-content {
     height: auto;
-    width: auto;
+    width: inherit;
 }
