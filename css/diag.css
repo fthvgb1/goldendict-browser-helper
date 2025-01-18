@@ -5,7 +5,11 @@
 }
 
 .form-label {
-    width: 8rem
+    width: 4rem
+}
+
+.form-item ol {
+    padding-inline-start: 0;
 }
 
 .form-item ol .form-item .swal2-input {
@@ -14,15 +18,15 @@
 }
 
 .form-item ol .form-item .field-name {
-    width: 8rem
+    width: 4rem
 }
 
 .form-item ol .form-item .field-value {
-    width: 27rem
+    width: 23rem
 }
 
 .form-item ol .form-item .mock-textarea {
-    width: 27rem;
+    width: 23rem;
     padding: 5px;
     min-height: 17rem
 }
@@ -34,7 +38,7 @@
 .form-item .spell-content {
     text-align: left;
     height: 17rem;
-    width: 28rem;
+    width: 30rem;
     resize: both;
 }
 
@@ -66,5 +70,5 @@
 
 .sentence_setting .spell-content {
     height: auto;
-    width: auto;
+    width: inherit;
 }

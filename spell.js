@@ -1,6 +1,6 @@
 //altered from https://github.com/ninja33/ODH/blob/master/src/fg/js/spell.js
 function spell() {
-    let exec = (command, value = null) => document.execCommand(command, false, value)
+    let exec = (command, value = null) => document.querySelector('#add-anki-popup').contentDocument.execCommand(command, false, value)
     let ensureHTTP = url => /^https?:\//.test(url) ? url : `https://${url}`
     let $ = (tag, props, children = [], elm = document.createElement(tag)) =>
         children.map(child => child && elm.appendChild(child)) && Object.assign(elm, props)
@@ -11,7 +11,7 @@ function spell() {
     let buttons = {};
     let queryState = _ => {
         for (let cmd in buttons)
-            buttons[cmd].classList.toggle('selected', document.queryCommandState(cmd))
+            buttons[cmd].classList.toggle('selected', document.querySelector('#add-anki-popup').contentDocument.queryCommandState(cmd))
     }
 
     let actions = [

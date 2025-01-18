@@ -1,5 +1,6 @@
 let ankiHost = GM_getValue('ankiHost', 'http://127.0.0.1:8765');
 let richTexts = [];
+let iframeDocument = null
 
 let createHtml = html => html;
 if (window.trustedTypes && window.trustedTypes.createPolicy) {
@@ -43,7 +44,7 @@ function buildInput(rawStr = false, field = '', value = '', checked = false) {
     if (rawStr) {
         return li.outerHTML
     }
-    document.querySelector('#shadowFields ol').appendChild(li)
+    iframeDocument.querySelector('#shadowFields ol').appendChild(li)
 }
 
 function buildTextarea(rawStr = false, field = '', value = '', checked = false) {
@@ -78,7 +79,7 @@ function buildTextarea(rawStr = false, field = '', value = '', checked = false) 
     enableImageResizeInDiv(editor);
     editor.innerHTML = value;
     li.insertBefore(richText, li.querySelector('.field-operate'));
-    document.querySelector('#shadowFields ol').appendChild(li);
+    iframeDocument.querySelector('#shadowFields ol').appendChild(li);
 }
 
 const base64Reg = /(data:(.*?)\/(.*?);base64,(.*?)?)[^0-9a-zA-Z=\/+]/i;
@@ -99,7 +100,7 @@ function base64ToUint8Array(base64String) {
 }
 
 async function fetchImg(html) {
-    const div = document.createElement('div');
+    const div = iframeDocument.createElement('div');
     div.innerHTML = html;
     for (const img of div.querySelectorAll('img')) {
         const prefix = GM_getValue('proxyPrefix', '')
@@ -225,14 +226,14 @@ async function addAnki(value = '', tapKeyboard = null) {
     const fieldFn = ['', buildInput, buildTextarea];
     const changeFn = ev => {
         if (ev.target.id === 'auto-sentence') {
-            document.querySelector('.sample-sentence').style.display = ev.target.checked ? 'grid' : 'none';
+            iframeDocument.querySelector('.sample-sentence').style.display = ev.target.checked ? 'grid' : 'none';
             enableSentence = ev.target.checked
             return;
         }
         if (ev.target.id === 'sentence_num') {
             const {sentence, offset, word} = sentenceBackup;
             const num = parseInt(ev.target.value);
-            document.querySelector('.sample-sentence .spell-content').innerHTML = cutSentence(word, offset, sentence, num);
+            iframeDocument.querySelector('.sample-sentence .spell-content').innerHTML = cutSentence(word, offset, sentence, num);
             sentenceNum = num
             return;
         }
@@ -244,7 +245,7 @@ async function addAnki(value = '', tapKeyboard = null) {
             return;
         }
         const modelField = GM_getValue('modelFields-' + filed, [[1, '正面', false], [2, '背面', false]]);
-        document.querySelector('#shadowFields ol').innerHTML = '';
+        iframeDocument.querySelector('#shadowFields ol').innerHTML = '';
         if (modelField.length > 0) {
             modelField.forEach(v => {
                 let t = value
@@ -255,10 +256,9 @@ async function addAnki(value = '', tapKeyboard = null) {
             })
         }
     }
-    document.addEventListener('change', changeFn);
     const clickFn = async ev => {
         if (ev.target.id === 'shadowAddField') {
-            const type = parseInt(document.getElementById('shadowField').value);
+            const type = parseInt(iframeDocument.getElementById('shadowField').value);
             fieldFn[type]()
             return
         }
@@ -312,7 +312,6 @@ async function addAnki(value = '', tapKeyboard = null) {
                 break;
         }
     }
-    document.addEventListener('click', clickFn)
     let ol = '';
     if (modelFields.length > 0) {
         ol = modelFields.map(v => {
@@ -331,31 +330,11 @@ async function addAnki(value = '', tapKeyboard = null) {
     const frameCss = GM_getResourceText("frame-css");
     const st = GM_getResourceText('diag-style');
     const style = `<style>${frameCss} ${spellCss} ${st}</style>`;
-    await Swal.fire({
-        didRender: () => {
-            const eles = document.querySelectorAll('.wait-replace');
-            if (eles.length > 0) {
-                richTexts.forEach((fn, index) => fn(eles[index]))
-            }
-            const se = document.querySelector('.sentence_setting .wait-replace');
-            if (se) {
-                const editor = spell();
-                editor.querySelector('.spell-content').innerHTML = getSentence(sentenceNum);
-                se.parentElement.replaceChild(editor, se);
-                enableImageResizeInDiv(editor.querySelector('.spell-content'))
-            }
-            if (!enableSentence) {
-                document.querySelector('.sample-sentence').style.display = 'none';
-            }
-            sentenceBackup = calSentence();
-        },
-        title: "anki制卡",
-        showCancelButton: true,
-        width: 700,
-        html: `
+    const content = `
 ${style}
+
     <div class="form-item">
-        <label for="ankiHost" class="form-label">ankiConnect监听地址</label>
+        <label for="ankiHost" class="form-label">ankiConnect</label>
         <input id="ankiHost" value="${ankiHost}" placeholder="ankiConnector监听地址" class="swal2-input">
         <div class="field-operate">
                 <button class="hammer">🔨</button>
@@ -371,7 +350,7 @@ ${style}
     </div>
     
     <div class="form-item">
-        <label for="auto-sentence" class="form-label">自动提取句子</label>
+        <label for="auto-sentence" class="form-label">提取句子</label>
         <input type="checkbox" ${enableSentence ? 'checked' : ''} class="swal2-checkbox" name="auto-sentence" id="auto-sentence">
     </div>
     
@@ -397,17 +376,55 @@ ${style}
             ${sentenceHtml}
         </div>
     </div>
-    
+    `
+    await Swal.fire({
+        didRender: () => {
+            const iframe = document.querySelector('#add-anki-popup');
+            iframe.srcdoc = content;
+            iframe.onload = (ev) => {
+                const eles = iframe.contentDocument.querySelectorAll('.wait-replace');
+                if (eles.length > 0) {
+                    richTexts.forEach((fn, index) => fn(eles[index]))
+                }
+                const se = iframe.contentDocument.querySelector('.sentence_setting .wait-replace');
+                if (se) {
+                    const editor = spell();
+                    editor.querySelector('.spell-content').innerHTML = getSentence(sentenceNum);
+                    se.parentElement.replaceChild(editor, se);
+                    enableImageResizeInDiv(editor.querySelector('.spell-content'))
+                }
+                if (!enableSentence) {
+                    iframe.contentDocument.querySelector('.sample-sentence').style.display = 'none';
+                }
+                sentenceBackup = calSentence();
+                autoResize(ev);
+                //iframe.height=document.documentElement.clientHeight;
+                iframe.contentDocument.addEventListener('click', clickFn);
+                iframe.contentDocument.addEventListener('change', changeFn);
+                iframeDocument = iframe.contentDocument;
+
+            };
+
+            //iframe.width=document.documentElement.clientWidth;
+            //iframe.contentDocument
+
+        },
+        title: "anki制卡",
+        showCancelButton: true,
+        width: 700,
+        html: `
+<iframe id="add-anki-popup" style="width: 99%;">
+</iframe>
   `,
         focusConfirm: false,
         preConfirm: async () => {
             let form = {};
             Object.keys(lastValues).forEach(field => {
-                form[field] = document.getElementById(field).value;
+                form[field] = iframeDocument.getElementById(field).value;
             })
             let fields = {};
             let modelField = [];
-            for (const div of [...document.querySelectorAll('#shadowFields > ol > div')]) {
+            for (const div of [...iframeDocument.querySelectorAll('#shadowFields > ol > div')]) {
                 const name = div.children[0].value;
                 if (name === '') {
                     continue;
@@ -436,8 +453,8 @@ ${style}
                 return
             }
             if (enableSentence) {
-                const el = document.querySelector('.sentence_setting .spell-content');
-                fields[document.querySelector('#sentence_field').value] = await checkAndStoreMedia(el.tagName === 'DIV' ? el.innerHTML : el.value);
+                const el = iframeDocument.querySelector('.sentence_setting .spell-content');
+                fields[iframeDocument.querySelector('#sentence_field').value] = await checkAndStoreMedia(el.tagName === 'DIV' ? el.innerHTML : el.value);
             }
             const params = {
                 "note": {
@@ -461,7 +478,7 @@ ${style}
             [
                 [enableSentence, 'enableSentence'],
                 //[sentenceNum, 'sentenceNum'],
-                [document.querySelector('#sentence_field').value, 'sentenceField']
+                [iframeDocument.querySelector('#sentence_field').value, 'sentenceField']
             ].forEach(v => {
                 if (v[0] !== GM_getValue(v[1])) {
                     GM_setValue(v[1], v[0])
@@ -477,6 +494,19 @@ ${style}
         }
     });
     richTexts = [];
-    document.removeEventListener('click', clickFn);
-    document.removeEventListener('change', changeFn);
+    iframeDocument.removeEventListener('click', clickFn);
+    iframeDocument.removeEventListener('change', changeFn);
+}
+
+function autoResize(event) {
+    // 获取iframe元素:
+    const iframeEle = event.target;
+    // 创建一个ResizeObserver:
+    const resizeRo = new ResizeObserver((entries) => {
+        let entry = entries[0];
+        let height = entry.contentRect.height;
+        iframeEle.style.height = height + 17 + 'px';
+    });
+    // 开始监控iframe的body元素:
+    resizeRo.observe(iframeEle.contentWindow.document.body);
 }
