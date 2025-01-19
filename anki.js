@@ -412,11 +412,19 @@ ${style}
         title: "anki制卡",
         showCancelButton: true,
         width: 700,
+        customClass: {
+            popup: 'swal-with-iframe',
+        },
         html: `
-<iframe id="add-anki-popup" style="width: 99%;">
+<iframe id="add-anki-popup" frameborder="0" style="width: 99%;">
 </iframe>
   `,
         focusConfirm: false,
+        didClose: () => {
+            richTexts = [];
+            document.removeEventListener('click', clickFn);
+            document.removeEventListener('change', changeFn);
+        },
         preConfirm: async () => {
             let form = {};
             Object.keys(lastValues).forEach(field => {
