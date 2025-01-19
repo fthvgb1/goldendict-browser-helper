@@ -400,6 +400,11 @@ ${style}
     
   `,
         focusConfirm: false,
+        didClose: () => {
+            richTexts = [];
+            document.removeEventListener('click', clickFn);
+            document.removeEventListener('change', changeFn);
+        },
         preConfirm: async () => {
             let form = {};
             Object.keys(lastValues).forEach(field => {
@@ -476,7 +481,4 @@ ${style}
             });
         }
     });
-    richTexts = [];
-    document.removeEventListener('click', clickFn);
-    document.removeEventListener('change', changeFn);
 }
