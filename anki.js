@@ -400,7 +400,7 @@ ${style}
     
   `,
         focusConfirm: false,
-        didClose: () => {
+        didDestroy: () => {
             richTexts = [];
             document.removeEventListener('click', clickFn);
             document.removeEventListener('change', changeFn);
