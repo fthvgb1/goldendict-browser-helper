@@ -122,8 +122,8 @@
         }, menu.key);
     })
 
-    let speakText = '';
-    let selectText = '';
+    let speakText = '', selectText = '', vices = [], engVice, utterance, vice;
+
     const iconArray = [
         {
             name: 'golden dict',
@@ -189,12 +189,6 @@
         }
     ];
 
-    if (iconArray.length < 1) {
-        return
-    }
-    let vices = [];
-    let engVice;
-    let utterance;
     speechSynthesis.addEventListener("voiceschanged", () => {
         if (vices.length < 1) {
             vices = speechSynthesis.getVoices();
@@ -304,8 +298,6 @@
         })
         return JSON.stringify(keys)
     }
-
-    let vice;
 
     function goldenDict(text) {
         request({keys: goldDictKey, text: text})
