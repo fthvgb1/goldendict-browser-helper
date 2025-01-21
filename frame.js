@@ -1,4 +1,4 @@
-const start = (iconArray) => {
+const start = (iconArray, initialFns = []) => {
     String.prototype.replaceWithMap = function (m) {
         let s = this;
         Object.keys(k => {
@@ -29,8 +29,6 @@ const start = (iconArray) => {
     let content = document.createElement('tr-content'), // 内容面板
         contentList = document.createElement('div'), //翻译内容结果集（HTML内容）列表
         selected, // 当前选中文本
-        engineId, // 当前翻译引擎
-        engineTriggerTime, // 引擎触发时间（milliseconds）
         pageX, // 图标显示的 X 坐标
         pageY; // 图标显示的 Y 坐标
     // 初始化内容面板
@@ -41,7 +39,7 @@ const start = (iconArray) => {
     // 图标数组
     let hideCalls = []
     // 添加翻译引擎图标
-    iconArray.forEach(function (obj) {
+    iconArray.forEach(obj => {
         const img = document.createElement('img');
         img.setAttribute('src', obj.image);
         img.setAttribute('alt', obj.name);
@@ -53,6 +51,9 @@ const start = (iconArray) => {
         icon.appendChild(img);
         if (obj.hide) {
             hideCalls.push(obj.hide)
+        }
+        if (obj.hasOwnProperty('otherAttributes') && obj.otherAttributes) {
+            Object.keys(obj.otherAttributes).forEach(k => img[k] = obj[k]);
         }
     });
     // 添加内容面板（放图标后面）
@@ -79,6 +80,7 @@ const start = (iconArray) => {
     shadow.appendChild(link); // 外部样式表
     // 翻译图标加入 Shadow
     shadow.appendChild(icon);
+    initialFns.length > 0 && initialFns.forEach(fn => fn(shadow));
     // 鼠标事件：防止选中的文本消失
     document.addEventListener('mousedown', function (e) {
         log('mousedown event:', e);
@@ -217,8 +219,6 @@ const start = (iconArray) => {
     function hideIcon() {
         icon.style.display = 'none';
         content.style.display = 'none';
-        engineId = '';
-        engineTriggerTime = 0;
         pageX = 0;
         pageY = 0;
         forceStopDrag();

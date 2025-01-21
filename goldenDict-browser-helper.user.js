@@ -123,6 +123,7 @@
     })
 
     let speakText = '', selectText = '', vices = [], engVice, utterance, vice;
+    const initialFns = [];
 
     const iconArray = [
         {
@@ -198,10 +199,10 @@
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", () => {
-            start(iconArray);
+            start(iconArray, initialFns);
         });
     } else {
-        start(iconArray);
+        start(iconArray, initialFns);
     }
 
     function getSelectionElement() {
