@@ -327,6 +327,7 @@ async function addAnki(value = '', tapKeyboard = null) {
                 return
             case 'lemmatizer':
                 const inputs = ev.target.parentElement.previousElementSibling;
+                const words = inputs.value.split(' ');
                 const word = inputs.value.split(' ')[0].toLowerCase();
                 if (word === '') {
                     return
@@ -335,12 +336,16 @@ async function addAnki(value = '', tapKeyboard = null) {
                 if (origin.length < 1) {
                     return
                 }
+                const last = words.length > 1 ? (' ' + words.slice(1).join(' ')) : '';
                 if (origin.length === 1) {
-                    inputs.value = origin[0][0];
+                    inputs.value = origin[0][0] + last;
                     return
                 }
-                origin.push([origin.map(v => v[0]).join(' '), 'all']);
-                const options = buildOption(origin.map(v => [`${v[1]}:    ${v[0]}`, v[0]]), '', 1, 0);
+
+                origin.push([origin.map(v => v[0] + last).join(' '), 'all']);
+                const options = buildOption(origin.map((v, i) => [
+                    `${v[1]}: ${v[0] + (i === origin.length - 1 ? '' : last)}`,
+                    v[0] + (i === origin.length - 1 ? '' : last)]), '', 1, 0);
                 const sel = document.createElement('select');
                 sel.name = inputs.name;
                 sel.className = inputs.className;
