@@ -1,5 +1,5 @@
 // altered from https://github.com/ninja33/ODH/blob/master/src/fg/js/text.js
-HtmlTagsToReplace = {
+const HtmlTagsToReplace = {
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;'

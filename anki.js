@@ -1,6 +1,39 @@
 let ankiHost = GM_getValue('ankiHost', 'http://127.0.0.1:8765');
 let richTexts = [];
 let iframeDocument = null
+const {frameCss, spellCss, diagStyle} = function () {
+    const spellIconsTtf = GM_getResourceURL('spell-icons-ttf');
+    const spellIconsWoff = GM_getResourceURL('spell-icons-woff');
+    const spellCss = GM_getResourceText("spell-css")
+        .replace('chrome-extension://__MSG_@@extension_id__/fg/font/spell-icons.ttf', spellIconsTtf)
+        .replace('chrome-extension://__MSG_@@extension_id__/fg/font/spell-icons.woff', spellIconsWoff);
+    const frameCss = GM_getResourceText("frame-css");
+    const diagStyle = GM_getResourceText('diag-style');
+    return {frameCss, diagStyle, spellCss}
+}();
+const wn_files = {
+    noun: [
+        'index.noun.json',
+        'noun.exc.json'
+    ],
+    verb: [
+        'index.verb.json',
+        'verb.exc.json'
+    ],
+    adj: [
+        'index.adj.json',
+        'adj.exc.json'
+    ],
+    adv: [
+        'index.adv.json',
+        'adv.exc.json'
+    ]
+};
+const wn_data = Object.values(wn_files).reduce((obj, v) => {
+    v.forEach(vv => obj[vv] = GM_getResourceText(vv));
+    return obj
+}, {});
+const lemmatizer = new Lemmatizer(wn_data);
 
 let createHtml = html => html;
 if (window.trustedTypes && window.trustedTypes.createPolicy) {
@@ -39,6 +72,8 @@ function buildInput(rawStr = false, field = '', value = '', checked = false) {
             <div class="field-operate">
                 <button class="minus">➖</button>
                 <input type="radio" title="选中赋值" ${checkeds} name="shadow-form-defaut[]">
+                <button class="lemmatizer" title="lemmatize查找单词原型">🔍</button>
+                <button class="upperlowercase" title="大小写转换">🔡</button>
             </div>
         `);
     if (rawStr) {
@@ -263,6 +298,58 @@ async function addAnki(value = '', tapKeyboard = null) {
             return
         }
         switch (ev.target.className) {
+            case 'word-wrap':
+                ev.target.parentElement.previousElementSibling.querySelector('.spell-content').appendChild(document.createElement('br'));
+                ev.target.parentElement.previousElementSibling.querySelector('.spell-content').focus();
+                break
+            case 'upperlowercase':
+                const input = ev.target.parentElement.previousElementSibling;
+                if (input.value === '') {
+                    return
+                }
+                const stats = input.dataset.stats;
+                switch (stats) {
+                    case 'upper':
+                        input.value = input.dataset.value;
+                        input.dataset.stats = '';
+                        break
+                    case 'lower':
+                        input.value = input.value.toUpperCase();
+                        input.dataset.stats = 'upper';
+                        break
+                    default:
+                        input.dataset.value = input.value;
+                        input.value = input.value.toLowerCase();
+                        input.dataset.stats = 'lower';
+                        break
+                }
+                return
+            case 'lemmatizer':
+                const inputs = ev.target.parentElement.previousElementSibling;
+                const word = inputs.value.split(' ')[0].toLowerCase();
+                if (word === '') {
+                    return
+                }
+                const origin = lemmatizer.only_lemmas_withPos(word);
+                if (origin.length < 1) {
+                    return
+                }
+                if (origin.length === 1) {
+                    inputs.value = origin[0][0];
+                    return
+                }
+                origin.push([origin.map(v => v[0]).join(' '), 'all']);
+                const options = buildOption(origin.map(v => [`${v[1]}:    ${v[0]}`, v[0]]), '', 1, 0);
+                const sel = iframeDocument.createElement('select');
+                sel.name = inputs.name;
+                sel.className = inputs.className;
+                sel.innerHTML = options;
+                inputs.parentElement.replaceChild(sel, inputs);
+                sel.onblur = () => {
+                    inputs.value = sel.value;
+                    sel.parentElement.replaceChild(inputs, sel);
+                }
+                return
             case 'text-clean':
                 ev.target.parentElement.previousElementSibling.querySelector('.spell-content').innerHTML = '';
                 break;
@@ -322,14 +409,7 @@ async function addAnki(value = '', tapKeyboard = null) {
             return fieldFn[v[0]](true, v[1], v[2] ? t : '', v[2])
         }).join('\n')
     }
-    const spellIconsTtf = GM_getResourceURL('spell-icons-ttf');
-    const spellIconsWoff = GM_getResourceURL('spell-icons-woff');
-    const spellCss = GM_getResourceText("spell-css")
-        .replace('chrome-extension://__MSG_@@extension_id__/fg/font/spell-icons.ttf', spellIconsTtf)
-        .replace('chrome-extension://__MSG_@@extension_id__/fg/font/spell-icons.woff', spellIconsWoff);
-    const frameCss = GM_getResourceText("frame-css");
-    const st = GM_getResourceText('diag-style');
-    const style = `<style>${frameCss} ${spellCss} ${st}</style>`;
+    const style = `<style>${frameCss} ${spellCss} ${diagStyle}</style>`;
     const content = `
 ${style}
 
@@ -350,7 +430,7 @@ ${style}
     </div>
     
     <div class="form-item">
-        <label for="auto-sentence" class="form-label">提取句子</label>
+        <label for="auto-sentence" class="form-label">自动提取句子</label>
         <input type="checkbox" ${enableSentence ? 'checked' : ''} class="swal2-checkbox" name="auto-sentence" id="auto-sentence">
     </div>
     

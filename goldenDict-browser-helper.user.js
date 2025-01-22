@@ -2,7 +2,7 @@
 // @name         goldenDict-browser-helper
 // @namespace    https://github.com/fthvgb1
 // @homepage     https://github.com/fthvgb1/goldendict-browser-helper
-// @version      1.03
+// @version      1.04
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1
 // @match        http://*/*
@@ -23,6 +23,7 @@
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/resizeimg.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/spell.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/text.js
+// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/lemmatizer.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/anki.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/frame.js
 // @resource spell-css https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/css/spell.css
@@ -35,6 +36,14 @@
 // @resource diag-style https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/css/diag.css?raw=true
 // @resource spell-icons-ttf https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/font/spell-icons.ttf
 // @resource spell-icons-woff https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/font/spell-icons.woff
+// @resource index.noun.json https://github.com/takafumir/javascript-lemmatizer/raw/refs/heads/master/dict/index.noun.json
+// @resource noun.exc.json https://github.com/takafumir/javascript-lemmatizer/raw/refs/heads/master/dict/noun.exc.json
+// @resource index.verb.json https://github.com/takafumir/javascript-lemmatizer/raw/refs/heads/master/dict/index.verb.json
+// @resource verb.exc.json https://github.com/takafumir/javascript-lemmatizer/raw/refs/heads/master/dict/verb.exc.json
+// @resource index.adj.json https://github.com/takafumir/javascript-lemmatizer/raw/refs/heads/master/dict/index.adj.json
+// @resource adj.exc.json https://github.com/takafumir/javascript-lemmatizer/raw/refs/heads/master/dict/adj.exc.json
+// @resource index.adv.json https://github.com/takafumir/javascript-lemmatizer/raw/refs/heads/master/dict/index.adv.json
+// @resource adv.exc.json https://github.com/takafumir/javascript-lemmatizer/raw/refs/heads/master/dict/adv.exc.json
 // ==/UserScript==
 
 (function () {
