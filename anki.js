@@ -96,7 +96,8 @@ function buildTextarea(rawStr = false, field = '', value = '', checked = false) 
                 <button class="text-clean" title="清空">🧹</button>
                 <button class="action-copy" title="复制innerHTML">⭕</button>
                 <button class="action-switch-text" title="切换为textrea">🖺</button>
-                <button class="word-wrap" title="在最后换行">🔽</button>
+                <button class="word-wrap-first" title="在首行换行">🔼</button>
+                <button class="word-wrap-last" title="在最后换行">🔽</button>
             </div>
         `);
     const editor = richText.querySelector('.spell-content');
@@ -299,9 +300,17 @@ async function addAnki(value = '', tapKeyboard = null) {
             return
         }
         switch (ev.target.className) {
-            case 'word-wrap':
-                ev.target.parentElement.previousElementSibling.querySelector('.spell-content').appendChild(document.createElement('br'));
-                ev.target.parentElement.previousElementSibling.querySelector('.spell-content').focus();
+            case 'word-wrap-first':
+                const ed = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
+                const b = ed.ownerDocument.createElement('br');
+                ed.children.length > 0 ? ed.insertBefore(b, ed.children[0]) : ed.innerHTML = `<br>${ed.innerHTML}`;
+                ed.focus();
+                break
+            case 'word-wrap-last':
+                const edt = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
+                const br = edt.ownerDocument.createElement('br');
+                edt.appendChild(br);
+                edt.focus();
                 break
             case 'upperlowercase':
                 const input = ev.target.parentElement.previousElementSibling;
