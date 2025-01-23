@@ -360,6 +360,7 @@ async function addAnki(value = '', tapKeyboard = null) {
                 sel.className = inputs.className;
                 sel.innerHTML = options;
                 inputs.parentElement.replaceChild(sel, inputs);
+                sel.focus();
                 sel.onblur = () => {
                     inputs.value = sel.value;
                     sel.parentElement.replaceChild(inputs, sel);
