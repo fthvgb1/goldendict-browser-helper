@@ -76,6 +76,9 @@
                             }
 
                             let match = srcChecker.exec(prop);
+                            if (!match) {
+                                continue
+                            }
                             if (map.hasOwnProperty(match[1])) {
                                 node.style.cssText = `background-image:url('${map[match[1]]}')`;
                                 continue;
