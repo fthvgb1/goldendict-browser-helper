@@ -52,8 +52,10 @@
     border-radius: 4px;
     padding: 3px;
     transition: background-color 0.2s;
+    position: relative;
+    z-index: 45453;
         `
-                a.innerText = '✍️'
+                a.innerText = '✍️';
                 a.addEventListener('click', () => {
                     let range = document.createRange() //创建range
                     let dict = el.querySelector('.mdict');
@@ -117,9 +119,9 @@
                             selection.removeAllRanges()
                         }
                     }
-                    copyFn().catch(r => console.log(r))
+                    copyFn().catch(r => console.log(r));
 
-                })
+                });
                 el.insertBefore(a, el.querySelector('.gddictnamebodyseparator').nextElementSibling)
 
             });
