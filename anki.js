@@ -28,10 +28,8 @@ const wn_files = {
         'adv.exc.json'
     ]
 };
-const wn_data = Object.values(wn_files).reduce((obj, v) => {
-    v.forEach(vv => obj[vv] = GM_getResourceText(vv));
-    return obj
-}, {});
+const wn_data = {};
+Object.values(wn_files).flatMap(v => v).forEach(v => wn_data[v] = GM_getResourceText(v));
 const lemmatizer = new Lemmatizer(wn_data);
 
 let createHtml = html => html;
