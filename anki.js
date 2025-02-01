@@ -29,7 +29,7 @@ const wn_files = {
     ]
 };
 const wn_data = {};
-Object.values(wn_files).flatMap(v => v).forEach(v => wn_data[v] = GM_getResourceText(v));
+Object.values(wn_files).forEach(v => v.forEach(vv => wn_data[vv] = GM_getResourceText(vv)));
 const lemmatizer = new Lemmatizer(wn_data);
 
 let createHtml = html => html;
