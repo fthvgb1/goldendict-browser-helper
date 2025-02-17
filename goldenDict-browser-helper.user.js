@@ -52,9 +52,6 @@
     const host = GM_getValue('host', 'http://127.0.0.1:9999');
     const goldDictKey = parseKey(GM_getValue('goldDictKey', 'ctrl c,ctrl c'));
     const ocrKey = parseKey(GM_getValue('ocrKey', ['windows', 'win32', 'win64'].filter(v => userAgent.indexOf(v) > -1).length > 0 ? 'cmd alt c' : 'alt c'));
-    const dd = document.createElement('div');
-    dd.innerHTML = `<br>connected connects scores awards`
-    document.body.appendChild(dd)
 
     const menus = GM_getValue('menus', [
         {
