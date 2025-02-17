@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"github.com/fthvgb1/goldendict-browser-helper/executecmd"
 	"github.com/fthvgb1/wp-go/helper"
 	"github.com/fthvgb1/wp-go/helper/slice"
@@ -19,13 +20,13 @@ import (
 	"time"
 )
 
-var addr string
+var port int
 var mux = sync.Mutex{}
 var timeout time.Duration
 var logfile string
 
 func main() {
-	flag.StringVar(&addr, "p", "127.0.0.1:9999", "httpserver listen port")
+	flag.IntVar(&port, "p", 9999, "httpserver listen port")
 	flag.DurationVar(&timeout, "t", 15*time.Second, "ocr watch timeout")
 	flag.StringVar(&logfile, "log", "stdout", "logfile path default stdout")
 	flag.Parse()
@@ -43,8 +44,8 @@ func main() {
 	http.HandleFunc("/cmd", executeCmd)
 	http.HandleFunc("/clipboard", ReadClipboard)
 	http.HandleFunc("/typeStr", typeStr)
-	log.Println("http listened ", addr)
-	err := http.ListenAndServe(addr, nil)
+	log.Println("http listened ", port)
+	err := http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), nil)
 	if err != nil {
 		panic(err)
 	}
