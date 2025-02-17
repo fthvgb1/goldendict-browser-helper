@@ -58,3 +58,8 @@ CreateObject("WScript.Shell").Run "goldenDictHelperServer.exe",0
 
 [clink here](https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/goldenDict-browser-helper.user.js)
 由于涉及到要装个后台服务所以没有放到其它脚本托管平台
+
+### 免责声明
+
+此脚本只适用于个人学习和交流之用。脚本的后台程序因为涉及调用系统的其它程序,脚本命令之类的，只适用于安装在个人电脑上，
+***千万不要装在服务器上***。如因此造成损失本人概不负责。
