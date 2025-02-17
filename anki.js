@@ -46,7 +46,7 @@ const clickFns = {
         const field = ev.target.parentElement.parentElement.querySelector('.field-name').value;
         const value = ev.target.parentElement.previousElementSibling.value;
         let {result, error} = await anki('findNotes', {
-            query: `deck:${deck} "${field}:*${value}"`
+            query: `deck:${deck} "${field}:${value}"`
         })
         if (error) {
             Swal.showValidationMessage(error);
