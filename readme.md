@@ -14,8 +14,15 @@ ps3: 其实还可以弄些其它骚操作，反正其实就是调些 [快捷键]
 而已，就看个人想象了。。。。
 
 #### 查词
-
 ![dict](example/dict.webp)
+什么，因为单词变形所以查不到词？试试鼠标右键点击图标查询试试。
+检索
+如果默认goldendict快捷键的快捷键为`ctrl c,ctrl c`，会因为本身关联复制系统功能的关系让使用右键查询时导致选中（拖蓝）的文字取消选中。如下有两种方式解决：
+
+- 修改调用goldendict快捷键，再打开tampermonkey高级设置模式，在脚本中的`存储`中添加一个key为`goldDictKey`的值，值为快捷键，如默认值为`ctrl c,ctrl c`，可修改为`alt c,alt c`或者其它,重复按键用半角逗号隔开。
+
+- 使用命令行调用的方式调用goldendict,
+在`存储`中添加一个key为`dictCmd`的值，值为goldendict词典的运行程序绝对路径，如`E:\\Program Files\\GoldenDict\\goldendict.exe|-s`，参数用`|`分隔。
 
 #### ocr
 
@@ -31,7 +38,7 @@ ps3: 其实还可以弄些其它骚操作，反正其实就是调些 [快捷键]
 - 可以在编辑器中添加图片，输入图片地址或者base64,并且可以调整图片尺寸
 - 添加时自动提取选中词所在的句子，先得在anki中添加一个句子的字段并在添加时设置为这个字段名
   ![img](example/anki.webp)
-
+- 可以查询已添加的卡片
 #### 附 windows 后台运行（开机启动）
 
 在**goldenDictHelperServer.exe**目录下创建一个后缀为.vbs的文本文件，添加以下代码
