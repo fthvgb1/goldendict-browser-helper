@@ -45,15 +45,17 @@ const start = (iconArray, initialFns = []) => {
         img.setAttribute('alt', obj.name);
         img.setAttribute('title', obj.name);
         img.setAttribute('icon-id', obj.id);
-        img.addEventListener('mouseup', (event) => {
-            obj.trigger(selected, hideIcon, event);
-        });
+        if (obj.hasOwnProperty('trigger') && obj.trigger) {
+            img.addEventListener('click', (event) => {
+                obj.trigger(selected, hideIcon, event);
+            });
+        }
         icon.appendChild(img);
         if (obj.hide) {
             hideCalls.push(obj.hide)
         }
-        if (obj.hasOwnProperty('otherAttributes') && obj.otherAttributes) {
-            Object.keys(obj.otherAttributes).forEach(k => img[k] = obj[k]);
+        if (obj.hasOwnProperty('call') && obj.call) {
+            obj.call(img);
         }
     });
     // 添加内容面板（放图标后面）
@@ -116,6 +118,9 @@ const start = (iconArray, initialFns = []) => {
         this.elementOriginalTop = parseInt(element.style.top);
         const ref = this;
         this.startDrag = function (e) {
+            if (e.target !== element) {
+                return
+            }
             e.preventDefault();
             ref.dragging = true;
             ref.startDragTime = new Date().getTime();

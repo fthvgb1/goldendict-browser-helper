@@ -40,6 +40,149 @@ if (window.trustedTypes && window.trustedTypes.createPolicy) {
     createHtml = html => window.trustedTypes.defaultPolicy.createHTML(html);
 }
 
+const clickFns = {
+    'anki-search': async (ev) => {
+        const deck = document.querySelector('#deckName').value;
+        const field = ev.target.parentElement.parentElement.querySelector('.field-name').value;
+        const value = ev.target.parentElement.previousElementSibling.value;
+        let {result, error} = await anki('findNotes', {
+            query: `deck:${deck} "${field}:*${value}"`
+        })
+        if (error) {
+            Swal.showValidationMessage(error);
+            return
+        }
+        if (result.length < 1) {
+            return
+        }
+        const res = await anki('notesInfo', {
+            notes: result
+        })
+        if (res.error) {
+            Swal.showValidationMessage(res.error);
+            return
+        }
+        const sentenceInput = document.querySelector('#sentence_field');
+        const sentence = sentenceInput.value;
+        if (res.result[0].fields.hasOwnProperty(sentence) && res.result[0].fields[sentence].value) {
+            sentenceInput.parentElement.querySelector('.spell-content').innerHTML = res.result[0].fields[sentence].value;
+            delete res.result[0].fields[sentence]
+        }
+        const fields = {};
+        [...document.querySelectorAll('#shadowFields input.field-name')].map(input => fields[input.value] = input);
+
+        Object.keys(res.result[0].fields).forEach(k => {
+            const v = res.result[0].fields[k].value;
+            if (fields.hasOwnProperty(k)) {
+                fields[k].nextElementSibling.tagName === 'INPUT' ? fields[k].nextElementSibling.value = v : fields[k].parentElement.querySelector('.spell-content').innerHTML = v;
+            }
+        })
+    },
+    'word-wrap-first': (ev) => {
+        const ed = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
+        const b = ed.ownerDocument.createElement('br');
+        ed.children.length > 0 ? ed.insertBefore(b, ed.children[0]) : ed.innerHTML = `<br>${ed.innerHTML}`;
+        ed.focus();
+    },
+    'word-wrap-last': (ev) => {
+        const edt = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
+        const br = edt.ownerDocument.createElement('br');
+        edt.appendChild(br);
+        edt.focus();
+    },
+    'upperlowercase': (ev) => {
+        const input = ev.target.parentElement.previousElementSibling;
+        if (input.value === '') {
+            return
+        }
+        const stats = input.dataset.stats;
+        switch (stats) {
+            case 'upper':
+                input.value = input.dataset.value;
+                input.dataset.stats = '';
+                break
+            case 'lower':
+                input.value = input.value.toUpperCase();
+                input.dataset.stats = 'upper';
+                break
+            default:
+                input.dataset.value = input.value;
+                input.value = input.value.toLowerCase();
+                input.dataset.stats = 'lower';
+                break
+        }
+    },
+    'lemmatizer': (ev) => {
+        const inputs = ev.target.parentElement.previousElementSibling;
+        const words = inputs.value.split(' ');
+        const word = inputs.value.split(' ')[0].toLowerCase();
+        if (word === '') {
+            return
+        }
+        const origin = lemmatizer.only_lemmas_withPos(word);
+        if (origin.length < 1) {
+            return
+        }
+        const last = words.length > 1 ? (' ' + words.slice(1).join(' ')) : '';
+        if (origin.length === 1) {
+            inputs.value = origin[0][0] + last;
+            return
+        }
+        let wait = origin[0][0];
+        [...origin].splice(1).map(v => wait = v[0] === origin[0][0] ? wait : v[0]);
+        if (wait === origin[0][0]) {
+            inputs.value = origin[0][0] + last
+            return;
+        }
+
+        origin.push([origin.map(v => v[0] + last).join(' '), 'all']);
+        const options = buildOption(origin.map((v, i) => [
+            `${v[1]}: ${v[0] + (i === origin.length - 1 ? '' : last)}`,
+            v[0] + (i === origin.length - 1 ? '' : last)]), '', 1, 0);
+        const sel = document.createElement('select');
+        sel.name = inputs.name;
+        sel.className = inputs.className;
+        sel.innerHTML = options;
+        inputs.parentElement.replaceChild(sel, inputs);
+        sel.focus();
+        sel.onblur = () => {
+            inputs.value = sel.value;
+            sel.parentElement.replaceChild(inputs, sel);
+        }
+    },
+    'text-clean': (ev) => {
+        ev.target.parentElement.previousElementSibling.querySelector('.spell-content').innerHTML = '';
+    },
+    'paste-html': (ev, tapKeyboard) => {
+        ev.target.parentElement.previousElementSibling.querySelector('.spell-content').focus();
+        tapKeyboard && tapKeyboard('ctrl v')
+    },
+    'action-switch-text': (ev) => {
+        const el = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
+        if (el.tagName === 'DIV') {
+            const text = el.innerHTML
+            el.outerHTML = `<textarea class="${el.className}">${text}</textarea>`;
+            ev.target.title = '切换为富文本'
+        } else {
+            const text = el.value
+            el.outerHTML = `<div class="${el.className}" contenteditable="true">${text}</div>`;
+            ev.target.title = '切换为textarea'
+        }
+    },
+    'minus': (ev) => {
+        ev.target.parentElement.parentElement.parentElement.removeChild(ev.target.parentElement.parentElement);
+    },
+    "action-copy": async (ev) => {
+        const ele = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
+        const html = await checkAndStoreMedia(ele.innerHTML);
+        const item = new ClipboardItem({
+            'text/html': new Blob([html], {type: 'text/html'}),
+            'text/plain': new Blob([html], {type: 'text/plain'}),
+        })
+        await navigator.clipboard.write([item]).catch(console.log)
+    },
+};
+
 function buildOption(arr, select = '', key = 'k', val = 'v') {
     return arr.map(v => {
         if (typeof v === 'string') {
@@ -69,7 +212,8 @@ function buildInput(rawStr = false, field = '', value = '', checked = false) {
             <div class="field-operate">
                 <button class="minus">➖</button>
                 <input type="radio" title="选中赋值" ${checkeds} name="shadow-form-defaut[]">
-                <button class="lemmatizer" title="lemmatize查找单词原型">🔍</button>
+                <button class="lemmatizer" title="lemmatize查找单词原型">📟</button>
+                <button class="anki-search" title="search anki">🔍</button>
                 <button class="upperlowercase" title="大小写转换">🔡</button>
             </div>
         `);
@@ -297,121 +441,25 @@ async function addAnki(value = '', tapKeyboard = null) {
             fieldFn[type]()
             return
         }
-        switch (ev.target.className) {
-            case 'word-wrap-first':
-                const ed = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
-                const b = ed.ownerDocument.createElement('br');
-                ed.children.length > 0 ? ed.insertBefore(b, ed.children[0]) : ed.innerHTML = `<br>${ed.innerHTML}`;
-                ed.focus();
-                break
-            case 'word-wrap-last':
-                const edt = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
-                const br = edt.ownerDocument.createElement('br');
-                edt.appendChild(br);
-                edt.focus();
-                break
-            case 'upperlowercase':
-                const input = ev.target.parentElement.previousElementSibling;
-                if (input.value === '') {
-                    return
-                }
-                const stats = input.dataset.stats;
-                switch (stats) {
-                    case 'upper':
-                        input.value = input.dataset.value;
-                        input.dataset.stats = '';
-                        break
-                    case 'lower':
-                        input.value = input.value.toUpperCase();
-                        input.dataset.stats = 'upper';
-                        break
-                    default:
-                        input.dataset.value = input.value;
-                        input.value = input.value.toLowerCase();
-                        input.dataset.stats = 'lower';
-                        break
-                }
-                return
-            case 'lemmatizer':
-                const inputs = ev.target.parentElement.previousElementSibling;
-                const words = inputs.value.split(' ');
-                const word = inputs.value.split(' ')[0].toLowerCase();
-                if (word === '') {
-                    return
-                }
-                const origin = lemmatizer.only_lemmas_withPos(word);
-                if (origin.length < 1) {
-                    return
-                }
-                const last = words.length > 1 ? (' ' + words.slice(1).join(' ')) : '';
-                if (origin.length === 1) {
-                    inputs.value = origin[0][0] + last;
-                    return
-                }
-
-                origin.push([origin.map(v => v[0] + last).join(' '), 'all']);
-                const options = buildOption(origin.map((v, i) => [
-                    `${v[1]}: ${v[0] + (i === origin.length - 1 ? '' : last)}`,
-                    v[0] + (i === origin.length - 1 ? '' : last)]), '', 1, 0);
-                const sel = document.createElement('select');
-                sel.name = inputs.name;
-                sel.className = inputs.className;
-                sel.innerHTML = options;
-                inputs.parentElement.replaceChild(sel, inputs);
-                sel.focus();
-                sel.onblur = () => {
-                    inputs.value = sel.value;
-                    sel.parentElement.replaceChild(inputs, sel);
-                }
-                return
-            case 'text-clean':
-                ev.target.parentElement.previousElementSibling.querySelector('.spell-content').innerHTML = '';
-                break;
-            case 'paste-html':
-                ev.target.parentElement.previousElementSibling.querySelector('.spell-content').focus();
-                tapKeyboard && tapKeyboard('ctrl v')
-                break
-            case 'action-switch-text':
-                const el = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
-                if (el.tagName === 'DIV') {
-                    const text = el.innerHTML
-                    el.outerHTML = `<textarea class="${el.className}">${text}</textarea>`;
-                    ev.target.title = '切换为富文本'
-                } else {
-                    const text = el.value
-                    el.outerHTML = `<div class="${el.className}" contenteditable="true">${text}</div>`;
-                    ev.target.title = '切换为textarea'
-                }
-                break
-            case 'minus':
-                ev.target.parentElement.parentElement.parentElement.removeChild(ev.target.parentElement.parentElement);
-                break
-            case "action-copy":
-                const ele = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
-                const html = await checkAndStoreMedia(ele.innerHTML);
-                const item = new ClipboardItem({
-                    'text/html': new Blob([html], {type: 'text/html'}),
-                    'text/plain': new Blob([html], {type: 'text/plain'}),
-                })
-                await navigator.clipboard.write([item]).catch(console.log)
-                break
-            case 'hammer':
-                ankiHost = ev.target.parentElement.previousElementSibling.value;
-                GM_setValue('ankiHost', ankiHost);
-                try {
-                    const {result: deck} = await anki('deckNames');
-                    const {result: modelss} = await anki('modelNames');
-                    deckNames = deck;
-                    models = modelss;
-                    ev.target.parentElement.parentElement.nextElementSibling.querySelector('#deckName').innerHTML = buildOption(deckNames, deckName);
-                    ev.target.parentElement.parentElement.nextElementSibling.nextElementSibling.querySelector('#model').innerHTML = buildOption(models, model);
-                    Swal.resetValidationMessage();
-                } catch (e) {
-                    Swal.showValidationMessage('无法获取anki的数据，请检查ankiconnect是否启动或者重新设置地址再点🔨');
-                    console.log(e);
-                }
-                break;
+        const className = ev.target.className;
+        if (className === 'hammer') {
+            ankiHost = ev.target.parentElement.previousElementSibling.value;
+            GM_setValue('ankiHost', ankiHost);
+            try {
+                const {result: deck} = await anki('deckNames');
+                const {result: modelss} = await anki('modelNames');
+                deckNames = deck;
+                models = modelss;
+                ev.target.parentElement.parentElement.nextElementSibling.querySelector('#deckName').innerHTML = buildOption(deckNames, deckName);
+                ev.target.parentElement.parentElement.nextElementSibling.nextElementSibling.querySelector('#model').innerHTML = buildOption(models, model);
+                Swal.resetValidationMessage();
+            } catch (e) {
+                Swal.showValidationMessage('无法获取anki的数据，请检查ankiconnect是否启动或者重新设置地址再点🔨');
+                console.log(e);
+            }
+            return
         }
+        clickFns.hasOwnProperty(className) && clickFns[className] && clickFns[className](ev, tapKeyboard);
     }
     document.addEventListener('click', clickFn)
     let ol = '';

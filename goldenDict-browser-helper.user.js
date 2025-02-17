@@ -2,7 +2,7 @@
 // @name         goldenDict-browser-helper
 // @namespace    https://github.com/fthvgb1
 // @homepage     https://github.com/fthvgb1/goldendict-browser-helper
-// @version      1.04
+// @version      1.05
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1
 // @match        http://*/*
@@ -52,6 +52,9 @@
     const host = GM_getValue('host', 'http://127.0.0.1:9999');
     const goldDictKey = parseKey(GM_getValue('goldDictKey', 'ctrl c,ctrl c'));
     const ocrKey = parseKey(GM_getValue('ocrKey', ['windows', 'win32', 'win64'].filter(v => userAgent.indexOf(v) > -1).length > 0 ? 'cmd alt c' : 'alt c'));
+    const dd = document.createElement('div');
+    dd.innerHTML = `<br>connected connects scores awards`
+    document.body.appendChild(dd)
 
     const menus = GM_getValue('menus', [
         {
@@ -136,18 +139,60 @@
 
     const iconArray = [
         {
-            name: 'golden dict',
+            name: 'golden dict 左键查所选中的词，右键查所选词的原形',
             id: 'icon-golden-dict',
             image: GM_getResourceURL('icon-goldenDict'),
             trigger: (t) => {
-                selectText = t
-                navigator.clipboard.writeText(selectText).then(r => {
-                    goldenDict('')
-                }).catch((res) => {
-                    console.log(res)
-                    goldenDict(selectText)
-                })
+                selectText = t;
+                checkDict(t);
             },
+            call: (img) => {
+                img.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    const word = getSelection().toString().trim().toLowerCase();
+                    const words = word.split(' ');
+                    const last = words.length > 1 ? (' ' + words.slice(1).join(' ')) : '';
+                    const first = words[0];
+                    const res = lemmatizer.only_lemmas_withPos(first);
+
+                    if (res.length < 1) {
+                        img.click();
+                        return
+                    }
+
+                    if (res.length === 1) {
+                        if (res[0][1] === '') {
+                            img.click();
+                            return;
+                        }
+                        checkDict(res[0][0] + last);
+                        return;
+                    }
+
+                    let wait = res[0][0];
+                    [...res].splice(1).map(v => wait = v[0] === res[0][0] ? wait : v[0]);
+                    if (wait === res[0][0]) {
+                        checkDict(res[0][0] + last);
+                        return;
+                    }
+                    res.unshift(['', res.map(v => `${v[1]}:${v[0]}`).join(' ')]);
+
+                    const options = buildOption(res.map((v) => [
+                        `${v[1]}: ${v[0] + last}`,
+                        v[0] + last]), '', 1, 0);
+                    const sel = document.createElement('select');
+                    sel.innerHTML = options;
+                    const content = img.parentElement.querySelector('tr-content');
+                    content.style.display = 'block';
+                    content.querySelector('div').innerHTML = sel.outerHTML;
+                    content.querySelector('select').addEventListener('change', function () {
+                        if (!this.value) {
+                            return
+                        }
+                        checkDict(this.value + last);
+                    })
+                })
+            }
         },
         {
             name: 'tts发音',
@@ -212,6 +257,48 @@
         });
     } else {
         start(iconArray, initialFns);
+    }
+
+    function checkDict(text, clearRange = false) {
+        //eg: E:\\Program Files\\GoldenDict\\goldendict.exe|-s
+        //eg: ["E:\\Program Files\\GoldenDict\\goldendict.exe",["-s"]]
+        let cmd = GM_getValue('dictCmd');
+        if (!cmd) {
+            if (GM_getValue('goldDictKey', 'ctrl c,ctrl c') === 'ctrl c,ctrl c') {
+                getSelection().removeAllRanges();
+            }
+            navigator.clipboard.writeText(text).then(r => {
+                goldenDict('');
+            }).catch((res) => {
+                console.log(res);
+                goldenDict(text);
+            })
+            return;
+        }
+
+        if (typeof cmd === 'string') {
+            const cmds = cmd.split('|');
+            let args = [];
+            if (cmds.length > 1) {
+                cmd = cmds[0];
+                args = cmds.splice(1);
+                args.push(text);
+            }
+            request({
+                cmd: cmd,
+                args: args
+            }, 'cmd').catch(console.log)
+            return;
+        }
+
+        if (Array.isArray(cmd)) {
+            const args = [...cmd[1]];
+            args.push(text);
+            request({
+                cmd: cmd[0],
+                args: args,
+            }, 'cmd').catch(console.log)
+        }
     }
 
     function getSelectionElement() {
