@@ -172,11 +172,8 @@
                         checkDict(res[0][0] + last);
                         return;
                     }
-                    res.unshift(['', res.map(v => `${v[1]}:${v[0]}`).join(' ')]);
-
-                    const options = buildOption(res.map((v) => [
-                        `${v[1]}: ${v[0] + last}`,
-                        v[0] + last]), '', 1, 0);
+                    const ops = [['', `有${res.length}个词性`], ...res.map(v => [v[0] + last, `${v[1]}: ${v[0] + last}`,])];
+                    const options = buildOption(ops, '', 0, 1);
                     const sel = document.createElement('select');
                     sel.innerHTML = options;
                     const content = img.parentElement.querySelector('tr-content');
