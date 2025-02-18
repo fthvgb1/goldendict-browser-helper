@@ -172,7 +172,7 @@
                         checkDict(res[0][0] + last);
                         return;
                     }
-                    const ops = [['', `有${res.length}个词性`], ...res.map(v => [v[0] + last, `${v[1]}: ${v[0] + last}`,])];
+                    const ops = [['', `有${res.length}个原形`], ...res.map(v => [v[0] + last, `${v[1]}: ${v[0] + last}`,])];
                     const options = buildOption(ops, '', 0, 1);
                     const sel = document.createElement('select');
                     sel.innerHTML = options;
