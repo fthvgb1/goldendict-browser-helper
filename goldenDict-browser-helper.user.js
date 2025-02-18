@@ -186,7 +186,7 @@
                         if (!this.value) {
                             return
                         }
-                        checkDict(this.value + last);
+                        checkDict(this.value);
                     })
                 })
             }
