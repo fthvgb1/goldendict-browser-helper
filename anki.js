@@ -1,5 +1,6 @@
 let ankiHost = GM_getValue('ankiHost', 'http://127.0.0.1:8765');
 let richTexts = [];
+let existsNoteId = 0;
 const {frameCss, spellCss, diagStyle} = function () {
     const spellIconsTtf = GM_getResourceURL('spell-icons-ttf');
     const spellIconsWoff = GM_getResourceURL('spell-icons-woff');
@@ -40,39 +41,56 @@ if (window.trustedTypes && window.trustedTypes.createPolicy) {
     createHtml = html => window.trustedTypes.defaultPolicy.createHTML(html);
 }
 
+async function query(expression) {
+    let {result, error} = await anki('findNotes', {
+        query: expression
+    })
+    if (error) {
+        throw error;
+    }
+    if (result.length < 1) {
+        return null
+    }
+    const res = await anki('notesInfo', {
+        notes: result
+    })
+    if (res.error) {
+        throw res.error;
+    }
+    return res.result;
+}
+
 const clickFns = {
     'anki-search': async (ev) => {
         const deck = document.querySelector('#deckName').value;
         const field = ev.target.parentElement.parentElement.querySelector('.field-name').value;
         const value = ev.target.parentElement.previousElementSibling.value;
-        let {result, error} = await anki('findNotes', {
-            query: `deck:${deck} "${field}:${value}"`
-        })
-        if (error) {
-            Swal.showValidationMessage(error);
+        let result;
+        try {
+            result = await query(`deck:${deck} "${field}:${value}"`);
+            if (!result) {
+                return
+            }
+        } catch (e) {
+            Swal.showValidationMessage(e);
             return
         }
-        if (result.length < 1) {
-            return
-        }
-        const res = await anki('notesInfo', {
-            notes: result
-        })
-        if (res.error) {
-            Swal.showValidationMessage(res.error);
-            return
-        }
+        existsNoteId = result[0].noteId;
+        document.querySelector('#force-update').parentElement.style.display = 'block';
         const sentenceInput = document.querySelector('#sentence_field');
         const sentence = sentenceInput.value;
-        if (res.result[0].fields.hasOwnProperty(sentence) && res.result[0].fields[sentence].value) {
-            sentenceInput.parentElement.querySelector('.spell-content').innerHTML = res.result[0].fields[sentence].value;
-            delete res.result[0].fields[sentence]
+        if (result[0].fields.hasOwnProperty(sentence) && result[0].fields[sentence].value) {
+            sentenceInput.parentElement.querySelector('.spell-content').innerHTML = result[0].fields[sentence].value;
+            delete result[0].fields[sentence]
+        }
+        if (result[0].tags.length >= 1) {
+            document.querySelector('#tags').value = result[0].tags.join(',');
         }
         const fields = {};
         [...document.querySelectorAll('#shadowFields input.field-name')].map(input => fields[input.value] = input);
 
-        Object.keys(res.result[0].fields).forEach(k => {
-            const v = res.result[0].fields[k].value;
+        Object.keys(result[0].fields).forEach(k => {
+            const v = result[0].fields[k].value;
             if (fields.hasOwnProperty(k)) {
                 fields[k].nextElementSibling.tagName === 'INPUT' ? fields[k].nextElementSibling.value = v : fields[k].parentElement.querySelector('.spell-content').innerHTML = v;
             }
@@ -368,6 +386,7 @@ function anki(action, params = {}) {
 
 async function addAnki(value = '', tapKeyboard = null) {
     let deckNames, models;
+    existsNoteId = 0;
     if (typeof value === 'string') {
         value = value.trim();
     }
@@ -514,6 +533,11 @@ ${style}
     </div>
     
     <div class="form-item">
+        <label for="tags" class="form-label">标签</label>
+        <input id="tags" placeholder="多个用,分隔" class="swal2-input">
+    </div>
+    
+    <div class="form-item">
         <label for="auto-sentence" class="form-label">自动提取句子</label>
         <input type="checkbox" ${enableSentence ? 'checked' : ''} class="swal2-checkbox" name="auto-sentence" id="auto-sentence">
     </div>
@@ -541,6 +565,10 @@ ${style}
         </div>
     </div>
     
+    <div class="form-item" style="display: none">
+        <label for="force-update" class="form-label">更新</label>
+        <input type="checkbox" class="swal2-checkbox" name="update" id="force-update">
+    </div>
   `,
         focusConfirm: false,
         didDestroy: () => {
@@ -583,6 +611,12 @@ ${style}
                 Swal.showValidationMessage('还有参数为空!请检查！');
                 return
             }
+            const tag = document.querySelector('#tags').value.trim();
+            let tags = [];
+            if (tag) {
+                tags = tag.replaceAll('，', ',').split(',');
+            }
+
             if (enableSentence) {
                 const el = document.querySelector('.sentence_setting .spell-content');
                 fields[document.querySelector('#sentence_field').value] = await checkAndStoreMedia(el.tagName === 'DIV' ? el.innerHTML : el.value);
@@ -592,12 +626,19 @@ ${style}
                     "deckName": form.deckName,
                     "modelName": form.model,
                     "fields": fields,
+                    "tags": tags,
                 }
             }
-            const res = await anki('addNote', params);
+            let res;
+            if (existsNoteId > 0 && document.querySelector('#force-update').checked) {
+                params.note.id = existsNoteId;
+                res = await anki('updateNote', params)
+            } else {
+                res = await anki('addNote', params);
+            }
             console.log(form, params, res);
             if (res.error !== null) {
-                Swal.showValidationMessage('添加出错：' + res.error);
+                Swal.showValidationMessage('发生出错：' + res.error);
                 return
             }
             Object.keys(lastValues).forEach(k => {
@@ -619,7 +660,7 @@ ${style}
                 GM_setValue('modelFields-' + form.model, modelField)
             }
             Swal.fire({
-                html: "添加成功",
+                html: "操作成功",
                 timer: 500,
             });
         }
