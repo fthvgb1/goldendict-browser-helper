@@ -1,6 +1,16 @@
 let ankiHost = GM_getValue('ankiHost', 'http://127.0.0.1:8765');
 let richTexts = [];
 let existsNoteId = 0;
+const setExistsNoteId = (id) => {
+    existsNoteId = id;
+    const update = document.querySelector('#force-update');
+    if (id > 0) {
+        update.parentElement.style.display = 'block';
+    } else {
+        update.parentElement.style.display = 'none';
+        update.checked = false;
+    }
+}
 const {frameCss, spellCss, diagStyle} = function () {
     const spellIconsTtf = GM_getResourceURL('spell-icons-ttf');
     const spellIconsWoff = GM_getResourceURL('spell-icons-woff');
@@ -69,32 +79,54 @@ const clickFns = {
         try {
             result = await query(`deck:${deck} "${field}:${value}"`);
             if (!result) {
+                setExistsNoteId(0);
                 return
             }
         } catch (e) {
             Swal.showValidationMessage(e);
             return
         }
-        existsNoteId = result[0].noteId;
-        document.querySelector('#force-update').parentElement.style.display = 'block';
-        const sentenceInput = document.querySelector('#sentence_field');
-        const sentence = sentenceInput.value;
-        if (result[0].fields.hasOwnProperty(sentence) && result[0].fields[sentence].value) {
-            sentenceInput.parentElement.querySelector('.spell-content').innerHTML = result[0].fields[sentence].value;
-            delete result[0].fields[sentence]
-        }
+        setExistsNoteId(result[0].noteId);
+
         if (result[0].tags.length >= 1) {
             document.querySelector('#tags').value = result[0].tags.join(',');
         }
-        const fields = {};
+        const sentenceInput = document.querySelector('#sentence_field');
+        const sentence = sentenceInput.value;
+        const fields = {
+            [sentence]: sentenceInput,
+        };
         [...document.querySelectorAll('#shadowFields input.field-name')].map(input => fields[input.value] = input);
 
-        Object.keys(result[0].fields).forEach(k => {
-            const v = result[0].fields[k].value;
-            if (fields.hasOwnProperty(k)) {
-                fields[k].nextElementSibling.tagName === 'INPUT' ? fields[k].nextElementSibling.value = v : fields[k].parentElement.querySelector('.spell-content').innerHTML = v;
+        for (const k of Object.keys(result[0].fields)) {
+            if (!fields.hasOwnProperty(k)) {
+                continue;
             }
-        })
+            const v = result[0].fields[k].value;
+            if (fields[k].nextElementSibling.tagName === 'INPUT') {
+                fields[k].nextElementSibling.value = v;
+                continue;
+            }
+            const div = document.createElement('div');
+            div.innerHTML = v;
+            for (const img of [...div.querySelectorAll('img')]) {
+                const src = (new URL(img.src)).pathname;
+                let suffix = 'png';
+                const name = src.split('.');
+                suffix = name.length > 1 ? name[1] : suffix;
+                const {result, error} = await anki('retrieveMediaFile', {'filename': src});
+                if (error) {
+                    console.log(error);
+                    continue
+                }
+                if (!result) {
+                    continue;
+                }
+                img.dataset.fileName = src;
+                img.src = `data:image/${suffix};base64,` + result;
+            }
+            fields[k].parentElement.querySelector('.spell-content').innerHTML = div.innerHTML;
+        }
     },
     'word-wrap-first': (ev) => {
         const ed = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
@@ -152,11 +184,9 @@ const clickFns = {
             inputs.value = origin[0][0] + last
             return;
         }
-
-        origin.push([origin.map(v => v[0] + last).join(' '), 'all']);
-        const options = buildOption(origin.map((v, i) => [
-            `${v[1]}: ${v[0] + (i === origin.length - 1 ? '' : last)}`,
-            v[0] + (i === origin.length - 1 ? '' : last)]), '', 1, 0);
+        const all = origin.map(v => v[0] + last).join(' ');
+        const ops = [...origin.map(v => [v[0] + last, `${v[1]}:${v[0]} ${last}`]), [all, all]];
+        const options = buildOption(ops, '', 0, 1);
         const sel = document.createElement('select');
         sel.name = inputs.name;
         sel.className = inputs.className;
@@ -299,6 +329,10 @@ async function fetchImg(html) {
     const div = document.createElement('div');
     div.innerHTML = html;
     for (const img of div.querySelectorAll('img')) {
+        if (img.dataset.hasOwnProperty('fileName') && img.dataset.fileName) {
+            img.src = img.dataset.fileName;
+            continue;
+        }
         const prefix = GM_getValue('proxyPrefix', '')
         if (img.src.indexOf('http') === 0) {
             const name = img.src.split('/').pop().split('&')[0];

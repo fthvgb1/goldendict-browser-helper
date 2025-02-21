@@ -180,10 +180,7 @@
                     content.style.display = 'block';
                     content.querySelector('div').innerHTML = sel.outerHTML;
                     content.querySelector('select').addEventListener('change', function () {
-                        if (!this.value) {
-                            return
-                        }
-                        checkDict(this.value);
+                        this.value && checkDict(this.value);
                     })
                 })
             }
