@@ -71,62 +71,8 @@ async function query(expression) {
 }
 
 const clickFns = {
-    'anki-search': async (ev) => {
-        const deck = document.querySelector('#deckName').value;
-        const field = ev.target.parentElement.parentElement.querySelector('.field-name').value;
-        const value = ev.target.parentElement.previousElementSibling.value;
-        let result;
-        try {
-            result = await query(`deck:${deck} "${field}:${value}"`);
-            if (!result) {
-                setExistsNoteId(0);
-                return
-            }
-        } catch (e) {
-            Swal.showValidationMessage(e);
-            return
-        }
-        setExistsNoteId(result[0].noteId);
-
-        if (result[0].tags.length >= 1) {
-            document.querySelector('#tags').value = result[0].tags.join(',');
-        }
-        const sentenceInput = document.querySelector('#sentence_field');
-        const sentence = sentenceInput.value;
-        const fields = {
-            [sentence]: sentenceInput,
-        };
-        [...document.querySelectorAll('#shadowFields input.field-name')].map(input => fields[input.value] = input);
-
-        for (const k of Object.keys(result[0].fields)) {
-            if (!fields.hasOwnProperty(k)) {
-                continue;
-            }
-            const v = result[0].fields[k].value;
-            if (fields[k].nextElementSibling.tagName === 'INPUT') {
-                fields[k].nextElementSibling.value = v;
-                continue;
-            }
-            const div = document.createElement('div');
-            div.innerHTML = v;
-            for (const img of [...div.querySelectorAll('img')]) {
-                const src = (new URL(img.src)).pathname;
-                let suffix = 'png';
-                const name = src.split('.');
-                suffix = name.length > 1 ? name[1] : suffix;
-                const {result, error} = await anki('retrieveMediaFile', {'filename': src});
-                if (error) {
-                    console.log(error);
-                    continue
-                }
-                if (!result) {
-                    continue;
-                }
-                img.dataset.fileName = src;
-                img.src = `data:image/${suffix};base64,` + result;
-            }
-            fields[k].parentElement.querySelector('.spell-content').innerHTML = div.innerHTML;
-        }
+    'anki-search': (ev) => {
+        search(ev);
     },
     'word-wrap-first': (ev) => {
         const ed = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
@@ -231,6 +177,103 @@ const clickFns = {
     },
 };
 
+async function search(ev, isPrecise = false) {
+    const value = ev.target.parentElement.previousElementSibling.value.trim();
+    if (!value) {
+        return
+    }
+    const deck = document.querySelector('#deckName').value;
+    const field = ev.target.parentElement.parentElement.querySelector('.field-name').value;
+    const inputs = ev.target.parentElement.previousElementSibling;
+    let result;
+    let queryStr = `deck:${deck} "${field}:${value}"`;
+    if (!isPrecise) {
+        const str = value.split(' ');
+        queryStr = str.length > 1 ? `deck:${deck} ` + str.map(v => `${field}:*${v}*`).join(' ') : `deck:${deck} ${field}:*${value}*`;
+    }
+    try {
+        result = await query(queryStr);
+        if (!result) {
+            setExistsNoteId(0);
+            return
+        }
+    } catch (e) {
+        Swal.showValidationMessage(e);
+        return
+    }
+    if (result.length === 1) {
+        await showAnkiCard(result[0]);
+        return
+    }
+    const sel = document.createElement('select');
+    sel.name = inputs.name;
+    sel.className = inputs.className;
+    const values = {};
+    const options = result.map(v => {
+        values[v.fields[field].value] = v;
+        return [v.fields[field].value, v.fields[field].value];
+    });
+    sel.innerHTML = buildOption(options, '', 0, 1);
+    inputs.parentElement.replaceChild(sel, inputs);
+    sel.focus();
+    const changeFn = async () => {
+        inputs.value = sel.value;
+        await showAnkiCard(values[sel.value]);
+    }
+    const blurFn = async () => {
+        sel.removeEventListener('change', changeFn);
+        inputs.value = sel.value;
+        sel.parentElement.replaceChild(inputs, sel);
+        await showAnkiCard(values[sel.value]);
+    };
+    sel.addEventListener('change', changeFn);
+    sel.addEventListener('blur', blurFn);
+}
+
+async function showAnkiCard(result) {
+    setExistsNoteId(result.noteId);
+    document.querySelector('#tags').value = result.tags.length >= 1 ? result.tags.join(',') : '';
+    const sentenceInput = document.querySelector('#sentence_field');
+    const sentence = sentenceInput.value;
+    const fields = {
+        [sentence]: sentenceInput,
+    };
+    [...document.querySelectorAll('#shadowFields input.field-name')].map(input => fields[input.value] = input);
+
+    for (const k of Object.keys(result.fields)) {
+        if (!fields.hasOwnProperty(k)) {
+            continue;
+        }
+        const v = result.fields[k].value;
+        if (fields[k].nextElementSibling.tagName === 'SELECT') {
+            continue;
+        }
+        if (fields[k].nextElementSibling.tagName === 'INPUT') {
+            fields[k].nextElementSibling.value = v;
+            continue;
+        }
+        const div = document.createElement('div');
+        div.innerHTML = v;
+        for (const img of [...div.querySelectorAll('img')]) {
+            const src = (new URL(img.src)).pathname;
+            let suffix = 'png';
+            const name = src.split('.');
+            suffix = name.length > 1 ? name[1] : suffix;
+            const {result, error} = await anki('retrieveMediaFile', {'filename': src});
+            if (error) {
+                console.log(error);
+                continue
+            }
+            if (!result) {
+                continue;
+            }
+            img.dataset.fileName = src;
+            img.src = `data:image/${suffix};base64,` + result;
+        }
+        fields[k].parentElement.querySelector('.spell-content').innerHTML = div.innerHTML;
+    }
+}
+
 function buildOption(arr, select = '', key = 'k', val = 'v') {
     return arr.map(v => {
         if (typeof v === 'string') {
@@ -261,7 +304,7 @@ function buildInput(rawStr = false, field = '', value = '', checked = false) {
                 <button class="minus">➖</button>
                 <input type="radio" title="选中赋值" ${checkeds} name="shadow-form-defaut[]">
                 <button class="lemmatizer" title="lemmatize查找单词原型">📟</button>
-                <button class="anki-search" title="search anki">🔍</button>
+                <button class="anki-search" title="search anki 左健模糊搜索 右键精确搜索">🔍</button>
                 <button class="upperlowercase" title="大小写转换">🔡</button>
             </div>
         `);
@@ -515,6 +558,14 @@ async function addAnki(value = '', tapKeyboard = null) {
         clickFns.hasOwnProperty(className) && clickFns[className] && clickFns[className](ev, tapKeyboard);
     }
     document.addEventListener('click', clickFn)
+    const preciseSearch = (ev) => {
+        if (ev.target.className !== 'anki-search') {
+            return
+        }
+        ev.preventDefault();
+        search(ev, true);
+    }
+    document.addEventListener('contextmenu', preciseSearch)
     let ol = '';
     if (modelFields.length > 0) {
         ol = modelFields.map(v => {
@@ -609,6 +660,7 @@ ${style}
             richTexts = [];
             document.removeEventListener('click', clickFn);
             document.removeEventListener('change', changeFn);
+            document.removeEventListener('contextmenu', preciseSearch);
         },
         preConfirm: async () => {
             let form = {};
