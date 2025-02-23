@@ -51,7 +51,7 @@ if (window.trustedTypes && window.trustedTypes.createPolicy) {
     createHtml = html => window.trustedTypes.defaultPolicy.createHTML(html);
 }
 
-async function query(expression) {
+async function queryAnki(expression) {
     let {result, error} = await anki('findNotes', {
         query: expression
     })
@@ -72,7 +72,7 @@ async function query(expression) {
 
 const clickFns = {
     'anki-search': (ev) => {
-        search(ev);
+        searchAnki(ev);
     },
     'word-wrap-first': (ev) => {
         const ed = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
@@ -177,7 +177,7 @@ const clickFns = {
     },
 };
 
-async function search(ev, isPrecise = false) {
+async function searchAnki(ev, isPrecise = false) {
     const value = ev.target.parentElement.previousElementSibling.value.trim();
     if (!value) {
         return
@@ -192,7 +192,7 @@ async function search(ev, isPrecise = false) {
         queryStr = str.length > 1 ? `deck:${deck} ` + str.map(v => `${field}:*${v}*`).join(' ') : `deck:${deck} ${field}:*${value}*`;
     }
     try {
-        result = await query(queryStr);
+        result = await queryAnki(queryStr);
         if (!result) {
             setExistsNoteId(0);
             return
