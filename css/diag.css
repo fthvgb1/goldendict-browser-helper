@@ -10,6 +10,7 @@
 
 .form-item ol {
     padding-inline-start: 0;
+    width: 50rem;
 }
 
 .form-item ol .form-item .swal2-input {
@@ -21,16 +22,6 @@
     width: 8rem
 }
 
-.form-item ol .form-item .field-value {
-    width: 27rem
-}
-
-.form-item ol .form-item .mock-textarea {
-    width: 27rem;
-    padding: 5px;
-    min-height: 17rem
-}
-
 .form-item .spell {
     margin-top: 1rem;
 }
@@ -38,7 +29,6 @@
 .form-item .spell-content {
     text-align: left;
     height: 17rem;
-    width: 30rem;
     resize: both;
 }
 

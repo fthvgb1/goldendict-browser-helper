@@ -598,7 +598,7 @@ async function addAnki(value = '', tapKeyboard = null) {
         },
         title: "anki制卡",
         showCancelButton: true,
-        width: 700,
+        width: '55rem',
         html: `
 ${style}
     <div class="form-item">
