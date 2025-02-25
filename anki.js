@@ -257,6 +257,7 @@ async function searchAnki(ev, queryStr, inputs, sels = null) {
         result = await queryAnki(queryStr);
         if (!result) {
             setExistsNoteId(0);
+            sels && sels.parentElement.replaceChild(inputs, sels);
             return
         }
     } catch (e) {
@@ -279,7 +280,7 @@ async function searchAnki(ev, queryStr, inputs, sels = null) {
         return [v.fields[field].value, v.fields[field].value];
     });
     sel.innerHTML = buildOption(options, '', 0, 1);
-    const ele = (sels && sels.hasOwnProperty('parentElement')) ? sels : inputs;
+    const ele = (sels && sels.parentElement) ? sels : inputs;
     ele.parentElement.replaceChild(sel, ele);
     sel.focus();
     const changeFn = async () => {
