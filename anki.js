@@ -102,6 +102,36 @@ function getSearchType(ev, type = null) {
     return {options, m}
 }
 
+const contextMenuFns = {
+    'anki-search': async (ev) => {
+        ev.preventDefault();
+        const sel = document.createElement('select');
+        const inputs = ev.target.parentElement.previousElementSibling;
+        sel.name = inputs.name;
+        sel.className = inputs.className;
+        const {options, m} = getSearchType(ev);
+        sel.innerHTML = buildOption(options, '', 0, 1);
+        inputs.parentElement.replaceChild(sel, inputs);
+        sel.focus();
+        sel.addEventListener('blur', () => {
+            GM_setValue('searchType', m[sel.value]);
+            searchAnki(ev, decodeHtmlSpecial(sel.value), inputs, sel);
+        })
+        sel.addEventListener('change', () => {
+            GM_setValue('searchType', m[sel.value]);
+            searchAnki(ev, decodeHtmlSpecial(sel.value), inputs, sel);
+        })
+    },
+    'action-copy': async (ev) => {
+        ev.preventDefault();
+        const ele = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
+        const item = new ClipboardItem({
+            'text/html': new Blob([ele.innerHTML], {type: 'text/html'}),
+            'text/plain': new Blob([ele.innerHTML], {type: 'text/plain'}),
+        })
+        await navigator.clipboard.write([item]).catch(console.log)
+    }
+}
 const clickFns = {
     'card-delete': async () => {
         if (confirm('确定删除么？')) {
@@ -371,7 +401,7 @@ function buildTextarea(rawStr = false, field = '', value = '', checked = false) 
                 <input type="radio" title="选中赋值" ${checkeds} name="shadow-form-defaut[]">
                 <button class="paste-html" title="粘贴">✍️</button>
                 <button class="text-clean" title="清空">🧹</button>
-                <button class="action-copy" title="复制innerHTML">⭕</button>
+                <button class="action-copy" title="复制innerHTML 左键处理图片 右键不处理">⭕</button>
                 <button class="action-switch-text" title="切换为textrea">🖺</button>
                 <button class="word-wrap-first" title="在首行换行">🔼</button>
                 <button class="word-wrap-last" title="在最后换行">🔽</button>
@@ -602,30 +632,10 @@ async function addAnki(value = '', tapKeyboard = null) {
         clickFns.hasOwnProperty(className) && clickFns[className] && clickFns[className](ev, tapKeyboard);
     }
     document.addEventListener('click', clickFn)
-    const preciseSearch = (ev) => {
-        if (ev.target.className !== 'anki-search') {
-            return
-        }
-        ev.preventDefault();
-        const sel = document.createElement('select');
-        const inputs = ev.target.parentElement.previousElementSibling;
-        sel.name = inputs.name;
-        sel.className = inputs.className;
-        const {options, m} = getSearchType(ev);
-        sel.innerHTML = buildOption(options, '', 0, 1);
-        inputs.parentElement.replaceChild(sel, inputs);
-        sel.focus();
-        sel.addEventListener('blur', () => {
-            GM_setValue('searchType', m[sel.value]);
-            searchAnki(ev, decodeHtmlSpecial(sel.value), inputs, sel);
-        })
-        sel.addEventListener('change', () => {
-            GM_setValue('searchType', m[sel.value]);
-            searchAnki(ev, decodeHtmlSpecial(sel.value), inputs, sel);
-        })
-
+    const contextMenuFn = (ev) => {
+        contextMenuFns.hasOwnProperty(ev.target.className) && contextMenuFns[ev.target.className](ev);
     }
-    document.addEventListener('contextmenu', preciseSearch)
+    document.addEventListener('contextmenu', contextMenuFn)
     let ol = '';
     if (modelFields.length > 0) {
         ol = modelFields.map(v => {
@@ -721,7 +731,7 @@ ${style}
             richTexts = [];
             document.removeEventListener('click', clickFn);
             document.removeEventListener('change', changeFn);
-            document.removeEventListener('contextmenu', preciseSearch);
+            document.removeEventListener('contextmenu', contextMenuFn);
         },
         preConfirm: async () => {
             let form = {};
