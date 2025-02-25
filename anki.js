@@ -70,9 +70,53 @@ async function queryAnki(expression) {
     return res.result;
 }
 
+function getSearchType(ev, type = null) {
+    const value = ev.target.parentElement.previousElementSibling.value.trim();
+    const field = ev.target.parentElement.parentElement.querySelector('.field-name').value;
+    const deck = document.querySelector('#deckName').value;
+    const sel = document.createElement('select');
+    const inputs = ev.target.parentElement.previousElementSibling;
+    sel.name = inputs.name;
+    sel.className = inputs.className;
+    const precision = `deck:${deck} "${field}:${value}"`;
+    const str = value.split(' ');
+    const vague = str.length > 1 ? str.map(v => `${field}:*${v}*`).join(' ') : `${field}:*${value}*`;
+    const deckVague = `deck:${deck} ` + vague;
+    if (type !== null) {
+        return [vague, deckVague, precision, value][type];
+    }
+    const searchType = GM_getValue('searchType', 0);
+    const m = {};
+    const options = [
+        [vague, `模糊不指定组牌查询: ${vague}`],
+        [deckVague, `模糊指定组牌查询: ${deckVague}`],
+        [htmlSpecial(precision), `精确查询: ${precision}`],
+        [value, `自定义查询: ${value}`],
+    ].map((v, i) => {
+        if (i === searchType) {
+            v[1] += '  默认'
+        }
+        m[v[0]] = i;
+        return v;
+    });
+    return {options, m}
+}
+
 const clickFns = {
+    'card-delete': async () => {
+        if (confirm('确定删除么？')) {
+            const {error} = await anki('deleteNotes', {notes: [existsNoteId]});
+            if (error) {
+                Swal.showValidationMessage(error);
+                return
+            }
+            setExistsNoteId(0);
+        }
+    },
     'anki-search': (ev) => {
-        searchAnki(ev);
+        const express = getSearchType(ev, GM_getValue('searchType', 0));
+        const inputs = ev.target.parentElement.previousElementSibling;
+        searchAnki(ev, express, inputs);
     },
     'word-wrap-first': (ev) => {
         const ed = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
@@ -84,7 +128,6 @@ const clickFns = {
         const edt = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
         const br = edt.ownerDocument.createElement('br');
         edt.appendChild(br);
-        edt.focus();
     },
     'upperlowercase': (ev) => {
         const input = ev.target.parentElement.previousElementSibling;
@@ -177,20 +220,9 @@ const clickFns = {
     },
 };
 
-async function searchAnki(ev, isPrecise = false) {
-    const value = ev.target.parentElement.previousElementSibling.value.trim();
-    if (!value) {
-        return
-    }
-    const deck = document.querySelector('#deckName').value;
+async function searchAnki(ev, queryStr, inputs, sels = null) {
     const field = ev.target.parentElement.parentElement.querySelector('.field-name').value;
-    const inputs = ev.target.parentElement.previousElementSibling;
     let result;
-    let queryStr = `deck:${deck} "${field}:${value}"`;
-    if (!isPrecise) {
-        const str = value.split(' ');
-        queryStr = str.length > 1 ? `deck:${deck} ` + str.map(v => `${field}:*${v}*`).join(' ') : `deck:${deck} ${field}:*${value}*`;
-    }
     try {
         result = await queryAnki(queryStr);
         if (!result) {
@@ -202,6 +234,9 @@ async function searchAnki(ev, isPrecise = false) {
         return
     }
     if (result.length === 1) {
+        if (sels && sels.parentElement) {
+            sels.parentElement.replaceChild(inputs, sels);
+        }
         await showAnkiCard(result[0]);
         return
     }
@@ -214,7 +249,8 @@ async function searchAnki(ev, isPrecise = false) {
         return [v.fields[field].value, v.fields[field].value];
     });
     sel.innerHTML = buildOption(options, '', 0, 1);
-    inputs.parentElement.replaceChild(sel, inputs);
+    const ele = (sels && sels.hasOwnProperty('parentElement')) ? sels : inputs;
+    ele.parentElement.replaceChild(sel, ele);
     sel.focus();
     const changeFn = async () => {
         inputs.value = sel.value;
@@ -233,6 +269,14 @@ async function searchAnki(ev, isPrecise = false) {
 async function showAnkiCard(result) {
     setExistsNoteId(result.noteId);
     document.querySelector('#tags').value = result.tags.length >= 1 ? result.tags.join(',') : '';
+    const res = await anki('cardsInfo', {cards: [result.cards[0]]});
+    if (res.error) {
+        console.log(res.error);
+    }
+    if (res.result.length > 0) {
+        document.querySelector('#deckName').value = res.result[0].deckName;
+    }
+    document.querySelector('#model').value = result.modelName;
     const sentenceInput = document.querySelector('#sentence_field');
     const sentence = sentenceInput.value;
     const fields = {
@@ -563,7 +607,23 @@ async function addAnki(value = '', tapKeyboard = null) {
             return
         }
         ev.preventDefault();
-        search(ev, true);
+        const sel = document.createElement('select');
+        const inputs = ev.target.parentElement.previousElementSibling;
+        sel.name = inputs.name;
+        sel.className = inputs.className;
+        const {options, m} = getSearchType(ev);
+        sel.innerHTML = buildOption(options, '', 0, 1);
+        inputs.parentElement.replaceChild(sel, inputs);
+        sel.focus();
+        sel.addEventListener('blur', () => {
+            GM_setValue('searchType', m[sel.value]);
+            searchAnki(ev, decodeHtmlSpecial(sel.value), inputs, sel);
+        })
+        sel.addEventListener('change', () => {
+            GM_setValue('searchType', m[sel.value]);
+            searchAnki(ev, decodeHtmlSpecial(sel.value), inputs, sel);
+        })
+
     }
     document.addEventListener('contextmenu', preciseSearch)
     let ol = '';
@@ -653,6 +713,7 @@ ${style}
     <div class="form-item" style="display: none">
         <label for="force-update" class="form-label">更新</label>
         <input type="checkbox" class="swal2-checkbox" name="update" id="force-update">
+        <input type="button" class="card-delete" value="删除">
     </div>
   `,
         focusConfirm: false,
