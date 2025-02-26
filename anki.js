@@ -330,6 +330,9 @@ async function showAnkiCard(result) {
         const div = document.createElement('div');
         div.innerHTML = v;
         for (const img of [...div.querySelectorAll('img')]) {
+            if (!img.src) {
+                continue;
+            }
             const src = (new URL(img.src)).pathname;
             let suffix = 'png';
             const name = src.split('.');
