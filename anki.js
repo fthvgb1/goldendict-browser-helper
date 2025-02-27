@@ -110,7 +110,7 @@ const contextMenuFns = {
         sel.name = inputs.name;
         sel.className = inputs.className;
         const {options, m} = getSearchType(ev);
-        sel.innerHTML = buildOption(options, '', 0, 1);
+        sel.innerHTML = buildOption(options, m[GM_getValue('searchType', 0)], 0, 1);
         inputs.parentElement.replaceChild(sel, inputs);
         sel.focus();
         sel.addEventListener('blur', () => {
@@ -295,6 +295,7 @@ async function searchAnki(ev, queryStr, inputs, sels = null) {
     };
     sel.addEventListener('change', changeFn);
     sel.addEventListener('blur', blurFn);
+    await showAnkiCard(result[0]);
 }
 
 async function showAnkiCard(result) {
@@ -382,7 +383,7 @@ function buildInput(rawStr = false, field = '', value = '', checked = false) {
                 <button class="minus">➖</button>
                 <input type="radio" title="选中赋值" ${checkeds} name="shadow-form-defaut[]">
                 <button class="lemmatizer" title="lemmatize查找单词原型">📟</button>
-                <button class="anki-search" title="search anki 左健模糊搜索 右键精确搜索">🔍</button>
+                <button class="anki-search" title="search anki 左健搜索 右键选择搜索模式">🔍</button>
                 <button class="upperlowercase" title="大小写转换">🔡</button>
             </div>
         `);
