@@ -88,13 +88,14 @@ function getSearchType(ev, type = null) {
     const searchType = GM_getValue('searchType', 0);
     const m = {};
     const options = [
-        [vague, `模糊不指定组牌查询: ${vague}`],
-        [deckVague, `模糊指定组牌查询: ${deckVague}`],
-        [htmlSpecial(precision), `精确查询: ${precision}`],
-        [value, `自定义查询: ${value}`],
+        [vague, `模糊不指定组牌查询:   &nbsp;&nbsp;&nbsp;${vague}`],
+        [deckVague, `模糊指定组牌查询:    &nbsp;&nbsp;&nbsp;${deckVague}`],
+        [htmlSpecial(precision), `精确查询:    &nbsp;&nbsp;&nbsp;${precision}`],
+        [value, `自定义查询:    &nbsp;&nbsp;&nbsp;${value}`],
     ].map((v, i) => {
         if (i === searchType) {
-            v[1] += '  默认'
+            const vv = v[1].split(':')[0];
+            v[1] = v[1].replace(vv, vv + ' (默认)');
         }
         m[v[0]] = i;
         return v;
