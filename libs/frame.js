@@ -1,15 +1,15 @@
 ;const {
-    PushContextMenu: PushContextMenu,
-    PushIconAction: PushIconAction,
-    PushInitialFn: PushInitialFn,
-    initContextMenu: initContextMenu,
-    initIconActions: initIconActions,
-    request: request,
-    parseKey: parseKey,
-    tapKeyboard: tapKeyboard,
-    readClipboard: readClipboard,
-    requestEx: requestEx,
-    getSelectionElement: getSelectionElement,
+    PushContextMenu,
+    PushIconAction,
+    PushInitialFn,
+    initContextMenu,
+    initIconActions,
+    request,
+    parseKey,
+    tapKeyboard,
+    readClipboard,
+    requestEx,
+    getSelectionElement,
 } = (() => {
     const contextMenuActions = [];
     const iconActions = [];
@@ -380,17 +380,17 @@
     }
 
     return {
-        PushContextMenu: PushContextMenu,
-        PushIconAction: PushIconAction,
-        PushInitialFn: PushInitialFn,
-        initContextMenu: initContextMenu,
-        initIconActions: initIconActions,
-        request: request,
-        parseKey: parseKey,
-        tapKeyboard: tapKeyboard,
-        readClipboard: readClipboard,
-        requestEx: requestEx,
-        getSelectionElement: getSelectionElement,
+        PushContextMenu,
+        PushIconAction,
+        PushInitialFn,
+        initContextMenu,
+        initIconActions,
+        request,
+        parseKey,
+        tapKeyboard,
+        readClipboard,
+        requestEx,
+        getSelectionElement,
     }
 })();
 
