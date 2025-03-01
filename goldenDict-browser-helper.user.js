@@ -2,7 +2,7 @@
 // @name         goldenDict-browser-helper
 // @namespace    https://github.com/fthvgb1
 // @homepage     https://github.com/fthvgb1/goldendict-browser-helper
-// @version      1.07
+// @version      1.08
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1
 // @match        http://*/*
@@ -20,12 +20,16 @@
 // @require      https://raw.githubusercontent.com/nitotm/efficient-language-detector-js/main/minified/eld.M60.min.js
 // @require      https://cdn.jsdelivr.net/npm/sweetalert2@11
 // @require      https://cdnjs.cloudflare.com/ajax/libs/js-sha1/0.6.0/sha1.min.js
-// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/frame.js
-// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/resizeimg.js
-// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/spell.js
-// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/text.js
-// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/lemmatizer.js
-// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/anki.js
+// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/libs/frame.js
+// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/libs/lemmatizerStarter.js
+// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/libs/text.js
+// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/libs/resizeimg.js
+// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/libs/spell.js
+// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/goldendict.js
+// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/tts.js
+// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/forcecopy.js
+// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/anki.js
+// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/contextmenuactions/menus.js
 // @resource spell-css https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/css/spell.css
 // @resource frame-css https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/css/frame.css
 // @resource icon-anki https://github.com/fthvgb1/goldendict-browser-helper/blob/master/icon/anki.png?raw=true
