@@ -1,4 +1,37 @@
-const start = (iconArray, initialFns = []) => {
+const contextMenuActions = [];
+const iconActions = [];
+const helperServerHost = GM_getValue('host', 'http://127.0.0.1:9999');
+const initialFns = [];
+
+function PushContextMenu(...fn) {
+    contextMenuActions.push(...fn);
+}
+
+function PushIconAction(...fn) {
+    iconActions.push(...fn);
+}
+
+function initContextMenu() {
+    contextMenuActions.forEach(menu => {
+        let fn = menu.action;
+        if (typeof menu.action === 'string') {
+            fn = () => {
+                request('keys=' + parseKey(menu.action), menu.path, menu.hasOwnProperty('call') ? menu.call : null)
+            }
+        } else if (typeof menu.action === 'object') {
+            fn = () => {
+                request(menu.action, menu.path, menu.hasOwnProperty('call') ? menu.call : null)
+            }
+        }
+        GM_registerMenuCommand(menu.title, () => {
+            if (self === top) {
+                fn();
+            }
+        }, menu.key);
+    })
+}
+
+function initIconActions() {
     String.prototype.replaceWithMap = function (m) {
         let s = this;
         Object.keys(k => {
@@ -39,7 +72,7 @@ const start = (iconArray, initialFns = []) => {
     // 图标数组
     let hideCalls = []
     // 添加翻译引擎图标
-    iconArray.forEach(obj => {
+    iconActions.forEach(obj => {
         const img = document.createElement('img');
         img.setAttribute('src', obj.image);
         img.setAttribute('alt', obj.name);
@@ -233,4 +266,98 @@ const start = (iconArray, initialFns = []) => {
             })
         }
     }
+}
+
+async function request(data, path = '', call = null) {
+    data = data ? buildData(data, path) : '';
+    if (path !== '' && path[0] !== '/') {
+        path = '/' + path;
+    }
+    await GM_xmlhttpRequest({
+        method: "POST",
+        url: helperServerHost + path,
+        data: data,
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        onload: function (res) {
+            if (call) {
+                call(res);
+            }
+        },
+        onerror: function (res) {
+            console.log(res);
+        },
+        onabort: function (res) {
+            console.log(res);
+        }
+    });
+}
+
+function parseKey(key) {
+    key = key.trim()
+    if (key.indexOf('[') > -1) {
+        return key
+    }
+    const keys = key.split(',').map(v => {
+        v = v.trim()
+        const vv = v.split(' ')
+        if (vv.length > 1) {
+            const k = vv[vv.length - 1]
+            let kk = vv.slice(0, vv.length - 1)
+            kk.unshift(k)
+            return kk
+        }
+        return vv
+    })
+    return JSON.stringify(keys)
+}
+
+function buildData(data) {
+    if (typeof data === 'object') {
+        data = Object.keys(data).map(k => {
+            if (data[k] instanceof Array) {
+                return data[k].map(v => k + '=' + encodeURIComponent(v)).join('&')
+            }
+            return k + '=' + encodeURIComponent(data[k])
+        }).join('&');
+    }
+    return data
+}
+
+async function tapKeyboard(keys) {
+    await request('keys=' + parseKey(keys))
+}
+
+async function readClipboard(type = 0) {
+    const {responseText: text} = await requestEx(helperServerHost + '/clipboard?type=' + (type === 1 ? 'img' : 'text'));
+    return text
+}
+
+async function requestEx(url, data = '', options = {}) {
+    data = buildData(data)
+    return new Promise((resolve, reject) => {
+        GM_xmlhttpRequest({
+            url: url,
+            data: data,
+            method: 'GET',
+            onload: function (res) {
+                return resolve(res)
+            },
+            onerror: function (res) {
+                reject(res)
+            },
+            ...options
+        });
+    })
+
+}
+
+function getSelectionElement() {
+    const selectionObj = window.getSelection();
+    const rangeObj = selectionObj.getRangeAt(0);
+    const docFragment = rangeObj.cloneContents();
+    const div = document.createElement("div");
+    div.appendChild(docFragment);
+    return div
 }
