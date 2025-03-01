@@ -110,7 +110,7 @@ func tapKeyboardAndCopy(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func ActionCopyAction(_ http.ResponseWriter, r *http.Request) {
+func ActionCopyAction(res http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		log.Println(err)
@@ -140,7 +140,7 @@ func ActionCopyAction(_ http.ResponseWriter, r *http.Request) {
 			log.Println(times, err)
 		}
 	}
-
+	getValue := r.Form.Get("get")
 	ctx, cancel := context.WithTimeout(context.TODO(), t)
 	defer cancel()
 	ch := clipboard.Watch(ctx, clipboard.FmtText)
@@ -149,13 +149,25 @@ func ActionCopyAction(_ http.ResponseWriter, r *http.Request) {
 		case <-ctx.Done():
 			log.Println("watch clipboard timeout")
 			return
-		case str := <-ch:
-			if len(str) < 1 {
+		case bytes := <-ch:
+			if len(bytes) < 1 {
 				return
 			}
-			log.Println("copied:", string(str))
-			clipboard.Write(clipboard.FmtText, str)
-			err = tapKeyboard(actionNext)
+			log.Println("copied:", string(bytes))
+			clipboard.Write(clipboard.FmtText, bytes)
+			if len(actionNext) > 0 {
+				err = tapKeyboard(actionNext)
+				if err != nil {
+					log.Println(err)
+				}
+
+			}
+			if getValue != "" {
+				_, err = res.Write(bytes)
+				if err != nil {
+					log.Println(err)
+				}
+			}
 			return
 		}
 	}
