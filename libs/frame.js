@@ -10,6 +10,10 @@
     readClipboard,
     requestEx,
     getSelectionElement,
+    buildOption,
+    htmlSpecial,
+    decodeHtmlSpecial,
+    base64ToUint8Array,
 } = (() => {
     const contextMenuActions = [];
     const iconActions = [];
@@ -379,6 +383,68 @@
         return div
     }
 
+    function buildOption(arr, select = '', key = 'k', val = 'v') {
+        return arr.map(v => {
+            if (typeof v === 'string') {
+                let sel = '';
+                if (v === select) {
+                    sel = 'selected'
+                }
+                return `<option ${sel} value="${v}">${v}</option>`
+            } else if (typeof v === 'object' || v instanceof Array) {
+                let sel = '';
+                if (v[key] === select) {
+                    sel = 'selected'
+                }
+                return `<option ${sel} value="${v[key]}">${v[val]}</option>`
+            }
+            return ''
+        }).join('\n');
+    }
+
+    const entityMap = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+        '/': '&#x2F;',
+        '`': '&#x60;',
+        '=': '&#x3D;'
+    };
+
+    const entityMap2 = Object.keys(entityMap).reduce((pre, cur) => {
+        pre[entityMap[cur]] = cur
+        return pre
+    }, {});
+
+    function htmlSpecial(string) {
+        return String(string).replace(/[&<>"'`=\/]/g, function (s) {
+            return entityMap[s];
+        });
+    }
+
+    function decodeHtmlSpecial(string) {
+        return String(string).replace(/&(amp|lt|gt|quot|#39|#x2F|#x60|#x3D);/ig, function (s) {
+            return entityMap2[s];
+        });
+    }
+
+    function base64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding)
+            .replace(/-/g, '+')
+            .replace(/_/g, '/');
+
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+
     return {
         PushContextMenu,
         PushIconAction,
@@ -391,6 +457,10 @@
         readClipboard,
         requestEx,
         getSelectionElement,
+        buildOption,
+        htmlSpecial,
+        decodeHtmlSpecial,
+        base64ToUint8Array,
     }
 })();
 

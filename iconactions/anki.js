@@ -12,23 +12,20 @@
             update.checked = false;
         }
     }
-    const {frameCss, spellCss, diagStyle} = function () {
-        const spellIconsTtf = GM_getResourceURL('spell-icons-ttf');
-        const spellIconsWoff = GM_getResourceURL('spell-icons-woff');
-        const spellCss = GM_getResourceText("spell-css")
-            .replace('chrome-extension://__MSG_@@extension_id__/fg/font/spell-icons.ttf', spellIconsTtf)
-            .replace('chrome-extension://__MSG_@@extension_id__/fg/font/spell-icons.woff', spellIconsWoff);
-        const frameCss = GM_getResourceText("frame-css");
-        const diagStyle = GM_getResourceText('diag-style');
-        return {frameCss, diagStyle, spellCss}
-    }();
+    const spellIconsTtf = GM_getResourceURL('spell-icons-ttf');
+    const spellIconsWoff = GM_getResourceURL('spell-icons-woff');
+    const spellCss = GM_getResourceText("spell-css")
+        .replace('chrome-extension://__MSG_@@extension_id__/fg/font/spell-icons.ttf', spellIconsTtf)
+        .replace('chrome-extension://__MSG_@@extension_id__/fg/font/spell-icons.woff', spellIconsWoff);
+    const frameCss = GM_getResourceText("frame-css");
+    const diagStyle = GM_getResourceText('diag-style');
 
     PushIconAction({
         name: 'anki',
         icon: 'icon-anki',
         image: GM_getResourceURL('icon-anki'),
         trigger: (t) => {
-            addAnki(getSelectionElement(), tapKeyboard).catch(res => console.log(res))
+            addAnki(getSelectionElement(), tapKeyboard).catch(res => console.log(res));
         }
     });
 
@@ -344,25 +341,6 @@
         }
     }
 
-    function buildOption(arr, select = '', key = 'k', val = 'v') {
-        return arr.map(v => {
-            if (typeof v === 'string') {
-                let sel = '';
-                if (v === select) {
-                    sel = 'selected'
-                }
-                return `<option ${sel} value="${v}">${v}</option>`
-            } else if (typeof v === 'object' || v instanceof Array) {
-                let sel = '';
-                if (v[key] === select) {
-                    sel = 'selected'
-                }
-                return `<option ${sel} value="${v[key]}">${v[val]}</option>`
-            }
-            return ''
-        }).join('\n');
-    }
-
     function buildInput(rawStr = false, field = '', value = '', checked = false) {
         const li = document.createElement('div');
         const checkeds = checked ? 'checked' : '';
@@ -423,21 +401,6 @@
 
     const base64Reg = /(data:(.*?)\/(.*?);base64,(.*?)?)[^0-9a-zA-Z=\/+]/i;
 
-    function base64ToUint8Array(base64String) {
-        const padding = '='.repeat((4 - base64String.length % 4) % 4);
-        const base64 = (base64String + padding)
-            .replace(/-/g, '+')
-            .replace(/_/g, '/');
-
-        const rawData = window.atob(base64);
-        const outputArray = new Uint8Array(rawData.length);
-
-        for (let i = 0; i < rawData.length; ++i) {
-            outputArray[i] = rawData.charCodeAt(i);
-        }
-        return outputArray;
-    }
-
     async function fetchImg(html) {
         const div = document.createElement('div');
         div.innerHTML = html;
@@ -484,34 +447,6 @@
             text = text.replace(r[1], file);
         }
         return text
-    }
-
-    const entityMap = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;',
-        '/': '&#x2F;',
-        '`': '&#x60;',
-        '=': '&#x3D;'
-    };
-
-    const entityMap2 = Object.keys(entityMap).reduce((pre, cur) => {
-        pre[entityMap[cur]] = cur
-        return pre
-    }, {});
-
-    function htmlSpecial(string) {
-        return String(string).replace(/[&<>"'`=\/]/g, function (s) {
-            return entityMap[s];
-        });
-    }
-
-    function decodeHtmlSpecial(string) {
-        return String(string).replace(/&(amp|lt|gt|quot|#39|#x2F|#x60|#x3D);/ig, function (s) {
-            return entityMap2[s];
-        });
     }
 
     function anki(action, params = {}) {
