@@ -1,4 +1,6 @@
 ;(() => {
+    const key = GM_getValue('goldDictKey', 'ctrl c,ctrl c');
+    const goldDictKey = parseKey(key);
     function goldenDict(text) {
         request({keys: goldDictKey, text: text})
     }
@@ -8,7 +10,7 @@
         //eg: ["E:\\Program Files\\GoldenDict\\goldendict.exe",["-s"]]
         let cmd = GM_getValue('dictCmd');
         if (!cmd) {
-            if (GM_getValue('goldDictKey', 'ctrl c,ctrl c') === 'ctrl c,ctrl c') {
+            if (key === 'ctrl c,ctrl c') {
                 getSelection().removeAllRanges();
             }
             navigator.clipboard.writeText(text).then(r => {

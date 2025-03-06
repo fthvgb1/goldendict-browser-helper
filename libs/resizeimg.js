@@ -1,4 +1,6 @@
 //revised from https://gist.github.com/p1coderblog/24cdae9fa923193f45f3583c2265161d
+;
+
 function enableImageResizeInDiv(editor) {
     if (!editor) {
         return

@@ -126,7 +126,9 @@ func ActionCopyAction(res http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	err = tapKeyboard(actionPrev)
+	if len(actionPrev) > 0 {
+		err = tapKeyboard(actionPrev)
+	}
 	if err != nil {
 		panic(err)
 	}
@@ -141,6 +143,7 @@ func ActionCopyAction(res http.ResponseWriter, r *http.Request) {
 		}
 	}
 	getValue := r.Form.Get("get")
+	copyAgain := r.Form.Get("copyAgain")
 	ctx, cancel := context.WithTimeout(context.TODO(), t)
 	defer cancel()
 	ch := clipboard.Watch(ctx, clipboard.FmtText)
@@ -154,7 +157,9 @@ func ActionCopyAction(res http.ResponseWriter, r *http.Request) {
 				return
 			}
 			log.Println("copied:", string(bytes))
-			clipboard.Write(clipboard.FmtText, bytes)
+			if copyAgain == "1" {
+				clipboard.Write(clipboard.FmtText, bytes)
+			}
 			if len(actionNext) > 0 {
 				err = tapKeyboard(actionNext)
 				if err != nil {
@@ -162,7 +167,7 @@ func ActionCopyAction(res http.ResponseWriter, r *http.Request) {
 				}
 
 			}
-			if getValue != "" {
+			if getValue == "1" {
 				_, err = res.Write(bytes)
 				if err != nil {
 					log.Println(err)

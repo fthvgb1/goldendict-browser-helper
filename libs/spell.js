@@ -1,4 +1,6 @@
 //altered from https://github.com/ninja33/ODH/blob/master/src/fg/js/spell.js
+;
+
 function spell() {
     let exec = (command, value = null) => document.execCommand(command, false, value)
     let ensureHTTP = url => /^https?:\//.test(url) ? url : `https://${url}`

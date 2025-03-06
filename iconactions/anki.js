@@ -1,4 +1,4 @@
-;const addAnki = (() => {
+;const {addAnki, anki, queryAnki} = (() => {
     let ankiHost = GM_getValue('ankiHost', 'http://127.0.0.1:8765');
     let richTexts = [];
     let existsNoteId = 0;
@@ -755,7 +755,7 @@ ${style}
         });
     }
 
-    return addAnki;
+    return {addAnki, anki, queryAnki};
 
 })();
 

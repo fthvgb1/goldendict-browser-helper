@@ -1,3 +1,5 @@
+// trimmed from https://github.com/barrer/tampermonkey-script/blob/master/translate/translate-dictionary.js
+
 ;const {
     PushContextMenu,
     PushIconAction,
