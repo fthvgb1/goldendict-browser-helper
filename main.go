@@ -144,6 +144,9 @@ func ActionCopyAction(res http.ResponseWriter, r *http.Request) {
 	}
 	getValue := r.Form.Get("get")
 	copyAgain := r.Form.Get("copyAgain")
+	if copyAgain != "1" && len(actionNext) < 1 && getValue != "1" {
+		return
+	}
 	ctx, cancel := context.WithTimeout(context.TODO(), t)
 	defer cancel()
 	ch := clipboard.Watch(ctx, clipboard.FmtText)
