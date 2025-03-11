@@ -322,7 +322,8 @@
                 if (!img.src) {
                     continue;
                 }
-                const src = (new URL(img.src)).pathname;
+                const srcs = (new URL(img.src)).pathname.split('/');
+                const src = srcs[srcs.length - 1];
                 let suffix = 'png';
                 const name = src.split('.');
                 suffix = name.length > 1 ? name[1] : suffix;

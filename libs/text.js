@@ -40,7 +40,7 @@
     };
 
     function isPDFJSPage() {
-        return (document.querySelectorAll('div#viewer.pdfViewer').length > 0);
+        return (document.querySelectorAll('div#viewer.pdfViewer,pdf-viewer#viewer').length > 0);
     }
 
     function isEmpty(word) {
@@ -156,7 +156,7 @@
 
         let sentence = '';
         let offset = 0;
-        sentenceNodes = sentenceNodes.filter(x => x.textContent != '' || x.textContent != '-');
+        sentenceNodes = sentenceNodes.filter(x => x.textContent !== '' || x.textContent !== '-');
         for (const node of sentenceNodes) {
             if (backwardindex === 0)
                 offset = sentence.length + window.getSelection().getRangeAt(0).startOffset;
