@@ -1,4 +1,4 @@
-;const {addAnki, anki, queryAnki} = (() => {
+;const {addAnki, anki, queryAnki, PushAnkiBeforeSaveHook, PushExpandAnkiRichButton} = (() => {
     let ankiHost = GM_getValue('ankiHost', 'http://127.0.0.1:8765');
     let richTexts = [];
     let existsNoteId = 0;
@@ -19,6 +19,11 @@
         .replace('chrome-extension://__MSG_@@extension_id__/fg/font/spell-icons.woff', spellIconsWoff);
     const frameCss = GM_getResourceText("frame-css");
     const diagStyle = GM_getResourceText('diag-style');
+    const hookFns = [];
+
+    function PushAnkiBeforeSaveHook(...call) {
+        hookFns.push(...call);
+    }
 
     PushIconAction({
         name: 'anki',
@@ -363,6 +368,27 @@
         document.querySelector('#shadowFields ol').appendChild(li)
     }
 
+    function PushExpandAnkiRichButton(button, className, clickFn, field = '', contextMenuFn = null) {
+        if (!button || !className) {
+            return
+        }
+        if (field) {
+            buttonFields[field] ? buttonFields[field].push(button) : buttonFields[field] = [button];
+        } else {
+            buttons.push(button);
+        }
+
+        if (clickFn) {
+            clickFns[className] = clickFn;
+        }
+        if (contextMenuFn) {
+            contextMenuFns[className] = contextMenuFn;
+        }
+    }
+
+    const buttonFields = {};
+    const buttons = [];
+
     function buildTextarea(rawStr = false, field = '', value = '', checked = false) {
         const li = document.createElement('div');
         const checkeds = checked ? 'checked' : '';
@@ -380,6 +406,7 @@
                 <button class="action-switch-text" title="切换为textrea">🖺</button>
                 <button class="word-wrap-first" title="在首行换行">🔼</button>
                 <button class="word-wrap-last" title="在最后换行">🔽</button>
+                ${buttons.join('\m')} ${buttonFields[field] ? buttonFields[field].join('\n') : ''}
             </div>
         `);
         const editor = richText.querySelector('.spell-content');
@@ -502,6 +529,7 @@
                 <button class="text-clean" title="清空">🧹</button>
                 <button class="action-copy" title="复制innerHTML">⭕</button>
                 <button class="action-switch-text" title="切换为textrea">🖺</button>
+                ${buttons.join('\m')}
             </div>`
         const fieldFn = ['', buildInput, buildTextarea];
         const changeFn = ev => {
@@ -710,7 +738,7 @@ ${style}
                     const el = document.querySelector('.sentence_setting .spell-content');
                     fields[document.querySelector('#sentence_field').value] = await checkAndStoreMedia(el.tagName === 'DIV' ? el.innerHTML : el.value);
                 }
-                const params = {
+                let params = {
                     "note": {
                         "deckName": form.deckName,
                         "modelName": form.model,
@@ -719,12 +747,26 @@ ${style}
                     }
                 }
                 let res;
-                if (existsNoteId > 0 && document.querySelector('#force-update').checked) {
-                    params.note.id = existsNoteId;
-                    res = await anki('updateNote', params)
-                } else {
-                    res = await anki('addNote', params);
+                try {
+                    if (existsNoteId > 0 && document.querySelector('#force-update').checked) {
+                        params.note.id = existsNoteId;
+                        hookFns.forEach(fn => {
+                            const note = fn(true, params.note);
+                            params.note = note ? note : params.note;
+                        });
+                        res = await anki('updateNote', params)
+                    } else {
+                        res = await anki('addNote', params);
+                        hookFns.forEach(fn => {
+                            const note = fn(false, params.note);
+                            params.note = note ? note : params.note;
+                        });
+                    }
+                } catch (e) {
+                    Swal.showValidationMessage('发生出错：' + e);
+                    return
                 }
+
                 console.log(form, params, res);
                 if (res.error !== null) {
                     Swal.showValidationMessage('发生出错：' + res.error);
@@ -756,7 +798,7 @@ ${style}
         });
     }
 
-    return {addAnki, anki, queryAnki};
+    return {addAnki, anki, queryAnki, PushAnkiBeforeSaveHook, PushExpandAnkiRichButton};
 
 })();
 
