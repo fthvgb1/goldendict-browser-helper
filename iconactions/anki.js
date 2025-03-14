@@ -4,7 +4,8 @@
     queryAnki,
     PushAnkiBeforeSaveHook,
     PushExpandAnkiRichButton,
-    PushExpandAnkiInputButton
+    PushExpandAnkiInputButton,
+    PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose
 } = (() => {
     let ankiHost = GM_getValue('ankiHost', 'http://127.0.0.1:8765');
     let richTexts = [];
@@ -380,8 +381,8 @@
     const inputButtons = [];
     const inputButtonFields = {};
 
-    function PushButtonFn(type, button, className, clickFn, field = '', contextMenuFn = null) {
-        if (!button && !className) {
+    function PushButtonFn(type, className, button, clickFn, field = '', contextMenuFn = null) {
+        if (!className) {
             return
         }
         const fields = type === 'input' ? inputButtonFields : buttonFields;
@@ -389,7 +390,7 @@
         if (field) {
             fields[field] ? fields[field].push(button) : fields[field] = [button];
         } else {
-            pushButtons.push(button);
+            button && pushButtons.push(button);
         }
 
         if (clickFn) {
@@ -400,12 +401,12 @@
         }
     }
 
-    function PushExpandAnkiInputButton(button, className, clickFn, field = '', contextMenuFn = null) {
-        PushButtonFn('input', button, className, clickFn, field, contextMenuFn)
+    function PushExpandAnkiInputButton(className, button, clickFn, field = '', contextMenuFn = null) {
+        PushButtonFn('input', className, button, clickFn, field, contextMenuFn)
     }
 
-    function PushExpandAnkiRichButton(button, className, clickFn, field = '', contextMenuFn = null) {
-        PushButtonFn('rich', button, className, clickFn, field, contextMenuFn)
+    function PushExpandAnkiRichButton(className, button, clickFn, field = '', contextMenuFn = null) {
+        PushButtonFn('rich', className, button, clickFn, field, contextMenuFn)
     }
 
     const buttonFields = {};
@@ -516,6 +517,22 @@
         })
     }
 
+    const styles = [];
+    const htmls = [];
+    const closeFns = [];
+
+    function PushHookAnkiClose(fn) {
+        fn && closeFns.push(fn)
+    }
+
+    function PushHookAnkiStyle(style) {
+        style && styles.push(style)
+    }
+
+    function PushHookAnkiHtml(htmlFn) {
+        htmlFn && htmls.push(htmlFn)
+    }
+
     async function addAnki(value = '', tapKeyboard = null) {
         let deckNames, models;
         existsNoteId = 0;
@@ -613,11 +630,11 @@
             }
             clickFns.hasOwnProperty(className) && clickFns[className] && clickFns[className](ev, tapKeyboard);
         }
-        document.addEventListener('click', clickFn)
+        document.addEventListener('click', clickFn);
         const contextMenuFn = (ev) => {
             contextMenuFns.hasOwnProperty(ev.target.className) && contextMenuFns[ev.target.className](ev);
-        }
-        document.addEventListener('contextmenu', contextMenuFn)
+        };
+        document.addEventListener('contextmenu', contextMenuFn);
         let ol = '';
         if (modelFields.length > 0) {
             ol = modelFields.map(v => {
@@ -628,31 +645,10 @@
                 return fieldFn[v[0]](true, v[1], v[2] ? t : '', v[2])
             }).join('\n')
         }
+        const hookStyles = styles.length > 0 ? `<style>${styles.filter(v => v !== '').join('\n')}</style>` : '';
 
-        const style = `<style>${frameCss} ${spellCss} ${diagStyle}</style>`;
-        await Swal.fire({
-            didRender: () => {
-                const eles = document.querySelectorAll('.wait-replace');
-                if (eles.length > 0) {
-                    richTexts.forEach((fn, index) => fn(eles[index]))
-                }
-                const se = document.querySelector('.sentence_setting .wait-replace');
-                if (se) {
-                    const editor = spell();
-                    editor.querySelector('.spell-content').innerHTML = getSentence(sentenceNum);
-                    se.parentElement.replaceChild(editor, se);
-                    enableImageResizeInDiv(editor.querySelector('.spell-content'))
-                }
-                if (!enableSentence) {
-                    document.querySelector('.sample-sentence').style.display = 'none';
-                }
-                sentenceBackup = calSentence();
-            },
-            title: "anki制卡",
-            showCancelButton: true,
-            width: '55rem',
-            html: `
-${style}
+        const style = `<style>${frameCss} ${spellCss} ${diagStyle}</style> ${hookStyles}`;
+        const ankiHtml = `${style} 
     <div class="form-item">
         <label for="ankiHost" class="form-label">ankiConnect监听地址</label>
         <input id="ankiHost" value="${ankiHost}" placeholder="ankiConnector监听地址" class="swal2-input">
@@ -706,14 +702,44 @@ ${style}
         <label for="force-update" class="form-label">更新</label>
         <input type="checkbox" class="swal2-checkbox" name="update" id="force-update">
         <input type="button" class="card-delete" value="删除">
-    </div>
-  `,
+    </div>`;
+        let htmlx = ankiHtml;
+        if (htmls.length > 0) {
+            const htmlDiv = document.createElement('div');
+            htmlDiv.innerHTML = ankiHtml;
+            htmls.map(fn => fn(htmlDiv));
+            htmlx = htmlDiv.innerHTML;
+        }
+
+        await Swal.fire({
+            didRender: () => {
+                const eles = document.querySelectorAll('.wait-replace');
+                if (eles.length > 0) {
+                    richTexts.forEach((fn, index) => fn(eles[index]))
+                }
+                const se = document.querySelector('.sentence_setting .wait-replace');
+                if (se) {
+                    const editor = spell();
+                    editor.querySelector('.spell-content').innerHTML = getSentence(sentenceNum);
+                    se.parentElement.replaceChild(editor, se);
+                    enableImageResizeInDiv(editor.querySelector('.spell-content'))
+                }
+                if (!enableSentence) {
+                    document.querySelector('.sample-sentence').style.display = 'none';
+                }
+                sentenceBackup = calSentence();
+            },
+            title: "anki制卡",
+            showCancelButton: true,
+            width: '55rem',
+            html: htmlx,
             focusConfirm: false,
             didDestroy: () => {
                 richTexts = [];
                 document.removeEventListener('click', clickFn);
                 document.removeEventListener('change', changeFn);
                 document.removeEventListener('contextmenu', contextMenuFn);
+                closeFns.length > 0 && closeFns.map(fn => fn());
             },
             preConfirm: async () => {
                 let form = {};
@@ -820,7 +846,12 @@ ${style}
         });
     }
 
-    return {addAnki, anki, queryAnki, PushAnkiBeforeSaveHook, PushExpandAnkiRichButton, PushExpandAnkiInputButton};
+    return {
+        addAnki,
+        anki, queryAnki,
+        PushAnkiBeforeSaveHook, PushExpandAnkiRichButton, PushExpandAnkiInputButton,
+        PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose
+    };
 
 })();
 
