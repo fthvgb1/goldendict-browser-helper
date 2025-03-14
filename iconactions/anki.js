@@ -1,4 +1,11 @@
-;const {addAnki, anki, queryAnki, PushAnkiBeforeSaveHook, PushExpandAnkiRichButton} = (() => {
+;const {
+    addAnki,
+    anki,
+    queryAnki,
+    PushAnkiBeforeSaveHook,
+    PushExpandAnkiRichButton,
+    PushExpandAnkiInputButton
+} = (() => {
     let ankiHost = GM_getValue('ankiHost', 'http://127.0.0.1:8765');
     let richTexts = [];
     let existsNoteId = 0;
@@ -360,6 +367,8 @@
                 <button class="lemmatizer" title="lemmatize查找单词原型">📟</button>
                 <button class="anki-search" title="search anki 左健搜索 右键选择搜索模式">🔍</button>
                 <button class="upperlowercase" title="大小写转换">🔡</button>
+                ${inputButtons.join('\m')} ${inputButtonFields[field] ? inputButtonFields[field].join('\n') : ''}
+
             </div>
         `);
         if (rawStr) {
@@ -368,14 +377,19 @@
         document.querySelector('#shadowFields ol').appendChild(li)
     }
 
-    function PushExpandAnkiRichButton(button, className, clickFn, field = '', contextMenuFn = null) {
-        if (!button || !className) {
+    const inputButtons = [];
+    const inputButtonFields = {};
+
+    function PushButtonFn(type, button, className, clickFn, field = '', contextMenuFn = null) {
+        if (!button && !className) {
             return
         }
+        const fields = type === 'input' ? inputButtonFields : buttonFields;
+        const pushButtons = type === 'input' ? inputButtons : buttons;
         if (field) {
-            buttonFields[field] ? buttonFields[field].push(button) : buttonFields[field] = [button];
+            fields[field] ? fields[field].push(button) : fields[field] = [button];
         } else {
-            buttons.push(button);
+            pushButtons.push(button);
         }
 
         if (clickFn) {
@@ -384,6 +398,14 @@
         if (contextMenuFn) {
             contextMenuFns[className] = contextMenuFn;
         }
+    }
+
+    function PushExpandAnkiInputButton(button, className, clickFn, field = '', contextMenuFn = null) {
+        PushButtonFn('input', button, className, clickFn, field, contextMenuFn)
+    }
+
+    function PushExpandAnkiRichButton(button, className, clickFn, field = '', contextMenuFn = null) {
+        PushButtonFn('rich', button, className, clickFn, field, contextMenuFn)
     }
 
     const buttonFields = {};
@@ -798,7 +820,7 @@ ${style}
         });
     }
 
-    return {addAnki, anki, queryAnki, PushAnkiBeforeSaveHook, PushExpandAnkiRichButton};
+    return {addAnki, anki, queryAnki, PushAnkiBeforeSaveHook, PushExpandAnkiRichButton, PushExpandAnkiInputButton};
 
 })();
 
