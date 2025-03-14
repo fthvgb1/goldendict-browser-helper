@@ -5,7 +5,7 @@
     PushAnkiBeforeSaveHook,
     PushExpandAnkiRichButton,
     PushExpandAnkiInputButton,
-    PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose
+    PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender
 } = (() => {
     let ankiHost = GM_getValue('ankiHost', 'http://127.0.0.1:8765');
     let richTexts = [];
@@ -520,9 +520,14 @@
     const styles = [];
     const htmls = [];
     const closeFns = [];
+    const didRenderFns = [];
 
     function PushHookAnkiClose(fn) {
         fn && closeFns.push(fn)
+    }
+
+    function PushHookAnkiDidRender(fn) {
+        fn && didRenderFns.push(fn)
     }
 
     function PushHookAnkiStyle(style) {
@@ -728,6 +733,7 @@
                     document.querySelector('.sample-sentence').style.display = 'none';
                 }
                 sentenceBackup = calSentence();
+                didRenderFns.length > 0 && didRenderFns.forEach(fn => fn());
             },
             title: "anki制卡",
             showCancelButton: true,
@@ -850,7 +856,7 @@
         addAnki,
         anki, queryAnki,
         PushAnkiBeforeSaveHook, PushExpandAnkiRichButton, PushExpandAnkiInputButton,
-        PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose
+        PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender
     };
 
 })();
