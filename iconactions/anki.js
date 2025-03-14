@@ -33,7 +33,7 @@
         hookFns.push(...call);
     }
 
-    PushIconAction({
+    PushIconAction && PushIconAction({
         name: 'anki',
         icon: 'icon-anki',
         image: GM_getResourceURL('icon-anki'),
