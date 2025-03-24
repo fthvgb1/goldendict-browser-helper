@@ -1,6 +1,6 @@
 // trimmed from https://github.com/barrer/tampermonkey-script/blob/master/translate/translate-dictionary.js
 
-;const {
+; const {
     PushContextMenu,
     PushIconAction,
     PushInitialFn,
@@ -165,6 +165,24 @@
             }
         }
 
+        function isInShadow(ele) {
+            if (ele === root) {
+                return true
+            }
+            if (!ele || !ele.hasOwnProperty('parentElement') || !ele.parentElement.TagName) {
+                return false
+            }
+            const tag = ele.parentElement.TagName;
+            if (TagName === "TR-CONTENT") {
+                return true
+            }
+            if (!TagName) {
+                return false
+            }
+            isInShadow(ele.parentElement);
+
+        }
+
         /**鼠标拖动*/
         function Drag(element) {
             this.dragging = false;
@@ -223,7 +241,7 @@
             }
         }
 
-// html 字符串转 DOM
+        // html 字符串转 DOM
         /**带异常处理的 createObjectURL*/
         function createObjectURLWithTry(blob) {
             try {
@@ -270,7 +288,7 @@
                 // 兼容部分 Content Security Policy
                 icon.style.position = 'absolute';
                 icon.style.zIndex = zIndex;
-            } else if (!selected) { // 隐藏翻译图标
+            } else if (!selected && e.target !== document && !isInShadow(e.target)) { // 隐藏翻译图标
                 log('hide icon');
                 hideIcon();
             }
@@ -353,7 +371,7 @@
     }
 
     async function readClipboard(type = 0) {
-        const {responseText: text} = await requestEx(helperServerHost + '/clipboard?type=' + (type === 1 ? 'img' : 'text'));
+        const { responseText: text } = await requestEx(helperServerHost + '/clipboard?type=' + (type === 1 ? 'img' : 'text'));
         return text
     }
 
