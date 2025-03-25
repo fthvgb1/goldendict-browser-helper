@@ -84,17 +84,6 @@ tr-icon[activate] {
     box-shadow: 0 3px 8px 0 rgba(0, 0, 0, 0.2), 0 0 0 0 rgba(0, 0, 0, 0.08)
 }
 
-tr-audio {
-    display: block;
-    margin-bottom: 5px
+tr-content > div {
+   cursor: initial;
 }
-
-tr-audio a {
-    margin-right: 1em;
-    font-size: 80%
-}
-
-tr-audio a:last-of-type {
-    margin-right: auto
-}
-
