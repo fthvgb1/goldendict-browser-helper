@@ -25,6 +25,9 @@ ps3: 其实还可以弄些其它骚操作，反正其实就是调些 [快捷键]
 - 使用命令行调用的方式调用goldendict,
 在`存储`中添加一个key为`dictCmd`的值，值为goldendict词典的运行程序绝对路径，如`E:\\Program Files\\GoldenDict\\goldendict.exe|-s`，参数用`|`分隔。
 
+#### tts发音
+可以调用系统的tts语音包，windows可以在`系统设置`->`时间和语言`->`语音`中下载，macos应该也可以在系统中下载相应的语音包，至于linux就真不知道去哪儿下了。
+
 #### ocr
 
 得先装umi-ocr,在截图ocr设置中勾选 *复制结果* 并取消勾选 *弹出主窗口*
