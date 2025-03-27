@@ -301,6 +301,7 @@
             pageX = 0;
             pageY = 0;
             forceStopDrag();
+            content.children[0].innerHTML = '';
             if (hideCalls.length > 0) {
                 hideCalls.forEach(fn => {
                     fn(icon)
