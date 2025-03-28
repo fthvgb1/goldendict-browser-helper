@@ -111,7 +111,7 @@
                 hideCalls.push(obj.hide)
             }
             if (obj.hasOwnProperty('call') && obj.call) {
-                obj.call(img);
+                obj.call(img, content);
             }
         });
         // 添加内容面板（放图标后面）
@@ -301,7 +301,6 @@
             pageX = 0;
             pageY = 0;
             forceStopDrag();
-            content.children[0].innerHTML = '';
             if (hideCalls.length > 0) {
                 hideCalls.forEach(fn => {
                     fn(icon)
