@@ -20,17 +20,21 @@
 
         if (!binded[utterance.name]) {
             binded[utterance.name] = true;
+            const setIcon = (i) => {
+                const pp = icon.parentElement.querySelector('button.pp');
+                pp && (pp.innerHTML = i);
+            }
             utterance.addEventListener('end', () => {
                 playStat = 0;
-                icon.parentElement.querySelector('button.pp').innerHTML = '▶️';
+                setIcon('▶️');
             })
             utterance.addEventListener('pause', (e) => {
                 playStat = 2;
-                icon.parentElement.querySelector('button.pp').innerHTML = '▶️';
+                setIcon('▶️');
             })
             utterance.addEventListener('resume', (e) => {
                 playStat = 1;
-                icon.parentElement.querySelector('button.pp').innerHTML = '⏸️';
+                setIcon('⏸️');
             })
         }
 

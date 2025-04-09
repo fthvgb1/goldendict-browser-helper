@@ -708,14 +708,12 @@
         <input type="checkbox" class="swal2-checkbox" name="update" id="force-update">
         <input type="button" class="card-delete" value="删除">
     </div>`;
-        let htmlx = ankiHtml;
+        const ankiContainer = document.createElement('div');
+        ankiContainer.className = 'anki-container';
+        ankiContainer.innerHTML = ankiHtml;
         if (htmls.length > 0) {
-            const htmlDiv = document.createElement('div');
-            htmlDiv.innerHTML = ankiHtml;
-            htmls.map(fn => fn(htmlDiv));
-            htmlx = htmlDiv.innerHTML;
+            htmls.map(fn => fn(ankiContainer));
         }
-
         await Swal.fire({
             didRender: () => {
                 const eles = document.querySelectorAll('.wait-replace');
@@ -738,7 +736,7 @@
             title: "anki制卡",
             showCancelButton: true,
             width: '55rem',
-            html: htmlx,
+            html: ankiContainer,
             focusConfirm: false,
             didDestroy: () => {
                 richTexts = [];
