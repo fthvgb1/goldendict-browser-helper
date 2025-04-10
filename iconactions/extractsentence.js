@@ -23,7 +23,6 @@
     `);
 
     PushHookAnkiDidRender(addOrDelBtn);
-    PushHookAnkiClose(saveFetchItems);
 
     const fetchFields = ['fetch-name', 'fetch-field', 'fetch-to-field', 'fetch-selector', 'fetch-parent-selector',
         'fetch-exclude-selector', 'fetch-join-selector', 'fetch-format', 'fetch-data-handle', 'fetch-repeat',
