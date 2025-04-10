@@ -24,6 +24,10 @@
 
     PushHookAnkiDidRender(addOrDelBtn);
 
+    ['swal2-cancel swal2-styled', 'swal2-confirm swal2-styled', 'swal2-container swal2-center swal2-backdrop-hide'].forEach(className => {
+        PushExpandAnkiInputButton(className, '', saveFetchItems);
+    })
+
     const fetchFields = ['fetch-name', 'fetch-field', 'fetch-to-field', 'fetch-selector', 'fetch-parent-selector',
         'fetch-exclude-selector', 'fetch-join-selector', 'fetch-format', 'fetch-data-handle', 'fetch-repeat',
         'fetch-bold-field', 'fetch-num', 'fetch-active'];
@@ -119,7 +123,8 @@
     }
 
     function saveFetchItems() {
-        GM_setValue('fetch-items', [...document.querySelectorAll('.fetch-item')].map(item => convertFetchParam(item)));
+        const data = [...document.querySelectorAll('.fetch-item')].map(item => convertFetchParam(item));
+        data.length > 0 && GM_setValue('fetch-items', data);
     }
 
     function convertFetchParam(item) {
