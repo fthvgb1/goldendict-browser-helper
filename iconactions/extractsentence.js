@@ -24,9 +24,11 @@
 
     PushHookAnkiDidRender(addOrDelBtn);
 
-    ['swal2-cancel swal2-styled', 'swal2-confirm swal2-styled', 'swal2-container swal2-center swal2-backdrop-hide'].forEach(className => {
+    ['swal2-cancel swal2-styled',
+        'swal2-confirm swal2-styled',
+        'swal2-container swal2-center swal2-backdrop-hide'].forEach(className => {
         PushExpandAnkiInputButton(className, '', saveFetchItems);
-    })
+    });
 
     const fetchFields = ['fetch-name', 'fetch-field', 'fetch-to-field', 'fetch-selector', 'fetch-parent-selector',
         'fetch-exclude-selector', 'fetch-join-selector', 'fetch-format', 'fetch-data-handle', 'fetch-repeat',
@@ -122,8 +124,10 @@
         saveFetchItems();
     }
 
+    let setting;
+
     function saveFetchItems() {
-        const data = [...document.querySelectorAll('.fetch-item')].map(item => convertFetchParam(item));
+        const data = [...setting.children].map(item => convertFetchParam(item));
         data.length > 0 && GM_setValue('fetch-items', data);
     }
 
@@ -491,7 +495,7 @@
         `;
         let fetchItems = GM_getValue('fetch-items', [{...de}]);
         fetchItems = fetchItems.length > 0 ? fetchItems : [{...de}];
-        const setting = div.querySelector('.select-setting');
+        setting = div.querySelector('.select-setting');
         let currentItem;
         setting.addEventListener('dragstart', (e) => {
             e.dataTransfer.effectAllowed = 'move';
