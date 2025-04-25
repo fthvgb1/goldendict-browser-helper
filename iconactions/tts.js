@@ -2,14 +2,15 @@
     let vices = [], utterance, vice, viceMap = {}, playStat = 0, icon;
     let selectVice = GM_getValue('ttsVice', '自动选择');
     let rate = GM_getValue('ttsrate', 1);
+    const setIcon = (i) => {
+        const pp = icon.parentElement.querySelector('button.pp');
+        pp && (pp.innerHTML = i);
+    }
     speechSynthesis.addEventListener("voiceschanged", () => {
         if (vices.length < 1) {
             vices = speechSynthesis.getVoices();
             utterance = new SpeechSynthesisUtterance();
-            const setIcon = (i) => {
-                const pp = icon.parentElement.querySelector('button.pp');
-                pp && (pp.innerHTML = i);
-            }
+
             utterance.addEventListener('end', () => {
                 playStat = 0;
                 setIcon('▶️');
@@ -126,6 +127,8 @@
         },
         hide: (icon) => {
             speechSynthesis.cancel();
+            setIcon('▶️');
+            playStat = 0;
         }
     })
 })();
