@@ -44,10 +44,14 @@
 
     let createHtml = html => html;
     if (window.trustedTypes && window.trustedTypes.createPolicy) {
-        window.trustedTypes.createPolicy('default', {
-            createHTML: (string, sink) => string
-        });
-        createHtml = html => window.trustedTypes.defaultPolicy.createHTML(html);
+        if (window.trustedTypes.defaultPolicy) {
+            createHtml = html => window.trustedTypes.defaultPolicy.createHTML(html);
+        } else {
+            window.trustedTypes.createPolicy('default', {
+                createHTML: (string, sink) => string
+            });
+            createHtml = html => window.trustedTypes.defaultPolicy.createHTML(html);
+        }
     }
 
     async function queryAnki(expression) {
@@ -282,6 +286,9 @@
         });
         sel.innerHTML = buildOption(options, '', 0, 1);
         const ele = (sels && sels.parentElement) ? sels : inputs;
+        if (!ele || !ele.parentElement) {
+            return
+        }
         ele.parentElement.replaceChild(sel, ele);
         sel.focus();
         const changeFn = async () => {
@@ -697,7 +704,7 @@
         <div class="sentence_setting">   
             <label for="sentence_field" class="form-label">字段</label>
             <input type="text" value="${sentenceFiled}" id="sentence_field" placeholder="句子字段" class="swal2-input sentence_field" name="sentence_field" >       
-            <label for="sentence_num">句子数量</label>
+            <label class="form-label" for="sentence_num">句子数量</label>
             <input type="number" min="0" id="sentence_num" value="${sentenceNum}" class="swal2-input sentence_field" placeholder="提取的句子数量">
             ${sentenceHtml}
         </div>

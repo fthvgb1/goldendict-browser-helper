@@ -62,3 +62,15 @@
     height: auto;
     width: inherit;
 }
+
+.sentence_setting .form-label {
+    display: inline;
+}
+
+#sentence_field {
+    width: 8rem;
+}
+
+#sentence_num {
+    width: 5rem;
+}

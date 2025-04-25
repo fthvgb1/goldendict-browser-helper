@@ -143,10 +143,12 @@
                 return
             }
 
-            param[sel] = item.querySelector(`.${sel}`).value.trim();
             if (specialFields.includes(sel)) {
+                param[sel] = item.querySelector(`.${sel}`).value;
                 param[sel] = decodeHtmlSpecial(param[sel]);
+                return;
             }
+            param[sel] = item.querySelector(`.${sel}`).value.trim();
         });
         return param
     }
@@ -316,7 +318,7 @@
     function parseSelector(expression, joinEle) {
         let ele = joinEle;
         for (const exp of expression.split('%')) {
-            const arr = exp.split(':').map(v => v.trim());
+            const arr = exp.split('@').map(v => v.trim());
             if (arr.length < 1 || !['s', 'ps', 'p', 'ns'].includes(arr[0])) {
                 continue
             }
@@ -420,7 +422,7 @@
         'fetch-format': '提取的格式，为空为原值，{$join}为组合选择器的值， {$value}为提取的值',
         'fetch-data-handle': '提到后的操作',
         'fetch-repeat': '是否去重',
-        'fetch-bold-field': '加粗的字段，如有多个值，用 :"分隔符"，如`正面:","`',
+        'fetch-bold-field': htmlSpecial('加粗的字段，如有多个值，用 :"分隔符"，如`正面:","%<b>{$bold}</b>`'),
         'fetch-num': '提取的数量,默认0为全部',
         'fetch-active': '是否启用这个提取项',
         'fetch-delete': '删除此项',
@@ -497,12 +499,13 @@
         fetchItems = fetchItems.length > 0 ? fetchItems : [{...de}];
         setting = div.querySelector('.select-setting');
         let currentItem;
-        setting.addEventListener('dragstart', (e) => {
+
+        const startDrag = (e) => {
             e.dataTransfer.effectAllowed = 'move';
             currentItem = e.target;
             currentItem.classList.add('moving');
-        });
-        setting.addEventListener('dragenter', (e) => {
+        };
+        const enterDrag = (e) => {
             e.preventDefault();
             if (e.target === currentItem || setting.children.length <= 1 || e.target === setting || ![...setting.children].includes(e.target)) {
                 return
@@ -515,14 +518,31 @@
             } else {
                 setting.insertBefore(currentItem, e.target);
             }
-        });
-        setting.addEventListener('dragend', (e) => {
+        };
+        const endDrag = (e) => {
             currentItem.classList.remove('moving');
             saveFetchItems();
-        });
-        setting.addEventListener('dragover', (e) => {
+        };
+        const overDrag = (e) => {
             e.preventDefault();
+        };
+        const turnDrag = (onoff) => {
+            setting.querySelectorAll('.fetch-item').forEach(item => item.draggable = onoff);
+        };
+        setting.addEventListener('mousedown', (ev) => {
+            if (ev.target.tagName === 'INPUT') {
+                turnDrag(false);
+            }
         });
+        setting.addEventListener('mouseup', (ev) => {
+            if (ev.target.tagName === 'INPUT') {
+                turnDrag(true);
+            }
+        });
+        setting.addEventListener('dragstart', startDrag);
+        setting.addEventListener('dragenter', enterDrag);
+        setting.addEventListener('dragend', endDrag);
+        setting.addEventListener('dragover', overDrag);
 
         fetchItems.forEach(item => setting.appendChild(buildFetchItem(item)));
 

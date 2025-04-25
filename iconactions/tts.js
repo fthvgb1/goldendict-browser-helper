@@ -1,25 +1,11 @@
-; (() => {
-    let speakText = '', vices = [], engVice, utterance, vice, viceMap = {}, playStat = 0;
+;(() => {
+    let vices = [], utterance, vice, viceMap = {}, playStat = 0, icon;
     let selectVice = GM_getValue('ttsVice', '自动选择');
     let rate = GM_getValue('ttsrate', 1);
     speechSynthesis.addEventListener("voiceschanged", () => {
         if (vices.length < 1) {
             vices = speechSynthesis.getVoices();
             utterance = new SpeechSynthesisUtterance();
-            vices.map(v => viceMap[v.voiceURI] = v);
-        }
-    });
-
-    const binded = {};
-
-    function play(text, icon, vice = null) {
-        utterance.voice = vice ? vice : viceMap[selectVice];
-        utterance.text = text;
-        utterance.rate = rate;
-        playStat = 1;
-
-        if (!binded[utterance.name]) {
-            binded[utterance.name] = true;
             const setIcon = (i) => {
                 const pp = icon.parentElement.querySelector('button.pp');
                 pp && (pp.innerHTML = i);
@@ -36,55 +22,49 @@
                 playStat = 1;
                 setIcon('⏸️');
             })
+            vices.map(v => viceMap[v.voiceURI] = v);
         }
+    });
 
+    function play(text, vice = null) {
+        utterance.voice = vice ? vice : viceMap[selectVice];
+        utterance.text = text;
+        utterance.rate = rate;
+        playStat = 1;
         speechSynthesis.speak(utterance);
     }
 
-    function speak(t, icon) {
+    function speak(speakText) {
         if (viceMap[selectVice]) {
-            play(t, icon);
+            play(speakText);
             return
         }
         const la = eld.detect(speakText).language;
         console.log(la);
-        let vic = false;
-        vices.forEach(value => {
-            if (vic) {
-                return
-            }
-            const lang = value.lang.toLowerCase()
+        for (const value of vices) {
+            const lang = value.lang.toLowerCase();
             if (lang.indexOf(la) > -1) {
                 vice = value
-                vic = true
+                break;
             }
-            if (!engVice && lang.indexOf('en') > -1) {
-                engVice = value
-            }
-        });
+        }
         if (!vice) {
             icon.title = '似乎无可用的tts,请先安装';
             return
         }
-        play(t, icon, vice);
+        play(speakText, vice);
     }
 
     PushIconAction({
         name: 'tts发音 右键设置语速和语言',
         id: 'icon-speech',
         image: GM_getResourceURL('icon-speak'),
-        trigger: function (text, _, ev) {
-            speakText = text;
+        trigger: function (speakText, _, ev) {
             if (vices.length < 1) {
-                setTimeout(() => {
-                    vices = speechSynthesis.getVoices();
-                    if (vices.length > 0) {
-                        speak(speakText, ev.target)
-                    }
-                }, 450);
-            } else {
-                speak(speakText, ev.target)
+                ev.target.title = 'tts还没有准备好，请稍等';
+                return
             }
+            speak(speakText);
         },
         call: (img) => {
             img.addEventListener('contextmenu', (e) => {
@@ -109,16 +89,16 @@
                     <select id="language">${options}</select>
                 </div>
                 `;
+                icon = content.querySelector('.pp');
                 content.querySelector('.stop').addEventListener('click', () => {
                     speechSynthesis.cancel();
                     playStat = 0;
-                    content.querySelector('.pp').innerHTML = '▶️';
-
-                })
-                content.querySelector('.pp').addEventListener('click', function (e) {
+                    icon.innerHTML = '▶️';
+                });
+                icon.addEventListener('click', function (e) {
                     switch (playStat) {
                         case 0:
-                            play(window.getSelection().toString().trim(), e.target);
+                            speak(window.getSelection().toString().trim());
                             this.innerHTML = '⏸️';
                             break;
                         case 1:
