@@ -3,6 +3,9 @@
     let selectVice = GM_getValue('ttsVice', '自动选择');
     let rate = GM_getValue('ttsrate', 1);
     const setIcon = (i) => {
+        if (!icon) {
+            return
+        }
         const pp = icon.parentElement.querySelector('button.pp');
         pp && (pp.innerHTML = i);
     }

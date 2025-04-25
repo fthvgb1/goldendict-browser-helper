@@ -173,10 +173,10 @@
                 return false
             }
             const tag = ele.parentElement.TagName;
-            if (TagName === "TR-CONTENT") {
+            if (tag === "TR-CONTENT") {
                 return true
             }
-            if (!TagName) {
+            if (!tag) {
                 return false
             }
             isInShadow(ele.parentElement);
