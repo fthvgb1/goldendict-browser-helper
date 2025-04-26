@@ -480,7 +480,7 @@
                         <dd class="fetch-dd">
                             <input name="fetch-exclude-selector" value="${data['fetch-exclude-selector']}" class="fetch-exclude-selector" title="${mapTitle['fetch-exclude-selector']}" placeholder="${mapTitle['fetch-exclude-selector']}">
                             <input name="fetch-join-selector" value="${data['fetch-join-selector']}" class="fetch-join-selector" title="${mapTitle['fetch-join-selector']}" placeholder="${mapTitle['fetch-join-selector']}">
-                            <input type="checkbox" name="fetch-join-reverse" class="fetch-join-reverse" title="${mapTitle['fetch-join-reverse']}" placeholder="${mapTitle['fetch-join-reverse']}">
+                            <input type="checkbox" ${data['fetch-join-reverse'] ? 'checked' : ''} name="fetch-join-reverse" class="fetch-join-reverse" title="${mapTitle['fetch-join-reverse']}" placeholder="${mapTitle['fetch-join-reverse']}">
                         </dd>
                         <dd class="fetch-dd">
                             <input name="fetch-format" value="${data['fetch-format']}" class="fetch-format" title="${mapTitle['fetch-format']}" placeholder="${mapTitle['fetch-format']}">
