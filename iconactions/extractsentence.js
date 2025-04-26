@@ -31,7 +31,7 @@
     });
 
     const fetchFields = ['fetch-name', 'fetch-field', 'fetch-to-field', 'fetch-selector', 'fetch-parent-selector',
-        'fetch-exclude-selector', 'fetch-join-selector', 'fetch-format', 'fetch-data-handle', 'fetch-repeat',
+        'fetch-exclude-selector', 'fetch-join-selector', 'fetch-join-reverse', 'fetch-format', 'fetch-data-handle', 'fetch-repeat',
         'fetch-bold-field', 'fetch-num', 'fetch-active'];
     const specialFields = ['fetch-selector', 'fetch-parent-selector', 'fetch-bold-field',
         'fetch-exclude-selector', 'fetch-join-selector', 'fetch-format'];
@@ -138,7 +138,7 @@
                 param[sel] = parseInt(item.querySelector(`.${sel}`).value);
                 return
             }
-            if (['fetch-repeat', 'fetch-active'].includes(sel)) {
+            if (['fetch-repeat', 'fetch-active', 'fetch-join-reverse'].includes(sel)) {
                 param[sel] = item.querySelector(`.${sel}`).checked;
                 return
             }
@@ -270,10 +270,10 @@
             }
             switch (t) {
                 case 'p':
-                    ele = el.parentElement;
+                    ele = ele.parentElement;
                     break;
                 case 'ns':
-                    ele = el.nextElementSibling;
+                    ele = ele.nextElementSibling;
                     break
                 case 'ps':
                     ele = ele.previousSibling;
@@ -299,10 +299,10 @@
             }
             switch (t) {
                 case 'p':
-                    ele = el.parentElement;
+                    ele = ele.parentElement;
                     break;
                 case 'ns':
-                    ele = el.nextElementSibling;
+                    ele = ele.nextElementSibling;
                     break
                 case 'ps':
                     ele = ele.previousSibling;
@@ -327,6 +327,13 @@
 
         return ele === joinEle ? null : ele;
 
+    }
+
+    function removeEle(ele, selector) {
+        if (!selector) {
+            return
+        }
+        ele.querySelectorAll(selector).forEach(el => el.remove());
     }
 
     function fetchData(item, from, target) {
@@ -358,21 +365,38 @@
         if (!param['fetch-parent-selector']) {
             for (const el of fetchLimit(from.querySelectorAll(param['fetch-selector']), param['fetch-num'])) {
                 const ele = el.cloneNode(true);
+                removeEle(ele, param['fetch-exclude-selector']);
                 setValue(target, ele, param['fetch-format'], param['fetch-data-handle'], !param['fetch-repeat'], null, boldFieldValue);
             }
             return;
         }
         [...from.querySelectorAll(param['fetch-parent-selector'])].forEach(parent => {
             if (param['fetch-join-selector']) {
-                const joinSel = param['fetch-join-selector'].split('%');
+                const joinSel = param['fetch-join-selector'].split('`');
+                if (param['fetch-join-reverse']) {
+                    for (let value of fetchLimit(parent.querySelectorAll(param['fetch-selector']), param['fetch-num'])) {
+                        let joinEle = parseSelector(joinSel[0], value);
+                        if (joinEle) {
+                            joinEle = joinEle.cloneNode(true);
+                            if (joinSel.length > 1) {
+                                removeEle(joinEle, joinSel[1]);
+                            }
+                        }
+                        const ele = value.cloneNode(true);
+                        removeEle(ele, param['fetch-exclude-selector']);
+                        setValue(target, ele, param['fetch-format'], param['fetch-data-handle'], !param['fetch-repeat'], joinEle, boldFieldValue);
+                    }
+                    return;
+                }
                 for (let joinEle of fetchLimit(parent.querySelectorAll(joinSel[0]), param['fetch-num'])) {
                     let ele = parseSelector(param['fetch-selector'], joinEle);
                     if (ele) {
                         ele = ele.cloneNode(true);
+                        removeEle(ele, param['fetch-exclude-selector'])
                     }
                     joinEle = joinEle.cloneNode(true);
                     if (joinSel.length > 1) {
-                        [...joinEle.querySelectorAll(joinSel[1])].forEach(el => el.remove());
+                        removeEle(joinEle, joinSel[1]);
                     }
                     setValue(target, ele, param['fetch-format'], param['fetch-data-handle'], !param['fetch-repeat'], joinEle, boldFieldValue);
                 }
@@ -381,9 +405,7 @@
 
             for (const el of fetchLimit(parent.querySelectorAll(param['fetch-selector']), param['fetch-num'])) {
                 const ele = el.cloneNode(true);
-                if (param['fetch-exclude-selector']) {
-                    [...ele.querySelectorAll(param['fetch-exclude-selector'])].forEach(ex => ex.remove())
-                }
+                removeEle(ele, param['fetch-exclude-selector']);
                 setValue(target, ele, param['fetch-format'], param['fetch-data-handle'], !param['fetch-repeat'], null, boldFieldValue);
             }
         })
@@ -419,6 +441,7 @@
         'fetch-parent-selector': '父选择器',
         'fetch-exclude-selector': '提取值需要排除的选择器',
         'fetch-join-selector': '组合选择器',
+        'fetch-join-reverse': '反转组合选择器',
         'fetch-format': '提取的格式，为空为原值，{$join}为组合选择器的值， {$value}为提取的值',
         'fetch-data-handle': '提到后的操作',
         'fetch-repeat': '是否去重',
@@ -457,6 +480,7 @@
                         <dd class="fetch-dd">
                             <input name="fetch-exclude-selector" value="${data['fetch-exclude-selector']}" class="fetch-exclude-selector" title="${mapTitle['fetch-exclude-selector']}" placeholder="${mapTitle['fetch-exclude-selector']}">
                             <input name="fetch-join-selector" value="${data['fetch-join-selector']}" class="fetch-join-selector" title="${mapTitle['fetch-join-selector']}" placeholder="${mapTitle['fetch-join-selector']}">
+                            <input type="checkbox" name="fetch-join-reverse" class="fetch-join-reverse" title="${mapTitle['fetch-join-reverse']}" placeholder="${mapTitle['fetch-join-reverse']}">
                         </dd>
                         <dd class="fetch-dd">
                             <input name="fetch-format" value="${data['fetch-format']}" class="fetch-format" title="${mapTitle['fetch-format']}" placeholder="${mapTitle['fetch-format']}">
