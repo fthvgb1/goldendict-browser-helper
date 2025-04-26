@@ -260,6 +260,9 @@
     }
 
     function findELeBySelector(t, sel, el) {
+        if (!el) {
+            return null;
+        }
         if (t === 's') {
             return el.querySelector(sel);
         }
@@ -289,6 +292,9 @@
     }
 
     function findEleByNum(t, num, el) {
+        if (!el) {
+            return null;
+        }
         if (num < 1) {
             return null
         }
@@ -362,6 +368,7 @@
                 }
             }
         }
+        from = from.parentElement;
         if (!param['fetch-parent-selector']) {
             for (const el of fetchLimit(from.querySelectorAll(param['fetch-selector']), param['fetch-num'])) {
                 const ele = el.cloneNode(true);
