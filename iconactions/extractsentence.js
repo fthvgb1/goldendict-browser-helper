@@ -124,7 +124,7 @@
         saveFetchItems();
     }
 
-    let setting;
+    let setting, boldAll = false;
 
     function saveFetchItems() {
         const data = [...setting.children].map(item => convertFetchParam(item));
@@ -199,10 +199,25 @@
                 }
 
                 words = words.sort((a, b) => a.length <= b.length ? 1 : -1);
+                const formats = format ? format.split('{$bold}').join('\$&') : '<b>\$&</b>';
                 for (const word of words) {
-                    if (sentence.includes(word)) {
-                        sentence = sentence.replaceAll(word, format ? format.replaceAll('{$bold}', word) : `<b>${word}</b>`);
-                        break;
+                    let flag = false;
+                    let offset = 0;
+                    for (let index of sentence.searchAll(word)) {
+                        index += offset;
+                        const start = sentence.slice(0, index);
+                        let middle = sentence.slice(index, index + word.length);
+                        const end = sentence.slice(index + word.length);
+                        const l = middle.length
+                        middle = format ? format.replaceAll('{$bold}', middle) : `<b>${middle}</b>`;
+                        const ll = middle.length;
+                        sentence = start + middle + end;
+                        offset += ll - l;
+                        flag = true;
+                    }
+
+                    if (flag) {
+                        break
                     }
                 }
 
@@ -438,6 +453,11 @@
             }
             fetchData(item, fromEle, e.target.parentElement.parentElement.querySelector('.spell-content,.field-value'))
         }
+    }, '', (ev) => {
+        ev.preventDefault();
+        boldAll = true
+        ev.target.click();
+        boldAll = false;
     });
 
     const mapTitle = {
