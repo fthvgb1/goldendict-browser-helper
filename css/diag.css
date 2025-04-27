@@ -71,6 +71,15 @@
     width: 8rem;
 }
 
+
 #sentence_num {
     width: 5rem;
+}
+
+.sentence-format {
+    display: none;
+}
+
+.sentence-format-input {
+    width: 15rem;
 }

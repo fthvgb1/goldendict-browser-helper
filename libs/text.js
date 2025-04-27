@@ -20,11 +20,11 @@
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
     }
 
-// strangely,it's will change unsafeWindow's String replaceAll if not rename
-    String.prototype.replaceAllX = function (search, replacement) {
+// peculiarly, it's will change unsafeWindow's String replaceAll if not rename
+    String.prototype.replaceAllX = function (search, replacement, flag = 'g') {
         let target = this;
         search = escapeRegExp(search);
-        return target.replace(new RegExp(search, 'g'), replacement);
+        return target.replace(new RegExp(search, flag), replacement);
     };
 
     String.prototype.searchAll = function (search) {
@@ -33,7 +33,7 @@
         let regex = new RegExp(search, 'gi');
         let result = 0;
         let indices = [];
-        while ((result = regex.exec(target)) && result != '') {
+        while ((result = regex.exec(target)) && result) {
             indices.push(result.index);
         }
         return indices;
@@ -62,8 +62,14 @@
         return (isChinese(word) && isEmpty(word) || isShortandNum(word));
     }
 
-    function cutSentence(word, offset, sentence, sentenceNum) {
-
+    function cutSentence(word, offset, sentence, sentenceNum, wordFormat, sentenceFormat) {
+        if (!wordFormat) {
+            wordFormat = '<b>{$bold}</b>';
+        }
+        if (!sentenceFormat) {
+            sentenceFormat = '{$sentence}';
+        }
+        wordFormat = wordFormat.split('{$bold}').join('\$&');
         if (sentenceNum > 0) {
             let arr = sentence.match(/((?![.!?;:。！？]['"’”]?\s).|\n)*[.!?;:。！？]['"’”]?(\s|.*$)/g);
             if (arr && arr.length > 1) {
@@ -107,15 +113,16 @@
                 }
             }
 
-            return arr.slice(start, end + 1).join('').replaceAllX(word, word.replace(/\S+/g, '<b>\$&</b>'));
+            sentence = arr.slice(start, end + 1).join('').replaceAllX(word, word.replace(/\S+/g, wordFormat), 'gi');
         } else {
-            return sentence.replace(word, word.replace(/[^\s]+/g, '<b>\$&</b>'));
+            sentence = sentence.replace(word, word.replace(/\S+/g, wordFormat));
         }
+        return sentenceFormat.replaceAll('{$sentence}', sentence);
     }
 
     function getSelectionOffset(node) {
-        var range = window.getSelection().getRangeAt(0);
-        var clone = range.cloneRange();
+        const range = window.getSelection().getRangeAt(0);
+        const clone = range.cloneRange();
         clone.selectNodeContents(node);
         clone.setEnd(range.startContainer, range.startOffset);
         let start = clone.toString().length;
@@ -203,12 +210,12 @@
         return {sentence, offset, word}
     }
 
-    function getSentence(sentenceNum) {
+    function getSentence(sentenceNum, wordFormat, sentenceFormat) {
         const {word, offset, sentence} = calSentence()
         if (word === '') {
             return '';
         }
-        return cutSentence(word, offset, sentence, sentenceNum);
+        return cutSentence(word, offset, sentence, sentenceNum, wordFormat, sentenceFormat);
     }
 
     function getWebNode(node, deep) {

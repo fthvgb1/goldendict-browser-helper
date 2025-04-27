@@ -225,9 +225,9 @@
         'text-clean': (ev) => {
             ev.target.parentElement.previousElementSibling.querySelector('.spell-content').innerHTML = '';
         },
-        'paste-html': (ev, tapKeyboard) => {
+        'paste-html': async (ev) => {
             ev.target.parentElement.previousElementSibling.querySelector('.spell-content').focus();
-            tapKeyboard && tapKeyboard('ctrl v')
+            await tapKeyboard('ctrl v');
         },
         'action-switch-text': (ev) => {
             const el = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
@@ -252,6 +252,10 @@
                 'text/plain': new Blob([html], {type: 'text/plain'}),
             })
             await navigator.clipboard.write([item]).catch(console.log)
+        },
+        "sentence-format-setting": () => {
+            const checked = document.querySelector('.sentence-format-setting').checked;
+            document.querySelector('.sentence-format').style.display = checked ? 'block' : 'none';
         },
     };
 
@@ -401,10 +405,12 @@
         }
 
         if (clickFn) {
-            clickFns[className] = clickFn;
+            const fn = clickFns[className];
+            clickFns[className] = fn ? (ev) => clickFn(ev, fn) : clickFn;
         }
         if (contextMenuFn) {
-            contextMenuFns[className] = contextMenuFn;
+            const fn = contextMenuFns[className];
+            contextMenuFns[className] = fn ? (ev) => contextMenuFn(ev, fn) : contextMenuFn;
         }
     }
 
@@ -545,7 +551,21 @@
         htmlFn && htmls.push(htmlFn)
     }
 
-    async function addAnki(value = '', tapKeyboard = null) {
+    function sentenceFormatFn() {
+        let wordFormat = decodeHtmlSpecial(document.querySelector('.sentence_bold').value);
+        if (!wordFormat) {
+            wordFormat = '<b>{$bold}</b>';
+        }
+        let sentenceFormat = decodeHtmlSpecial(document.querySelector('.sentence_format').value);
+        if (!sentenceFormat) {
+            sentenceFormat = '<div>{$sentence}</div>'
+        }
+        return {
+            wordFormat, sentenceFormat
+        }
+    }
+
+    async function addAnki(value = '') {
         let deckNames, models;
         existsNoteId = 0;
         if (typeof value === 'string') {
@@ -590,9 +610,10 @@
                 return;
             }
             if (ev.target.id === 'sentence_num') {
-                const {sentence, offset, word} = sentenceBackup;
+                const {wordFormat, sentenceFormat} = sentenceFormatFn();
+                const {sentence, offset, word,} = sentenceBackup;
                 const num = parseInt(ev.target.value);
-                document.querySelector('.sample-sentence .spell-content').innerHTML = cutSentence(word, offset, sentence, num);
+                document.querySelector('.sample-sentence .spell-content').innerHTML = cutSentence(word, offset, sentence, num, wordFormat, sentenceFormat);
                 sentenceNum = num
                 return;
             }
@@ -640,13 +661,15 @@
                 }
                 return
             }
-            clickFns.hasOwnProperty(className) && clickFns[className] && clickFns[className](ev, tapKeyboard);
+            clickFns.hasOwnProperty(className) && clickFns[className] && clickFns[className](ev);
         }
         document.addEventListener('click', clickFn);
         const contextMenuFn = (ev) => {
             contextMenuFns.hasOwnProperty(ev.target.className) && contextMenuFns[ev.target.className](ev);
         };
         document.addEventListener('contextmenu', contextMenuFn);
+        const sentenceBold = GM_getValue('sentence_bold', '');
+        const sentenceFormat = GM_getValue('sentence_format', '')
         let ol = '';
         if (modelFields.length > 0) {
             ol = modelFields.map(v => {
@@ -706,6 +729,11 @@
             <input type="text" value="${sentenceFiled}" id="sentence_field" placeholder="句子字段" class="swal2-input sentence_field" name="sentence_field" >       
             <label class="form-label" for="sentence_num">句子数量</label>
             <input type="number" min="0" id="sentence_num" value="${sentenceNum}" class="swal2-input sentence_field" placeholder="提取的句子数量">
+            <input type="checkbox" class="sentence-format-setting" title="设置句子加粗和整句格式">
+            <dd class="sentence-format">
+                <input type="text" name="sentence_bold" value="${htmlSpecial(sentenceBold)}" class="sentence_bold sentence-format-input" title="加粗格式,默认: <b>{$bold}</b}" placeholder="加粗格式,默认: <b>{$bold}</b}">
+                <input type="text" value="${htmlSpecial(sentenceFormat)}" name="sentence_format" class="sentence_format sentence-format-input" title="整句格式,默认: <div>{$sentence}</div>" placeholder="整句格式,默认: <div>{$sentence}</div>">
+            </dd>
             ${sentenceHtml}
         </div>
     </div>
@@ -730,7 +758,8 @@
                 const se = document.querySelector('.sentence_setting .wait-replace');
                 if (se) {
                     const editor = spell();
-                    editor.querySelector('.spell-content').innerHTML = getSentence(sentenceNum);
+                    const {wordFormat, sentenceFormat} = sentenceFormatFn();
+                    editor.querySelector('.spell-content').innerHTML = getSentence(sentenceNum, wordFormat, sentenceFormat);
                     se.parentElement.replaceChild(editor, se);
                     enableImageResizeInDiv(editor.querySelector('.spell-content'))
                 }
@@ -836,11 +865,13 @@
                         GM_setValue(k, form[k])
                     }
                 });
-
+                const {wordFormat, sentenceFormat} = sentenceFormatFn();
                 [
                     [enableSentence, 'enableSentence'],
                     //[sentenceNum, 'sentenceNum'],
-                    [document.querySelector('#sentence_field').value, 'sentenceField']
+                    [document.querySelector('#sentence_field').value, 'sentenceField'],
+                    [wordFormat, 'sentence_bold'],
+                    [sentenceFormat, 'sentence_format'],
                 ].forEach(v => {
                     if (v[0] !== GM_getValue(v[1])) {
                         GM_setValue(v[1], v[0])
