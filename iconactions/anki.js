@@ -2,7 +2,7 @@
     addAnki,
     anki,
     queryAnki,
-    PushAnkiBeforeSaveHook,
+    PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook,
     PushExpandAnkiRichButton,
     PushExpandAnkiInputButton,
     PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender
@@ -27,10 +27,14 @@
         .replace('chrome-extension://__MSG_@@extension_id__/fg/font/spell-icons.woff', spellIconsWoff);
     const frameCss = GM_getResourceText("frame-css");
     const diagStyle = GM_getResourceText('diag-style');
-    const hookFns = [];
+    const beforeSaveHookFns = [], afterSaveHookFns = [];
 
     function PushAnkiBeforeSaveHook(...call) {
-        hookFns.push(...call);
+        beforeSaveHookFns.push(...call);
+    }
+
+    function PushAnkiAfterSaveHook(...call) {
+        afterSaveHookFns.push(...call);
     }
 
     PushIconAction && PushIconAction({
@@ -838,18 +842,19 @@
                 try {
                     if (existsNoteId > 0 && document.querySelector('#force-update').checked) {
                         params.note.id = existsNoteId;
-                        hookFns.forEach(fn => {
+                        beforeSaveHookFns.forEach(fn => {
                             const note = fn(true, params.note);
                             params.note = note ? note : params.note;
                         });
                         res = await anki('updateNote', params)
                     } else {
-                        res = await anki('addNote', params);
-                        hookFns.forEach(fn => {
+                        beforeSaveHookFns.forEach(fn => {
                             const note = fn(false, params.note);
                             params.note = note ? note : params.note;
                         });
+                        res = await anki('addNote', params);
                     }
+                    afterSaveHookFns.forEach(fn => fn(res));
                 } catch (e) {
                     Swal.showValidationMessage('发生出错：' + e);
                     return
@@ -891,7 +896,7 @@
     return {
         addAnki,
         anki, queryAnki,
-        PushAnkiBeforeSaveHook, PushExpandAnkiRichButton, PushExpandAnkiInputButton,
+        PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook, PushExpandAnkiRichButton, PushExpandAnkiInputButton,
         PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender
     };
 
