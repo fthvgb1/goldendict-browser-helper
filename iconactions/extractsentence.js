@@ -201,22 +201,9 @@
                 words = words.sort((a, b) => a.length <= b.length ? 1 : -1);
                 const formats = format ? format.split('{$bold}').join('\$&') : '<b>\$&</b>';
                 for (const word of words) {
-                    let flag = false;
-                    let offset = 0;
-                    for (let index of sentence.searchAll(word)) {
-                        index += offset;
-                        const start = sentence.slice(0, index);
-                        let middle = sentence.slice(index, index + word.length);
-                        const end = sentence.slice(index + word.length);
-                        const l = middle.length
-                        middle = format ? format.replaceAll('{$bold}', middle) : `<b>${middle}</b>`;
-                        const ll = middle.length;
-                        sentence = start + middle + end;
-                        offset += ll - l;
-                        flag = true;
-                    }
-
-                    if (flag) {
+                    const l = sentence.length;
+                    sentence = sentence.replaceAllX(word, formats, 'gi');
+                    if (l !== sentence.length && !boldAll) {
                         break
                     }
                 }
