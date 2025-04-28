@@ -21,8 +21,6 @@
 // @require      https://raw.githubusercontent.com/nitotm/efficient-language-detector-js/main/minified/eld.M60.min.js
 // @require      https://cdn.jsdelivr.net/npm/sweetalert2@11
 // @require      https://cdnjs.cloudflare.com/ajax/libs/js-sha1/0.6.0/sha1.min.js
-// @require      https://code.jquery.com/jquery-3.7.1.min.js
-// @require      https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js
 
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/libs/frame.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/libs/lemmatizer.js
@@ -44,7 +42,6 @@
 // @resource icon-goldenDict https://github.com/fthvgb1/goldendict-browser-helper/blob/master/icon/goldenDict.png?raw=true
 // @resource icon-speak https://github.com/fthvgb1/goldendict-browser-helper/blob/master/icon/speak.png?raw=true
 
-// @resource select2-css https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css
 // @resource spell-css https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/css/spell.css
 // @resource frame-css https://github.com/ninja33/ODH/raw/refs/heads/master/src/fg/css/frame.css
 // @resource style https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/css/style.css?raw=true

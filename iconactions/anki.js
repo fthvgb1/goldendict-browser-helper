@@ -25,7 +25,6 @@
     const spellCss = GM_getResourceText("spell-css")
         .replace('chrome-extension://__MSG_@@extension_id__/fg/font/spell-icons.ttf', spellIconsTtf)
         .replace('chrome-extension://__MSG_@@extension_id__/fg/font/spell-icons.woff', spellIconsWoff);
-    const select2Css = GM_getResourceText("select2-css");
     const frameCss = GM_getResourceText("frame-css");
     const diagStyle = GM_getResourceText('diag-style');
     const beforeSaveHookFns = [], afterSaveHookFns = [];
@@ -323,7 +322,7 @@
 
     async function showAnkiCard(result) {
         setExistsNoteId(result.noteId);
-        $('#tags').val(result.tags).trigger('change');
+        document.querySelector('#tags').value = result.tags.length >= 1 ? result.tags.join(',') : '';
         const res = await anki('cardsInfo', {cards: [result.cards[0]]});
         if (res.error) {
             console.log(res.error);
@@ -694,7 +693,7 @@
         }
         const hookStyles = styles.length > 0 ? `<style>${styles.filter(v => v !== '').join('\n')}</style>` : '';
 
-        const style = `<style>${select2Css} ${frameCss} ${spellCss} ${diagStyle} </style> ${hookStyles}`;
+        const style = `<style>${frameCss} ${spellCss} ${diagStyle}</style> ${hookStyles}`;
         const ankiHtml = `${style} 
     <div class="form-item">
         <label for="ankiHost" class="form-label">ankiConnect监听地址</label>
@@ -714,12 +713,7 @@
     
     <div class="form-item">
         <label for="tags" class="form-label">标签</label>
-        <select class="swal2-select js-example-basic-multiple js-states form-control" id="tags">
-          
-          </select>
-          
-
-        <!--<input id="tags" placeholder="多个用,分隔" class="swal2-input">-->
+        <input id="tags" placeholder="多个用,分隔" class="swal2-input">
     </div>
     
     <div class="form-item">
@@ -767,18 +761,7 @@
             htmls.map(fn => fn(ankiContainer));
         }
         await Swal.fire({
-            didRender: async () => {
-                let {result: tags} = await anki('getTags');
-                tags = tags.map(v => {
-                    return {id: v, text: v}
-                });
-                $('#tags').select2({
-                    tags: true,
-                    placeholder: '选择或输入标签',
-                    data: tags,
-                    tokenSeparators: [',', ' '],
-                    multiple: true,
-                });
+            didRender: () => {
                 const eles = document.querySelectorAll('.wait-replace');
                 if (eles.length > 0) {
                     richTexts.forEach((fn, index) => fn(eles[index]))
@@ -844,7 +827,11 @@
                     Swal.showValidationMessage('还有参数为空!请检查！');
                     return
                 }
-                let tags = $('#tags').val();
+                const tag = document.querySelector('#tags').value.trim();
+                let tags = [];
+                if (tag) {
+                    tags = tag.replaceAll('，', ',').split(',');
+                }
 
                 if (enableSentence) {
                     const el = document.querySelector('.sentence_setting .spell-content');
