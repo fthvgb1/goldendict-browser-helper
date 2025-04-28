@@ -83,3 +83,15 @@
 .sentence-format-input {
     width: 15rem;
 }
+
+.select2-container {
+    margin-left: 1rem;
+}
+
+.select2-dropdown {
+    z-index: 10510;
+}
+
+.select2-search__field {
+    height: 2rem !important;
+}

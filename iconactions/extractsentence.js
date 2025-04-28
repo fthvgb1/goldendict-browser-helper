@@ -348,14 +348,14 @@
         const param = convertFetchParam(item);
         let boldFieldValue = '';
         if (param['fetch-bold-field']) {
-            const fields = param['fetch-bold-field'].split(':');
+            const fields = param['fetch-bold-field'].split('@');
             for (const input of document.querySelectorAll('input.field-name')) {
                 if (input => input.value === fields[0]) {
                     const ip = input.nextElementSibling;
                     if (ip && ip.matches('input.field-value')) {
                         boldFieldValue = ip.value;
                         if (fields.length > 1) {
-                            const f = fields[1].split('%');
+                            const f = fields[1].split('&');
                             if (f.length < 1) {
                                 break;
                             }
@@ -363,7 +363,7 @@
                                 boldFieldValue = [boldFieldValue, f[0]];
                                 break;
                             }
-                            boldFieldValue = [boldFieldValue.split(f[0].replaceAll('"', '')).join(' '), f[1]];
+                            boldFieldValue = [boldFieldValue.split(f[0].replaceAll('`', '')).join(' '), f[1]];
                         }
                         break
                     }
@@ -459,7 +459,7 @@
         'fetch-format': '提取的格式，为空为原值，{$join}为组合选择器的值， {$value}为提取的值',
         'fetch-data-handle': '提到后的操作',
         'fetch-repeat': '是否去重',
-        'fetch-bold-field': htmlSpecial('加粗的字段，如有多个值，用 :"分隔符"，如`正面:","%<b>{$bold}</b>`'),
+        'fetch-bold-field': htmlSpecial('加粗的字段，如有多个值，可以指定分隔符如 正面@`,`&<b>{$bold}</b> &后为格式'),
         'fetch-num': '提取的数量,默认0为全部',
         'fetch-active': '是否启用这个提取项',
         'fetch-delete': '删除此项',

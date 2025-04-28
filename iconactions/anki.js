@@ -5,7 +5,7 @@
     PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook,
     PushExpandAnkiRichButton,
     PushExpandAnkiInputButton,
-    PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender
+    PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn
 } = (() => {
     let ankiHost = GM_getValue('ankiHost', 'http://127.0.0.1:8765');
     let richTexts = [];
@@ -25,6 +25,7 @@
     const spellCss = GM_getResourceText("spell-css")
         .replace('chrome-extension://__MSG_@@extension_id__/fg/font/spell-icons.ttf', spellIconsTtf)
         .replace('chrome-extension://__MSG_@@extension_id__/fg/font/spell-icons.woff', spellIconsWoff);
+    const select2Css = GM_getResourceText("select2-css");
     const frameCss = GM_getResourceText("frame-css");
     const diagStyle = GM_getResourceText('diag-style');
     const beforeSaveHookFns = [], afterSaveHookFns = [];
@@ -160,7 +161,7 @@
         'word-wrap-first': (ev) => {
             const ed = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
             const b = ed.ownerDocument.createElement('br');
-            ed.children.length > 0 ? ed.insertBefore(b, ed.children[0]) : ed.innerHTML = `<br>${ed.innerHTML}`;
+            ed.children.length > 0 ? ed.insertBefore(b, ed.children[0]) : ed.innerHTML = `<div><br></div>${ed.innerHTML}`;
             ed.focus();
         },
         'word-wrap-last': (ev) => {
@@ -314,9 +315,15 @@
         await showAnkiCard(result[0]);
     }
 
+    const showFns = [];
+
+    function PushShowFn(...fns) {
+        showFns.push(...fns);
+    }
+
     async function showAnkiCard(result) {
         setExistsNoteId(result.noteId);
-        document.querySelector('#tags').value = result.tags.length >= 1 ? result.tags.join(',') : '';
+        $('#tags').val(result.tags).trigger('change');
         const res = await anki('cardsInfo', {cards: [result.cards[0]]});
         if (res.error) {
             console.log(res.error);
@@ -368,6 +375,7 @@
             }
             fields[k].parentElement.querySelector('.spell-content').innerHTML = div.innerHTML;
         }
+        showFns.forEach(fn => fn(result, res));
     }
 
     function buildInput(rawStr = false, field = '', value = '', checked = false) {
@@ -686,7 +694,7 @@
         }
         const hookStyles = styles.length > 0 ? `<style>${styles.filter(v => v !== '').join('\n')}</style>` : '';
 
-        const style = `<style>${frameCss} ${spellCss} ${diagStyle}</style> ${hookStyles}`;
+        const style = `<style>${select2Css} ${frameCss} ${spellCss} ${diagStyle} </style> ${hookStyles}`;
         const ankiHtml = `${style} 
     <div class="form-item">
         <label for="ankiHost" class="form-label">ankiConnect监听地址</label>
@@ -706,7 +714,12 @@
     
     <div class="form-item">
         <label for="tags" class="form-label">标签</label>
-        <input id="tags" placeholder="多个用,分隔" class="swal2-input">
+        <select class="swal2-select js-example-basic-multiple js-states form-control" id="tags">
+          
+          </select>
+          
+
+        <!--<input id="tags" placeholder="多个用,分隔" class="swal2-input">-->
     </div>
     
     <div class="form-item">
@@ -754,7 +767,18 @@
             htmls.map(fn => fn(ankiContainer));
         }
         await Swal.fire({
-            didRender: () => {
+            didRender: async () => {
+                let {result: tags} = await anki('getTags');
+                tags = tags.map(v => {
+                    return {id: v, text: v}
+                });
+                $('#tags').select2({
+                    tags: true,
+                    placeholder: '选择或输入标签',
+                    data: tags,
+                    tokenSeparators: [',', ' '],
+                    multiple: true,
+                });
                 const eles = document.querySelectorAll('.wait-replace');
                 if (eles.length > 0) {
                     richTexts.forEach((fn, index) => fn(eles[index]))
@@ -820,11 +844,7 @@
                     Swal.showValidationMessage('还有参数为空!请检查！');
                     return
                 }
-                const tag = document.querySelector('#tags').value.trim();
-                let tags = [];
-                if (tag) {
-                    tags = tag.replaceAll('，', ',').split(',');
-                }
+                let tags = $('#tags').val();
 
                 if (enableSentence) {
                     const el = document.querySelector('.sentence_setting .spell-content');
@@ -854,7 +874,7 @@
                         });
                         res = await anki('addNote', params);
                     }
-                    afterSaveHookFns.forEach(fn => fn(res));
+                    afterSaveHookFns.forEach(fn => fn(res, params));
                 } catch (e) {
                     Swal.showValidationMessage('发生出错：' + e);
                     return
@@ -897,7 +917,7 @@
         addAnki,
         anki, queryAnki,
         PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook, PushExpandAnkiRichButton, PushExpandAnkiInputButton,
-        PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender
+        PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn
     };
 
 })();
