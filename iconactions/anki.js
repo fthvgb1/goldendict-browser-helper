@@ -768,17 +768,6 @@
         }
         await Swal.fire({
             didRender: async () => {
-                let {result: tags} = await anki('getTags');
-                tags = tags.map(v => {
-                    return {id: v, text: v}
-                });
-                $('#tags').select2({
-                    tags: true,
-                    placeholder: '选择或输入标签',
-                    data: tags,
-                    tokenSeparators: [',', ' '],
-                    multiple: true,
-                });
                 const eles = document.querySelectorAll('.wait-replace');
                 if (eles.length > 0) {
                     richTexts.forEach((fn, index) => fn(eles[index]))
@@ -795,6 +784,17 @@
                     document.querySelector('.sample-sentence').style.display = 'none';
                 }
                 sentenceBackup = calSentence();
+                let {result: tags} = await anki('getTags');
+                tags = tags.map(v => {
+                    return {id: v, text: v}
+                });
+                $('#tags').select2({
+                    tags: true,
+                    placeholder: '选择或输入标签',
+                    data: tags,
+                    tokenSeparators: [',', ' '],
+                    multiple: true,
+                });
                 didRenderFns.length > 0 && didRenderFns.forEach(fn => fn());
             },
             title: "anki制卡",
