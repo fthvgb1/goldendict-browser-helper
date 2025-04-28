@@ -216,7 +216,7 @@
                     isAppend ? [...di.children].forEach(v => div.appendChild(v)) : (div.innerHTML = di.innerHTML);
                     return;
                 }
-                div.innerHTML = isAppend ? (div.innerHTML + di.innerHTML) : di.innerHTML;
+                div.innerHTML = isAppend ? div.insertAdjacentHTML('afterend', di.innerHTML) : di.innerHTML;
             }
             if (format) {
                 let join = '';

@@ -46,18 +46,6 @@
         }
     });
 
-    let createHtml = html => html;
-    if (window.trustedTypes && window.trustedTypes.createPolicy) {
-        if (window.trustedTypes.defaultPolicy) {
-            createHtml = html => window.trustedTypes.defaultPolicy.createHTML(html);
-        } else {
-            window.trustedTypes.createPolicy('default', {
-                createHTML: (string, sink) => string
-            });
-            createHtml = html => window.trustedTypes.defaultPolicy.createHTML(html);
-        }
-    }
-
     async function queryAnki(expression) {
         let {result, error} = await anki('findNotes', {
             query: expression
