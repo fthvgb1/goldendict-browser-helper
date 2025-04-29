@@ -459,7 +459,7 @@
         'fetch-format': '提取的格式，为空为原值，{$join}为组合选择器的值， {$value}为提取的值',
         'fetch-data-handle': '提到后的操作',
         'fetch-repeat': '是否去重',
-        'fetch-bold-field': htmlSpecial('加粗的字段，如有多个值，可以指定分隔符如 正面@`,`&<b>{$bold}</b> &后为格式'),
+        'fetch-bold-field': htmlSpecial('加粗的字段，如有多个值，可以指定分隔符如 正面@@`,`%%<b>{$bold}</b> %%后为格式'),
         'fetch-num': '提取的数量,默认0为全部',
         'fetch-active': '是否启用这个提取项',
         'fetch-delete': '删除此项',
