@@ -16,7 +16,6 @@
     htmlSpecial,
     decodeHtmlSpecial,
     base64ToUint8Array,
-    createHtml, createScriptURL, createScript
 } = (() => {
     const contextMenuActions = [];
     const iconActions = [];
@@ -466,22 +465,6 @@
         return outputArray;
     }
 
-    let createHtml = html => html;
-    let createScriptURL = url => url;
-    let createScript = script => script;
-    if (window.trustedTypes && window.trustedTypes.createPolicy) {
-        if (window.trustedTypes.defaultPolicy) {
-            createHtml = html => window.trustedTypes.defaultPolicy.createHTML(html);
-        } else {
-            window.trustedTypes.createPolicy('default', {
-                createHTML: (string, sink) => string,
-                createScriptURL: s => s,
-                createScript: s => s,
-            });
-            createHtml = html => window.trustedTypes.defaultPolicy.createHTML(html);
-        }
-    }
-
     return {
         PushContextMenu,
         PushIconAction,
@@ -498,7 +481,6 @@
         htmlSpecial,
         decodeHtmlSpecial,
         base64ToUint8Array,
-        createHtml, createScriptURL, createScript
     }
 })();
 

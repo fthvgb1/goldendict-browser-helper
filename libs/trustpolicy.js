@@ -19,4 +19,4 @@
     return {
         createHtml, createScriptURL, createScript
     }
-});
+})();
