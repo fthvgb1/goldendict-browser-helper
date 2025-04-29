@@ -71,6 +71,9 @@
     width: 8rem;
 }
 
+.swal2-select {
+    height: 3rem;
+}
 
 #sentence_num {
     width: 5rem;
@@ -81,5 +84,17 @@
 }
 
 .sentence-format-input {
-    width: 15rem;
+    width: 18rem;
+}
+
+.select2-container {
+    margin-left: 1rem;
+}
+
+.select2-dropdown {
+    z-index: 10510;
+}
+
+.select2-search__field {
+    height: 2rem !important;
 }

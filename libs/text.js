@@ -63,6 +63,9 @@
     }
 
     function cutSentence(word, offset, sentence, sentenceNum, wordFormat, sentenceFormat) {
+        if (!word) {
+            return '';
+        }
         if (!wordFormat) {
             wordFormat = '<b>{$bold}</b>';
         }
