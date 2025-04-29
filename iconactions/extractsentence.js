@@ -348,14 +348,14 @@
         const param = convertFetchParam(item);
         let boldFieldValue = '';
         if (param['fetch-bold-field']) {
-            const fields = param['fetch-bold-field'].split('@');
+            const fields = param['fetch-bold-field'].split('@@');
             for (const input of document.querySelectorAll('input.field-name')) {
                 if (input => input.value === fields[0]) {
                     const ip = input.nextElementSibling;
                     if (ip && ip.matches('input.field-value')) {
                         boldFieldValue = ip.value;
                         if (fields.length > 1) {
-                            const f = fields[1].split('&');
+                            const f = fields[1].split('%%');
                             if (f.length < 1) {
                                 break;
                             }
