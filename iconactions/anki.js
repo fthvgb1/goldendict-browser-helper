@@ -553,6 +553,9 @@
     }
 
     function PushHookAnkiChange(selector, fn) {
+        if (!selector || !fn) {
+            return;
+        }
         const fnn = changeFns[selector];
         changeFns[selector] = fnn ? (ev) => {
             fn(ev, fnn)
