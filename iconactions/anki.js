@@ -5,7 +5,7 @@
     PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook,
     PushExpandAnkiRichButton,
     PushExpandAnkiInputButton,
-    PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn
+    PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn, PushHookAnkiChange
 } = (() => {
     let ankiHost = GM_getValue('ankiHost', 'http://127.0.0.1:8765');
     let richTexts = [];
@@ -257,10 +257,6 @@
                 'text/plain': new Blob([html], {type: 'text/plain'}),
             })
             await navigator.clipboard.write([item]).catch(console.log)
-        },
-        "sentence-format-setting": () => {
-            const checked = document.querySelector('.sentence-format-setting').checked;
-            document.querySelector('.sentence-format').style.display = checked ? 'block' : 'none';
         },
     };
 
@@ -542,10 +538,23 @@
         })
     }
 
-    const styles = [];
-    const htmls = [];
-    const closeFns = [];
-    const didRenderFns = [];
+    let enableSentence, sentenceNum, sentenceBackup;
+    const styles = [], htmls = [], closeFns = [], didRenderFns = [], changeFns = {
+        ".sentence-format-setting": (ev) => {
+            document.querySelector('.sentence-format').style.display = ev.target.checked ? 'block' : 'none';
+        },
+        "#auto-sentence": (ev) => {
+            document.querySelector('.sample-sentence').style.display = ev.target.checked ? 'grid' : 'none';
+            enableSentence = ev.target.checked
+        },
+        "#sentence_num": (ev) => {
+            const {wordFormat, sentenceFormat} = sentenceFormatFn();
+            const {sentence, offset, word,} = sentenceBackup;
+            const num = parseInt(ev.target.value);
+            document.querySelector('.sample-sentence .spell-content').innerHTML = cutSentence(word, offset, sentence, num, wordFormat, sentenceFormat);
+            sentenceNum = num
+        }
+    };
 
     function PushHookAnkiClose(fn) {
         fn && closeFns.push(fn)
@@ -553,6 +562,13 @@
 
     function PushHookAnkiDidRender(fn) {
         fn && didRenderFns.push(fn)
+    }
+
+    function PushHookAnkiChange(selector, fn) {
+        const fnn = changeFns[selector];
+        changeFns[selector] = fnn ? (ev) => {
+            fn(ev, fnn)
+        } : fn;
     }
 
     function PushHookAnkiStyle(style) {
@@ -578,6 +594,7 @@
     }
 
     async function addAnki(value = '') {
+        sentenceBackup = calSentence();
         let deckNames, models;
         existsNoteId = 0;
         if (typeof value === 'string') {
@@ -599,13 +616,13 @@
         const model = GM_getValue('model', '问答题');
         let modelFields = GM_getValue('modelFields-' + model, [[1, '正面', true], [2, '背面', false]]);
         const deckName = GM_getValue('deckName', '');
-        let enableSentence = GM_getValue('enableSentence', true)
+        enableSentence = GM_getValue('enableSentence', true);
         const sentenceFiled = GM_getValue('sentenceField', '句子');
-        let sentenceNum = GM_getValue('sentenceNum', 1);
+        sentenceNum = GM_getValue('sentenceNum', 1);
         const lastValues = {ankiHost, model, deckName,}
         const deckNameOptions = buildOption(deckNames, deckName);
         const modelOptions = buildOption(models, model);
-        let sentenceBackup = {};
+
         const sentenceHtml = `<div class="wait-replace"></div>            
             <div class="field-operate">
                 <button class="paste-html" title="粘贴">✍️</button>
@@ -616,18 +633,11 @@
             </div>`
         const fieldFn = ['', buildInput, buildTextarea];
         const changeFn = ev => {
-            if (ev.target.id === 'auto-sentence') {
-                document.querySelector('.sample-sentence').style.display = ev.target.checked ? 'grid' : 'none';
-                enableSentence = ev.target.checked
-                return;
-            }
-            if (ev.target.id === 'sentence_num') {
-                const {wordFormat, sentenceFormat} = sentenceFormatFn();
-                const {sentence, offset, word,} = sentenceBackup;
-                const num = parseInt(ev.target.value);
-                document.querySelector('.sample-sentence .spell-content').innerHTML = cutSentence(word, offset, sentence, num, wordFormat, sentenceFormat);
-                sentenceNum = num
-                return;
+            for (const selector of Object.keys(changeFns)) {
+                if (ev.target.matches(selector)) {
+                    changeFns[selector](ev);
+                    return;
+                }
             }
             if (ev.target.id !== 'model' && ev.target.id !== 'ankiHost') {
                 return
@@ -746,7 +756,7 @@
             <input type="text" value="${sentenceFiled}" id="sentence_field" placeholder="句子字段" class="swal2-input sentence_field" name="sentence_field" >       
             <label class="form-label" for="sentence_num">句子数量</label>
             <input type="number" min="0" id="sentence_num" value="${sentenceNum}" class="swal2-input sentence_field" placeholder="提取的句子数量">
-            <input type="checkbox" class="sentence-format-setting" title="设置句子加粗和整句格式">
+            <input type="checkbox" class="sentence-format-setting swal2-checkbox" title="设置句子加粗和整句格式">
             <dd class="sentence-format">
                 <input type="text" name="sentence_bold" value="${htmlSpecial(sentenceBold)}" class="sentence_bold sentence-format-input" title="加粗格式,默认: <b>{$bold}</b}" placeholder="加粗格式,默认: <b>{$bold}</b}">
                 <input type="text" value="${htmlSpecial(sentenceFormat)}" name="sentence_format" class="sentence_format sentence-format-input" title="整句格式,默认: <div>{$sentence}</div>" placeholder="整句格式,默认: <div>{$sentence}</div>">
@@ -762,7 +772,7 @@
     </div>`;
         const ankiContainer = document.createElement('div');
         ankiContainer.className = 'anki-container';
-        ankiContainer.innerHTML = ankiHtml;
+        ankiContainer.innerHTML = createHtml(ankiHtml);
         if (htmls.length > 0) {
             htmls.map(fn => fn(ankiContainer));
         }
@@ -776,14 +786,14 @@
                 if (se) {
                     const editor = spell();
                     const {wordFormat, sentenceFormat} = sentenceFormatFn();
-                    editor.querySelector('.spell-content').innerHTML = getSentence(sentenceNum, wordFormat, sentenceFormat);
+                    const {sentence, offset, word,} = sentenceBackup;
+                    editor.querySelector('.spell-content').innerHTML = cutSentence(word, offset, sentence, sentenceNum, wordFormat, sentenceFormat);
                     se.parentElement.replaceChild(editor, se);
                     enableImageResizeInDiv(editor.querySelector('.spell-content'))
                 }
                 if (!enableSentence) {
                     document.querySelector('.sample-sentence').style.display = 'none';
                 }
-                sentenceBackup = calSentence();
                 let {result: tags} = await anki('getTags');
                 tags = tags.map(v => {
                     return {id: v, text: v}
@@ -917,7 +927,7 @@
         addAnki,
         anki, queryAnki,
         PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook, PushExpandAnkiRichButton, PushExpandAnkiInputButton,
-        PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn
+        PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn, PushHookAnkiChange
     };
 
 })();

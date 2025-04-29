@@ -71,6 +71,9 @@
     width: 8rem;
 }
 
+.swal2-select {
+    height: 3rem;
+}
 
 #sentence_num {
     width: 5rem;
@@ -81,7 +84,7 @@
 }
 
 .sentence-format-input {
-    width: 15rem;
+    width: 18rem;
 }
 
 .select2-container {
