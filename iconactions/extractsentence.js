@@ -168,8 +168,14 @@
                 return value;
             }
             const v = exp.length > 1 ? exp[1] : '';
-            exp[0] = exp[0].replaceAll(`\\\\`, `\\`);
-            value = value.replaceAll(new RegExp(exp[0], param['fetch-value-replacement-ignore-case'] ? 'gi' : 'g'), v);
+            try {
+                exp[0] = exp[0].replaceAll(`\\\\`, `\\`);
+                value = value.replaceAll(new RegExp(exp[0], param['fetch-value-replacement-ignore-case'] ? 'gi' : 'g'), v);
+            } catch (e) {
+                console.log(e);
+                value = value.split(exp[0]).join(v);
+            }
+
             return value
         }, value);
     }
