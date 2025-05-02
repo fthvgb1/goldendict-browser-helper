@@ -1,6 +1,6 @@
 ;const {
-    addAnki,
-    anki,
+    addAnki, getAnkiFormValue,
+    anki, ankiSave,
     queryAnki,
     PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook,
     PushExpandAnkiRichButton,
@@ -87,13 +87,14 @@
         const options = [
             [vague, `模糊不指定组牌查询:   ${nbsp}${vague}`],
             [deckVague, `模糊指定组牌查询:    ${nbsp}${deckVague}`],
-            [htmlSpecial(precision), `精确查询:    ${nbsp}${precision}`],
+            [precision, `精确查询:    ${nbsp}${precision}`],
             [value, `自定义查询:    ${nbsp}${value}`],
         ].map((v, i) => {
             if (i === searchType) {
                 const vv = v[1].split(':')[0];
                 v[1] = v[1].replace(vv, vv + ' (默认)');
             }
+            v[0] = htmlSpecial(v[0]);
             m[v[0]] = i;
             return v;
         });
@@ -111,14 +112,14 @@
             sel.innerHTML = buildOption(options, m[GM_getValue('searchType', 0)], 0, 1);
             inputs.parentElement.replaceChild(sel, inputs);
             sel.focus();
-            sel.addEventListener('blur', () => {
-                GM_setValue('searchType', m[sel.value]);
-                searchAnki(ev, decodeHtmlSpecial(sel.value), inputs, sel);
-            })
-            sel.addEventListener('change', () => {
-                GM_setValue('searchType', m[sel.value]);
-                searchAnki(ev, decodeHtmlSpecial(sel.value), inputs, sel);
-            })
+            const fn = () => {
+                GM_setValue('searchType', m[htmlSpecial(sel.value)]);
+                searchAnki(ev, sel.value, inputs, sel);
+                sel.removeEventListener('blur', fn);
+                sel.removeEventListener('change', fn);
+            };
+            sel.addEventListener('blur', fn)
+            sel.addEventListener('change', fn)
         },
         'action-copy': async (ev) => {
             ev.preventDefault();
@@ -375,7 +376,7 @@
                 <button class="lemmatizer" title="lemmatize查找单词原型">📟</button>
                 <button class="anki-search" title="search anki 左健搜索 右键选择搜索模式">🔍</button>
                 <button class="upperlowercase" title="大小写转换">🔡</button>
-                ${inputButtons.join('\m')} ${inputButtonFields[field] ? inputButtonFields[field].join('\n') : ''}
+                ${inputButtons.join('\n')} ${inputButtonFields[field] ? inputButtonFields[field].join('\n') : ''}
 
             </div>
         `);
@@ -385,8 +386,7 @@
         document.querySelector('#shadowFields ol').appendChild(li)
     }
 
-    const inputButtons = [];
-    const inputButtonFields = {};
+    const inputButtons = [], inputButtonFields = {}, buttonFields = {}, buttons = [];
 
     function PushButtonFn(type, className, button, clickFn, field = '', contextMenuFn = null) {
         if (!className) {
@@ -418,9 +418,6 @@
         PushButtonFn('rich', className, button, clickFn, field, contextMenuFn)
     }
 
-    const buttonFields = {};
-    const buttons = [];
-
     function buildTextarea(rawStr = false, field = '', value = '', checked = false) {
         const li = document.createElement('div');
         const checkeds = checked ? 'checked' : '';
@@ -438,7 +435,7 @@
                 <button class="action-switch-text" title="切换为textrea">🖺</button>
                 <button class="word-wrap-first" title="在首行换行">🔼</button>
                 <button class="word-wrap-last" title="在最后换行">🔽</button>
-                ${buttons.join('\m')} ${buttonFields[field] ? buttonFields[field].join('\n') : ''}
+                ${buttons.join('\n')} ${buttonFields[field] ? buttonFields[field].join('\n') : ''}
             </div>
         `);
         const editor = richText.querySelector('.spell-content');
@@ -608,7 +605,7 @@
         let modelFields = GM_getValue('modelFields-' + model, [[1, '正面', true], [2, '背面', false]]);
         const deckName = GM_getValue('deckName', '');
         enableSentence = GM_getValue('enableSentence', true);
-        const sentenceFiled = GM_getValue('sentenceField', '句子');
+        const sentenceField = GM_getValue('sentenceField', '句子');
         sentenceNum = GM_getValue('sentenceNum', 1);
         const lastValues = {ankiHost, model, deckName,}
         const deckNameOptions = buildOption(deckNames, deckName);
@@ -620,7 +617,7 @@
                 <button class="text-clean" title="清空">🧹</button>
                 <button class="action-copy" title="复制innerHTML">⭕</button>
                 <button class="action-switch-text" title="切换为textrea">🖺</button>
-                ${buttons.join('\m')}
+                ${buttons.join('\n')} ${buttonFields[sentenceField].join('\n')}
             </div>`
         const fieldFn = ['', buildInput, buildTextarea];
         const changeFn = ev => {
@@ -715,12 +712,7 @@
     
     <div class="form-item">
         <label for="tags" class="form-label">标签</label>
-        <select class="swal2-select js-example-basic-multiple js-states form-control" id="tags">
-          
-          </select>
-          
-
-        <!--<input id="tags" placeholder="多个用,分隔" class="swal2-input">-->
+        <select class="swal2-select js-example-basic-multiple js-states form-control" id="tags"></select>
     </div>
     
     <div class="form-item">
@@ -744,7 +736,7 @@
         <label class="form-label">句子</label>
         <div class="sentence_setting">   
             <label for="sentence_field" class="form-label">字段</label>
-            <input type="text" value="${sentenceFiled}" id="sentence_field" placeholder="句子字段" class="swal2-input sentence_field" name="sentence_field" >       
+            <input type="text" value="${sentenceField}" id="sentence_field" placeholder="句子字段" class="swal2-input sentence_field" name="sentence_field" >       
             <label class="form-label" for="sentence_num">句子数量</label>
             <input type="number" min="0" id="sentence_num" value="${sentenceNum}" class="swal2-input sentence_field" placeholder="提取的句子数量">
             <input type="checkbox" class="sentence-format-setting swal2-checkbox" title="设置句子加粗和整句格式">
@@ -811,76 +803,14 @@
                 closeFns.length > 0 && closeFns.map(fn => fn());
             },
             preConfirm: async () => {
-                let form = {};
-                Object.keys(lastValues).forEach(field => {
-                    form[field] = document.getElementById(field).value;
-                })
-                let fields = {};
-                let modelField = [];
-                for (const div of [...document.querySelectorAll('#shadowFields > ol > div')]) {
-                    const name = div.children[0].value;
-                    if (name === '') {
-                        continue;
-                    }
-                    modelField.push([
-                        div.children[1].tagName === 'INPUT' ? 1 : 2,
-                        name,
-                        div.children[2].children[1].checked
-                    ]);
-                    try {
-                        if (div.children[1].tagName === 'INPUT') {
-                            fields[name] = decodeHtmlSpecial(div.children[1].value);
-                        } else {
-                            const el = div.querySelector('.spell-content');
-                            fields[name] = await checkAndStoreMedia(el.tagName === 'DIV' ? el.innerHTML : el.value)
-                        }
-
-                    } catch (e) {
-                        Swal.showValidationMessage(e);
-                        return
-                    }
-                }
-
-                if (Object.values(form).map(v => v === '' ? 0 : 1).reduce((p, c) => p + c, 0) < Object.keys(form).length) {
-                    Swal.showValidationMessage('还有参数为空!请检查！');
-                    return
-                }
-                let tags = $('#tags').val();
-
-                if (enableSentence) {
-                    const el = document.querySelector('.sentence_setting .spell-content');
-                    fields[document.querySelector('#sentence_field').value] = await checkAndStoreMedia(el.tagName === 'DIV' ? el.innerHTML : el.value);
-                }
-                let params = {
-                    "note": {
-                        "deckName": form.deckName,
-                        "modelName": form.model,
-                        "fields": fields,
-                        "tags": tags,
-                    }
-                }
-                let res;
+                let r;
                 try {
-                    if (existsNoteId > 0 && document.querySelector('#force-update').checked) {
-                        params.note.id = existsNoteId;
-                        beforeSaveHookFns.forEach(fn => {
-                            const note = fn(true, params.note);
-                            params.note = note ? note : params.note;
-                        });
-                        res = await anki('updateNote', params)
-                    } else {
-                        beforeSaveHookFns.forEach(fn => {
-                            const note = fn(false, params.note);
-                            params.note = note ? note : params.note;
-                        });
-                        res = await anki('addNote', params);
-                    }
-                    afterSaveHookFns.forEach(fn => fn(res, params));
+                    r = await ankiSave();
                 } catch (e) {
                     Swal.showValidationMessage('发生出错：' + e);
                     return
                 }
-
+                const {res, modelField, form, params} = r;
                 console.log(form, params, res);
                 if (res.error !== null) {
                     Swal.showValidationMessage('发生出错：' + res.error);
@@ -914,8 +844,81 @@
         });
     }
 
+    async function getAnkiFormValue(formFields) {
+        const form = {}, fields = {}, modelField = [];
+        formFields.forEach(field => {
+            form[field] = document.getElementById(field).value;
+        });
+        for (const div of [...document.querySelectorAll('#shadowFields > ol > div')]) {
+            const name = div.children[0].value;
+            if (name === '') {
+                continue;
+            }
+            modelField.push([
+                div.children[1].tagName === 'INPUT' ? 1 : 2,
+                name,
+                div.children[2].children[1].checked
+            ]);
+            if (div.children[1].tagName === 'INPUT') {
+                fields[name] = decodeHtmlSpecial(div.children[1].value);
+            } else {
+                const el = div.querySelector('.spell-content');
+                fields[name] = await checkAndStoreMedia(el.tagName === 'DIV' ? el.innerHTML : el.value)
+            }
+        }
+
+        if (Object.values(form).map(v => v === '' ? 0 : 1).reduce((p, c) => p + c, 0) < Object.keys(form).length) {
+            throw '还有参数为空!请检查！';
+        }
+        let tags = $('#tags').val();
+
+        if (enableSentence) {
+            const el = document.querySelector('.sentence_setting .spell-content');
+            fields[document.querySelector('#sentence_field').value] = await checkAndStoreMedia(el.tagName === 'DIV' ? el.innerHTML : el.value);
+        }
+        const params = {
+            "note": {
+                "deckName": form.deckName,
+                "modelName": form.model,
+                "fields": fields,
+                "tags": tags,
+            }
+        }
+        return {
+            params,
+            modelField,
+            form,
+        }
+    }
+
+    async function ankiSave(fields = ['ankiHost', 'model', 'deckName'], update = 'updateNote') {
+        const {params, modelField, form} = await getAnkiFormValue(fields);
+        let res;
+        if (existsNoteId > 0 && document.querySelector('#force-update').checked) {
+            params.note.id = existsNoteId;
+            beforeSaveHookFns.forEach(fn => {
+                const note = fn(true, params.note);
+                params.note = note ? note : params.note;
+            });
+            res = await anki(update, params)
+        } else {
+            beforeSaveHookFns.forEach(fn => {
+                const note = fn(false, params.note);
+                params.note = note ? note : params.note;
+            });
+            res = await anki('addNote', params);
+        }
+        afterSaveHookFns.forEach(fn => fn(res, params));
+        if (res.error) {
+            throw res.error;
+        }
+        return {
+            res, modelField, form, params
+        }
+    }
+
     return {
-        addAnki,
+        addAnki, getAnkiFormValue, ankiSave,
         anki, queryAnki,
         PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook, PushExpandAnkiRichButton, PushExpandAnkiInputButton,
         PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn, PushHookAnkiChange

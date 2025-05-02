@@ -32,9 +32,10 @@
 
     const fetchFields = ['fetch-name', 'fetch-field', 'fetch-to-field', 'fetch-selector', 'fetch-parent-selector',
         'fetch-exclude-selector', 'fetch-join-selector', 'fetch-join-reverse', 'fetch-format', 'fetch-data-handle', 'fetch-repeat',
-        'fetch-bold-field', 'fetch-num', 'fetch-active'];
+        'fetch-bold-field', 'fetch-num', 'fetch-active', 'fetch-value-replacement', 'fetch-value-trim',
+        'fetch-value-replacement-ignore-case'];
     const specialFields = ['fetch-selector', 'fetch-parent-selector', 'fetch-bold-field',
-        'fetch-exclude-selector', 'fetch-join-selector', 'fetch-format'];
+        'fetch-exclude-selector', 'fetch-join-selector', 'fetch-format', 'fetch-value-replacement',];
 
 
     function findParent(ele, selector) {
@@ -138,7 +139,7 @@
                 param[sel] = parseInt(item.querySelector(`.${sel}`).value);
                 return
             }
-            if (['fetch-repeat', 'fetch-active', 'fetch-join-reverse'].includes(sel)) {
+            if (['fetch-repeat', 'fetch-active', 'fetch-join-reverse', 'fetch-value-trim', 'fetch-value-replacement-ignore-case'].includes(sel)) {
                 param[sel] = item.querySelector(`.${sel}`).checked;
                 return
             }
@@ -153,11 +154,31 @@
         return param
     }
 
+    function replace(value, param) {
+        if (!param['fetch-value-replacement'] || !value) {
+            return value;
+        }
+        const arr = decodeHtmlSpecial(param['fetch-value-replacement']).split('@@');
+        if (arr.length < 1) {
+            return value
+        }
+        return arr.reduce((value, express) => {
+            const exp = express.split('[=]');
+            if (exp.length < 1) {
+                return value;
+            }
+            const v = exp.length > 1 ? exp[1] : '';
+            value = value.replaceAllX(exp[0], v, param['fetch-value-replacement-ignore-case'] ? 'gi' : 'g');
+            return value
+        }, value);
+    }
 
-    function setValue(target, valElement, format, way, isRepeat = false, joinEle = null, boldFieldValue = '') {
+
+    function setValue(target, valElement, param, joinEle = null, boldFieldValue = '') {
         if (!valElement && !joinEle) {
             return
         }
+        const format = param['fetch-format'], way = param['fetch-data-handle'], isRepeat = !param['fetch-repeat'];
         let sw = false;
         if (!valElement && joinEle) {
             valElement = joinEle;
@@ -166,7 +187,10 @@
         }
 
         const setInput = (input, value, isAppend, isRepeat) => {
-            value = value.innerText.trim();
+            value = replace(value.innerText, param);
+            if (param['fetch-value-trim']) {
+                value = value.trim();
+            }
             if (format) {
                 let join = '';
                 if (joinEle) {
@@ -174,6 +198,9 @@
                 }
                 value = sw ? format.replaceAll('{$join}', value).replaceAll('{$value}', '') :
                     format.replaceAll('{$value}', value).replaceAll('{$join}', join);
+            }
+            if (param['fetch-value-trim'] && !isRepeat && input.value.includes(value.trim())) {
+                return;
             }
             if (!isRepeat && input.value.includes(value)) {
                 return;
@@ -218,6 +245,7 @@
                 }
                 div.innerHTML = isAppend ? div.insertAdjacentHTML('afterend', di.innerHTML) : di.innerHTML;
             }
+
             if (format) {
                 let join = '';
                 if (joinEle) {
@@ -227,7 +255,7 @@
                     format.replaceAll('{$join}', value.innerText.trim()).replaceAll('{$value}', '') :
                     format.replaceAll('{$value}', value.innerText.trim()).replaceAll('{$join}', join);
                 const di = document.createElement('div');
-                di.innerHTML = v;
+                di.innerHTML = replace(v, param);
                 if (!isRepeat && div.innerText.includes(di.innerText)) {
                     return
                 }
@@ -235,7 +263,7 @@
                 return;
             }
             //joinEle.innerHTML = bold(joinEle.innerHTML);
-            value.innerHTML = bold(value.innerHTML);
+            value.innerHTML = bold(replace(value.innerHTML, param));
             if (joinEle) {
                 isAppend ? (div.appendChild(joinEle) , div.appendChild(value)) : (div.innerHTML = joinEle.outerHTML + value.outerHTML);
                 return;
@@ -344,38 +372,23 @@
         ele.querySelectorAll(selector).forEach(el => el.remove());
     }
 
-    function fetchData(item, from, target) {
-        const param = convertFetchParam(item);
-        let boldFieldValue = '';
-        if (param['fetch-bold-field']) {
-            const fields = param['fetch-bold-field'].split('@@');
-            for (const input of document.querySelectorAll('input.field-name')) {
-                if (input => input.value === fields[0]) {
-                    const ip = input.nextElementSibling;
-                    if (ip && ip.matches('input.field-value')) {
-                        boldFieldValue = ip.value;
-                        if (fields.length > 1) {
-                            const f = fields[1].split('%%');
-                            if (f.length < 1) {
-                                break;
-                            }
-                            if (f.length === 1 && f[0].includes('{$bold}')) {
-                                boldFieldValue = [boldFieldValue, f[0]];
-                                break;
-                            }
-                            boldFieldValue = [boldFieldValue.split(f[0].replaceAll('`', '')).join(' '), f[1]];
-                        }
-                        break
-                    }
-                }
-            }
+    function inputTrim(target, param) {
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+            return;
         }
+        if (!param['fetch-value-trim']) {
+            return
+        }
+        target.value = target.value.trim();
+    }
+
+    function fetchData(item, from, target, param, boldFieldValue) {
         from = from.parentElement;
         if (!param['fetch-parent-selector']) {
             for (const el of fetchLimit(from.querySelectorAll(param['fetch-selector']), param['fetch-num'])) {
                 const ele = el.cloneNode(true);
                 removeEle(ele, param['fetch-exclude-selector']);
-                setValue(target, ele, param['fetch-format'], param['fetch-data-handle'], !param['fetch-repeat'], null, boldFieldValue);
+                setValue(target, ele, param, null, boldFieldValue);
             }
             return;
         }
@@ -393,7 +406,7 @@
                         }
                         const ele = value.cloneNode(true);
                         removeEle(ele, param['fetch-exclude-selector']);
-                        setValue(target, ele, param['fetch-format'], param['fetch-data-handle'], !param['fetch-repeat'], joinEle, boldFieldValue);
+                        setValue(target, ele, param, joinEle, boldFieldValue);
                     }
                     return;
                 }
@@ -407,7 +420,7 @@
                     if (joinSel.length > 1) {
                         removeEle(joinEle, joinSel[1]);
                     }
-                    setValue(target, ele, param['fetch-format'], param['fetch-data-handle'], !param['fetch-repeat'], joinEle, boldFieldValue);
+                    setValue(target, ele, param, joinEle, boldFieldValue);
                 }
                 return
             }
@@ -415,7 +428,7 @@
             for (const el of fetchLimit(parent.querySelectorAll(param['fetch-selector']), param['fetch-num'])) {
                 const ele = el.cloneNode(true);
                 removeEle(ele, param['fetch-exclude-selector']);
-                setValue(target, ele, param['fetch-format'], param['fetch-data-handle'], !param['fetch-repeat'], null, boldFieldValue);
+                setValue(target, ele, param, null, boldFieldValue);
             }
         })
     }
@@ -438,7 +451,11 @@
             if (!fromEle) {
                 continue;
             }
-            fetchData(item, fromEle, e.target.parentElement.parentElement.querySelector('.spell-content,.field-value'))
+            const target = e.target.parentElement.parentElement.querySelector('.spell-content,.field-value');
+            const param = convertFetchParam(item);
+            const bold = parseBoldFormat(param);
+            fetchData(item, fromEle, target, param, bold);
+            inputTrim(target, param);
         }
     }, '', (ev) => {
         ev.preventDefault();
@@ -446,6 +463,35 @@
         ev.target.click();
         boldAll = false;
     });
+
+    function parseBoldFormat(param) {
+        if (!param['fetch-bold-field']) {
+            return ''
+        }
+        let boldFieldValue = '';
+        const fields = param['fetch-bold-field'].split('@@');
+        for (const input of document.querySelectorAll('input.field-name')) {
+            if (input => input.value === fields[0]) {
+                const ip = input.nextElementSibling;
+                if (ip && ip.matches('input.field-value')) {
+                    boldFieldValue = ip.value;
+                    if (fields.length > 1) {
+                        const f = fields[1].split('%%');
+                        if (f.length < 1) {
+                            break;
+                        }
+                        if (f.length === 1 && f[0].includes('{$bold}')) {
+                            boldFieldValue = [boldFieldValue, f[0]];
+                            break;
+                        }
+                        boldFieldValue = [boldFieldValue.split(f[0].replaceAll('`', '')).join(' '), f[1]];
+                    }
+                    break
+                }
+            }
+        }
+        return boldFieldValue;
+    }
 
     const mapTitle = {
         'fetch-name': '名称，只作为标识',
@@ -457,10 +503,13 @@
         'fetch-join-selector': '组合选择器',
         'fetch-join-reverse': '反转组合选择器',
         'fetch-format': '提取的格式，为空为原值，{$join}为组合选择器的值， {$value}为提取的值',
-        'fetch-data-handle': '提到后的操作',
+        'fetch-data-handle': '提取到后的操作',
         'fetch-repeat': '是否去重',
         'fetch-bold-field': htmlSpecial('加粗的字段，如有多个值，可以指定分隔符如 正面@@`,`%%<b>{$bold}</b> %%后为格式'),
         'fetch-num': '提取的数量,默认0为全部',
+        'fetch-value-replacement': '提取的值替换,[=]前后分为表示要替换的值和替换值，多个用@@分隔，支持正则 如 去掉·和将。替换为. 为 ·[=]@@。[=].',
+        'fetch-value-trim': '提取的值去除首尾空白符如空格等',
+        'fetch-value-replacement-ignore-case': '是否忽略大小写',
         'fetch-active': '是否启用这个提取项',
         'fetch-delete': '删除此项',
     };
@@ -471,6 +520,8 @@
         de['fetch-repeat'] = true;
         de['fetch-active'] = false;
         de['fetch-data-handle'] = '1';
+        de['fetch-value-trim'] = false;
+        de['fetch-value-replacement-ignore-case'] = false;
     });
 
     function buildFetchItem(data = null) {
@@ -506,6 +557,11 @@
                                <input name="fetch-bold-field" value="${data['fetch-bold-field']}" class="fetch-bold-field" title="${mapTitle['fetch-bold-field']}" placeholder="${mapTitle['fetch-bold-field']}">
                                <input name="fetch-num" step="1" min="0" value="${data['fetch-num']}" class="fetch-num" type="number" title="${mapTitle['fetch-num']}" placeholder="${mapTitle['fetch-num']}">
                                <input type="checkbox" ${data['fetch-repeat'] ? 'checked' : ''} name="fetch-repeat" class="fetch-repeat" title="${mapTitle['fetch-repeat']}" placeholder="${mapTitle['fetch-repeat']}">
+                        </dd>
+                        <dd class="fetch-dd">
+                               <input name="fetch-value-replacement" value="${data['fetch-value-replacement']}" class="fetch-value-replacement" title="${mapTitle['fetch-value-replacement']}" placeholder="${mapTitle['fetch-value-replacement']}">
+                               <input type="checkbox" ${data['fetch-value-trim'] ? 'checked' : ''} name="fetch-value-trim" class="fetch-value-trim" title="${mapTitle['fetch-value-trim']}" placeholder="${mapTitle['fetch-value-trim']}">
+                               <input type="checkbox" ${data['fetch-value-replacement-ignore-case'] ? 'checked' : ''} name="fetch-value-replacement-ignore-case" class="fetch-value-replacement-ignore-case" title="${mapTitle['fetch-value-replacement-ignore-case']}" placeholder="${mapTitle['fetch-value-replacement-ignore-case']}">
                         </dd>
                     </span>     
                     <span class="fetch-box">
