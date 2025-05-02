@@ -168,16 +168,27 @@
                 return value;
             }
             const v = exp.length > 1 ? exp[1] : '';
-            value = value.replaceAllX(exp[0], v, param['fetch-value-replacement-ignore-case'] ? 'gi' : 'g');
+            exp[0] = exp[0].replaceAll(`\\\\`, `\\`);
+            value = value.replaceAll(new RegExp(exp[0], param['fetch-value-replacement-ignore-case'] ? 'gi' : 'g'), v);
             return value
         }, value);
     }
 
 
-    function setValue(target, valElement, param, joinEle = null, boldFieldValue = '') {
+    function setValue(target, valElement, param, join = null, boldFieldValue = '') {
+        let joinEle, joinRep;
+        if (join) {
+            joinEle = join.joinEle
+            joinRep = join.joinRep
+        }
         if (!valElement && !joinEle) {
             return
         }
+        const joinParam = {
+            'fetch-value-replacement-ignore-case': true,
+            'fetch-value-replacement': joinRep
+        }
+
         const format = param['fetch-format'], way = param['fetch-data-handle'], isRepeat = !param['fetch-repeat'];
         let sw = false;
         if (!valElement && joinEle) {
@@ -195,6 +206,7 @@
                 let join = '';
                 if (joinEle) {
                     join = joinEle.innerText.trim();
+                    join = replace(join, joinParam);
                 }
                 value = sw ? format.replaceAll('{$join}', value).replaceAll('{$value}', '') :
                     format.replaceAll('{$value}', value).replaceAll('{$join}', join);
@@ -250,6 +262,7 @@
                 let join = '';
                 if (joinEle) {
                     join = joinEle.innerText.trim();
+                    join = replace(join, joinParam);
                 }
                 const v = sw ?
                     format.replaceAll('{$join}', value.innerText.trim()).replaceAll('{$value}', '') :
@@ -265,6 +278,7 @@
             //joinEle.innerHTML = bold(joinEle.innerHTML);
             value.innerHTML = bold(replace(value.innerHTML, param));
             if (joinEle) {
+                joinEle.innerHTML = replace(joinEle.innerHTML, joinParam);
                 isAppend ? (div.appendChild(joinEle) , div.appendChild(value)) : (div.innerHTML = joinEle.outerHTML + value.outerHTML);
                 return;
             }
@@ -384,6 +398,14 @@
 
     function fetchData(item, from, target, param, boldFieldValue) {
         from = from.parentElement;
+        let joinRep, joinSel;
+        if (param['fetch-join-selector']) {
+            const joinSelX = param['fetch-join-selector'].split('++');
+            joinSel = joinSelX[0].split('`');
+            if (joinSelX.length > 1) {
+                joinRep = joinSelX[1];
+            }
+        }
         if (!param['fetch-parent-selector']) {
             for (const el of fetchLimit(from.querySelectorAll(param['fetch-selector']), param['fetch-num'])) {
                 const ele = el.cloneNode(true);
@@ -394,7 +416,6 @@
         }
         [...from.querySelectorAll(param['fetch-parent-selector'])].forEach(parent => {
             if (param['fetch-join-selector']) {
-                const joinSel = param['fetch-join-selector'].split('`');
                 if (param['fetch-join-reverse']) {
                     for (let value of fetchLimit(parent.querySelectorAll(param['fetch-selector']), param['fetch-num'])) {
                         let joinEle = parseSelector(joinSel[0], value);
@@ -406,7 +427,7 @@
                         }
                         const ele = value.cloneNode(true);
                         removeEle(ele, param['fetch-exclude-selector']);
-                        setValue(target, ele, param, joinEle, boldFieldValue);
+                        setValue(target, ele, param, {joinEle, joinRep}, boldFieldValue);
                     }
                     return;
                 }
@@ -420,7 +441,7 @@
                     if (joinSel.length > 1) {
                         removeEle(joinEle, joinSel[1]);
                     }
-                    setValue(target, ele, param, joinEle, boldFieldValue);
+                    setValue(target, ele, param, {joinEle, joinRep}, boldFieldValue);
                 }
                 return
             }
