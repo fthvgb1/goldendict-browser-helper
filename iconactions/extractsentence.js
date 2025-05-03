@@ -543,7 +543,7 @@
         'fetch-repeat': '是否去重',
         'fetch-bold-field': htmlSpecial('加粗的字段，如有多个值，可以指定分隔符如 正面@@`,`%%<b>{$bold}</b> %%后为格式'),
         'fetch-num': '提取的数量,默认0为全部',
-        'fetch-value-replacement': '提取的值替换,[=]前后分为表示要替换的值和替换值，多个用@@分隔，支持正则 如 去掉·和将。替换为. 为 ·[=]@@。[=].',
+        'fetch-value-replacement': '提取的值去除或替换,[=]前后分为表示要替换的值和替换值，多个用@@分隔，支持正则， 如 去掉·和将。替换为. 为 ·@@。[=].',
         'fetch-value-trim': '提取的值去除首尾空白符如空格等',
         'fetch-value-replacement-ignore-case': '是否忽略大小写',
         'fetch-active': '是否启用这个提取项',
