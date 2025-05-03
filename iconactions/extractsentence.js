@@ -1,4 +1,4 @@
-;(() => {
+;const {ankiFetchClickFn} = (() => {
 
     PushHookAnkiStyle(`
     .fetch-sentence-container { display:flex; }
@@ -23,6 +23,12 @@
     `);
 
     PushHookAnkiDidRender(addOrDelBtn);
+
+    PushHookAnkiChange('#fetch.swal2-checkbox', (ev) => {
+        if (!ev.target.checked) {
+            saveFetchItems();
+        }
+    });
 
     ['swal2-cancel swal2-styled',
         'swal2-confirm swal2-styled',
@@ -464,8 +470,9 @@
     PushExpandAnkiInputButton('fetch-delete', '', (e) => {
         e.target.parentElement.parentElement.remove();
     });
-    PushExpandAnkiInputButton('fetch-sentence-field', '', (e) => {
-        const field = e.target.parentElement.parentElement.querySelector('.sentence_field,.field-name');
+
+    const ankiFetchClickFn = (button) => {
+        const field = button.parentElement.parentElement.querySelector('.sentence_field,.field-name');
         for (const toFieldInput of document.querySelectorAll('.fetch-to-field')) {
             const item = findParent(toFieldInput, '.fetch-item');
             const selector = item.querySelector('.fetch-selector');
@@ -478,16 +485,18 @@
             if (!fromEle) {
                 continue;
             }
-            const target = e.target.parentElement.parentElement.querySelector('.spell-content,.field-value');
+            const target = button.parentElement.parentElement.querySelector('.spell-content,.field-value');
             const param = convertFetchParam(item);
             const bold = parseBoldFormat(param);
             fetchData(item, fromEle, target, param, bold);
             inputTrim(target, param);
         }
-    }, '', (ev) => {
-        ev.preventDefault();
+    };
+
+    PushExpandAnkiInputButton('fetch-sentence-field', '', (ev) => ankiFetchClickFn(ev.target), '', (ev) => {
         boldAll = true
-        ev.target.click();
+        ankiFetchClickFn(ev.target);
+        ev.preventDefault();
         boldAll = false;
     });
 
@@ -686,4 +695,7 @@
         const n = ankiContainer.querySelector('#auto-sentence');
         n.parentElement.parentElement.insertBefore(div, n.parentElement.nextElementSibling);
     });
-})()
+    return {
+        ankiFetchClickFn
+    }
+})();
