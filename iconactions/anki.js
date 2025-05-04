@@ -1,6 +1,6 @@
 ;const {
     addAnki, getAnkiFormValue,
-    anki, ankiSave,
+    anki, ankiSave, showAnkiCard,
     queryAnki,
     PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook,
     PushExpandAnkiRichButton,
@@ -919,7 +919,7 @@
 
     return {
         addAnki, getAnkiFormValue, ankiSave,
-        anki, queryAnki,
+        anki, queryAnki, showAnkiCard,
         PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook, PushExpandAnkiRichButton, PushExpandAnkiInputButton,
         PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn, PushHookAnkiChange
     };
