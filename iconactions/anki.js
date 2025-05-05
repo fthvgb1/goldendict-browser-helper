@@ -131,6 +131,22 @@
             await navigator.clipboard.write([item]).catch(console.log)
         }
     }
+
+    function focusEle(ele, offset = 0) {
+        const s = window.getSelection();
+        const r = document.createRange();
+        r.setStart(ele, offset);
+        r.collapse(true);
+        s.removeAllRanges();
+        s.addRange(r);
+        ele.focus();
+    }
+
+    const br = (() => {
+        const div = document.createElement('div');
+        div.innerHTML = '<br>';
+        return div
+    })();
     const clickFns = {
         'card-delete': async () => {
             if (confirm('确定删除么？')) {
@@ -148,15 +164,14 @@
             searchAnki(ev, express, inputs);
         },
         'word-wrap-first': (ev) => {
-            const ed = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
-            const b = ed.ownerDocument.createElement('br');
-            ed.children.length > 0 ? ed.insertBefore(b, ed.children[0]) : ed.innerHTML = `<div><br></div>${ed.innerHTML}`;
-            ed.focus();
+            const b = br.cloneNode(true);
+            ev.target.parentElement.previousElementSibling.querySelector('.spell-content').insertAdjacentElement('afterbegin', b);
+            focusEle(b);
         },
         'word-wrap-last': (ev) => {
-            const edt = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
-            const br = edt.ownerDocument.createElement('br');
-            edt.appendChild(br);
+            const b = br.cloneNode(true);
+            ev.target.parentElement.previousElementSibling.querySelector('.spell-content').insertAdjacentElement('beforeend', b);
+            focusEle(b);
         },
         'upperlowercase': (ev) => {
             const input = ev.target.parentElement.previousElementSibling;
