@@ -79,7 +79,7 @@
     width: 5rem;
 }
 
-.sentence-format {
+.sentence-format, .anki-tag-search {
     display: none;
 }
 

@@ -1,7 +1,7 @@
 ;const {
     addAnki, getAnkiFormValue,
     anki, ankiSave, showAnkiCard,
-    queryAnki,
+    queryAnki, searchAnki,
     PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook,
     PushExpandAnkiRichButton,
     PushExpandAnkiInputButton,
@@ -101,7 +101,44 @@
         return {options, m}
     }
 
+    function getTags() {
+        return $('#tags').val();
+    }
+
+    let searchInput;
+
+
     const contextMenuFns = {
+        'anki-tag-search': (ev) => {
+            ev.preventDefault();
+            const target = ev.target;
+            if (!searchInput) {
+                searchInput = document.createElement('input');
+                searchInput.title = '请输入正面字段名';
+                const set = () => {
+                    const val = searchInput.value.trim();
+                    if (val) {
+                        GM_setValue('front-field', val);
+                    }
+                };
+                const fn = () => {
+                    set();
+                    searchInput.parentElement.replaceChild(target, searchInput);
+                    target.click();
+                }
+                searchInput.addEventListener('blur', fn);
+                searchInput.addEventListener('keyup', (ev) => {
+                    if (ev.key === 'Enter') {
+                        set();
+                        searchInput.removeEventListener('blur', fn);
+                        searchInput.parentElement.replaceChild(target, searchInput);
+                        target.click();
+                    }
+                });
+            }
+
+            ev.target.parentElement.replaceChild(searchInput, ev.target);
+        },
         'anki-search': async (ev) => {
             ev.preventDefault();
             const sel = document.createElement('select');
@@ -157,6 +194,27 @@
                 }
                 setExistsNoteId(0);
             }
+        },
+        'anki-tag-search': (ev) => {
+            const tags = getTags();
+            if (tags.length < 1) {
+                return
+            }
+            const frontField = GM_getValue('front-field');
+            let el;
+            if (frontField) {
+                for (const front of document.querySelectorAll('.field-name')) {
+                    if (frontField === front.value) {
+                        el = front.nextElementSibling;
+                        break
+                    }
+                }
+            }
+            if (!el) {
+                el = document.querySelector("#shadowFields .field-value");
+            }
+            const express = tags.map(v => `tag:${v}`).join(' ');
+            searchAnki(ev, express, el);
         },
         'anki-search': (ev) => {
             const express = getSearchType(ev, GM_getValue('searchType', 0));
@@ -728,6 +786,7 @@
     <div class="form-item">
         <label for="tags" class="form-label">标签</label>
         <select class="swal2-select js-example-basic-multiple js-states form-control" id="tags"></select>
+        <button class="anki-tag-search" title="左键搜索 右键设置正面字段">🔍</button>
     </div>
     
     <div class="form-item">
@@ -796,13 +855,18 @@
                 tags = tags.map(v => {
                     return {id: v, text: v}
                 });
-                $('#tags').select2({
+                const tag = $('#tags');
+                tag.select2({
                     tags: true,
                     placeholder: '选择或输入标签',
                     data: tags,
                     tokenSeparators: [',', ' '],
                     multiple: true,
                 });
+                tag.on('change', (ev) => {
+                    const vals = tag.val();
+                    document.querySelector('.anki-tag-search').style.display = vals.length > 0 ? 'inline' : 'none';
+                })
                 didRenderFns.length > 0 && didRenderFns.forEach(fn => fn());
             },
             title: "anki制卡",
@@ -885,7 +949,7 @@
         if (Object.values(form).map(v => v === '' ? 0 : 1).reduce((p, c) => p + c, 0) < Object.keys(form).length) {
             throw '还有参数为空!请检查！';
         }
-        let tags = $('#tags').val();
+        let tags = getTags();
 
         if (enableSentence) {
             const el = document.querySelector('.sentence_setting .spell-content');
@@ -934,7 +998,7 @@
 
     return {
         addAnki, getAnkiFormValue, ankiSave,
-        anki, queryAnki, showAnkiCard,
+        anki, queryAnki, showAnkiCard, searchAnki,
         PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook, PushExpandAnkiRichButton, PushExpandAnkiInputButton,
         PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn, PushHookAnkiChange
     };
