@@ -20,6 +20,7 @@
             update.checked = false;
         }
     }
+    const ankTags = new Set();
     const spellIconsTtf = GM_getResourceURL('spell-icons-ttf');
     const spellIconsWoff = GM_getResourceURL('spell-icons-woff');
     const spellCss = GM_getResourceText("spell-css")
@@ -99,10 +100,6 @@
             return v;
         });
         return {options, m}
-    }
-
-    function getTags() {
-        return $('#tags').val();
     }
 
     let searchInput;
@@ -196,7 +193,7 @@
             }
         },
         'anki-tag-search': (ev) => {
-            const tags = getTags();
+            const tags = $('#tags');
             if (tags.length < 1) {
                 return
             }
@@ -379,9 +376,24 @@
         showFns.push(...fns);
     }
 
+    function addNewTags(tagsEle, tags) {
+        const newTags = [];
+        tags.forEach(v => {
+            if (!ankTags.has(v)) {
+                ankTags.add(v);
+                newTags.push([v, v]);
+            }
+        })
+        if (newTags.length > 0) {
+            tagsEle.append(buildOption(newTags, '', 0, 1));
+        }
+    }
+
     async function showAnkiCard(result) {
         setExistsNoteId(result.noteId);
-        $('#tags').val(result.tags).trigger('change');
+        const tags = $('#tags');
+        addNewTags(tags, result.tags);
+        tags.val(result.tags).trigger('change');
         const res = await anki('cardsInfo', {cards: [result.cards[0]]});
         if (res.error) {
             console.log(res.error);
@@ -853,6 +865,7 @@
                 }
                 let {result: tags} = await anki('getTags');
                 tags = tags.map(v => {
+                    ankTags.add(v);
                     return {id: v, text: v}
                 });
                 const tag = $('#tags');
@@ -949,8 +962,9 @@
         if (Object.values(form).map(v => v === '' ? 0 : 1).reduce((p, c) => p + c, 0) < Object.keys(form).length) {
             throw '还有参数为空!请检查！';
         }
-        let tags = getTags();
-
+        const $tags = $('#tags');
+        const tags = $tags.val();
+        addNewTags($tags, tags);
         if (enableSentence) {
             const el = document.querySelector('.sentence_setting .spell-content');
             fields[document.querySelector('#sentence_field').value] = await checkAndStoreMedia(el.tagName === 'DIV' ? el.innerHTML : el.value);
