@@ -44,7 +44,11 @@ ps3: 其实还可以弄些其它骚操作，反正其实就是调些 [快捷键]
   ![img](example/anki.webp)
 - 可以查询已添加的卡片
 - 抓取词典中的如例句、词头、词性之类的内容，只要填入正确的`选择器`，并且提取后可以有删除或者替换内容
-  [fetch_sentence.webm](https://github.com/user-attachments/assets/dbba4035-8615-4be8-b4e1-35564cfa7c64)
+  
+
+
+
+  [![fetch_sentence.webm]()](https://github.com/user-attachments/assets/dbba4035-8615-4be8-b4e1-35564cfa7c64)
 
   
 #### 附 windows 后台运行（开机启动）
