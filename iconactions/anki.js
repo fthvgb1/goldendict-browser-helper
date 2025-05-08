@@ -210,7 +210,7 @@
             if (!el) {
                 el = document.querySelector("#shadowFields .field-value");
             }
-            const express = tags.map(v => `tag:${v}`).join(' ');
+            const express = tags.val().map(v => `tag:${v}`).join(' ');
             searchAnki(ev, express, el);
         },
         'anki-search': (ev) => {
