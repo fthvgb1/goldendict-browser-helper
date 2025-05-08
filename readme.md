@@ -43,6 +43,10 @@ ps3: 其实还可以弄些其它骚操作，反正其实就是调些 [快捷键]
 - 添加时自动提取选中词所在的句子，先得在anki中添加一个句子的字段并在添加时设置为这个字段名
   ![img](example/anki.webp)
 - 可以查询已添加的卡片
+- 抓取词典中的如例句、词头、词性之类的内容，只要填入正确的`选择器`，并且提取后可以有删除或者替换内容
+  <video controls> <source src="example/fetch_sentence.webm" type="video/webm"></video>
+
+  
 #### 附 windows 后台运行（开机启动）
 
 在**goldenDictHelperServer.exe**目录下创建一个后缀为.vbs的文本文件，添加以下代码
