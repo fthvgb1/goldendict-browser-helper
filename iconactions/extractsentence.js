@@ -234,7 +234,7 @@
 
         const setDiv = (div, value, isAppend, isRepeat) => {
             let v = value.innerText.trim();
-            if (!isRepeat && div.innerText.includes(v)) {
+            if (v && !isRepeat && div.innerText.includes(v)) {
                 return
             }
             const bold = (sentence) => {
