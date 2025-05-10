@@ -1,8 +1,8 @@
-;const {ankiFetchClickFn} = (() => {
+;const {ankiFetchClickFn, ankiFetchData} = (() => {
 
     PushHookAnkiStyle(`
     .fetch-sentence-container { display:flex; }
-    .select-setting,.fetch-add { display:none;}
+    .fetch-add { display:none;}
     .fetch-opera { display: grid;}
     .fetch-item { margin-top: 1rem; margin-left: 1rem; }
     .fetch-box { 
@@ -24,11 +24,22 @@
 
     PushHookAnkiDidRender(addOrDelBtn);
 
+    PushExpandAnkiInputButton('fetch-all', '', () => {
+        document.querySelectorAll('.fetch-sentence-field').forEach(button => button.click());
+    });
+
     PushHookAnkiChange('#fetch.swal2-checkbox', (ev) => {
         if (!ev.target.checked) {
             saveFetchItems();
+            setting.innerHTML = '';
+            return
         }
+        let fetchItems = GM_getValue('fetch-items', [{...de}]);
+        fetchItems = fetchItems.length > 0 ? fetchItems : [{...de}];
+        fetchItems.forEach(item => setting.appendChild(buildFetchItem(item)));
     });
+
+    PushHookAnkiChange('.fetch-active', fetchActive);
 
     ['swal2-cancel swal2-styled',
         'swal2-confirm swal2-styled',
@@ -61,22 +72,35 @@
             let input = el.parentElement.parentElement.querySelector('.field-name,.sentence_field');
             hadMap[input.value] = el;
         }
-        for (const ele of document.querySelectorAll('.fetch-to-field')) {
-            const active = ele.parentElement.parentElement.parentElement.querySelector('.fetch-active').checked;
-            if (!fetchMap.hasOwnProperty(ele.value)) {
-                fetchMap[ele.value] = [[active, ele]]
-            } else {
-                fetchMap[ele.value].push([active, ele]);
+
+        if (setting.children.length < 1) {
+            let fetchItems = GM_getValue('fetch-items', [{...de}]);
+            fetchItems.forEach(v => {
+                if (!fetchMap.hasOwnProperty(v['fetch-to-field'])) {
+                    fetchMap[v['fetch-to-field']] = [[v['fetch-active'], v]]
+                } else {
+                    fetchMap[v['fetch-to-field']].push([v['fetch-active'], v]);
+                }
+            })
+        } else {
+            for (const ele of document.querySelectorAll('.fetch-to-field')) {
+                const active = ele.parentElement.parentElement.parentElement.querySelector('.fetch-active').checked;
+                if (!fetchMap.hasOwnProperty(ele.value)) {
+                    fetchMap[ele.value] = [[active, ele]]
+                } else {
+                    fetchMap[ele.value].push([active, ele]);
+                }
             }
         }
+
+
         Object.keys(fetchMap).map(k => {
             let active = false;
-            let title = [];
-            fetchMap[k].map(v => {
+            const title = fetchMap[k].map(v => {
                 if (v[0]) {
                     active = true;
                 }
-                title.push(v[1].parentElement.parentElement.parentElement.querySelector('.fetch-name').value);
+                return v[1] instanceof HTMLElement ? v[1].parentElement.parentElement.parentElement.querySelector('.fetch-name').value : v[1]['fetch-name']
             });
 
             [...document.querySelectorAll('input.field-name,input.sentence_field')].filter(input => input.value === k).map(input => {
@@ -410,7 +434,7 @@
         target.value = target.value.trim();
     }
 
-    function fetchData(item, from, target, param, boldFieldValue) {
+    function fetchData(from, target, param, boldFieldValue) {
         from = from.parentElement;
         let joinRep, joinSel;
         if (param['fetch-join-selector']) {
@@ -428,7 +452,7 @@
             }
             return;
         }
-        [...from.querySelectorAll(param['fetch-parent-selector'])].forEach(parent => {
+        from.querySelectorAll(param['fetch-parent-selector']).forEach(parent => {
             if (param['fetch-join-selector']) {
                 if (param['fetch-join-reverse']) {
                     for (let value of fetchLimit(parent.querySelectorAll(param['fetch-selector']), param['fetch-num'])) {
@@ -473,27 +497,51 @@
         e.target.parentElement.parentElement.remove();
     });
 
-    const ankiFetchClickFn = (button) => {
-        const field = button.parentElement.parentElement.querySelector('.sentence_field,.field-name');
-        for (const toFieldInput of document.querySelectorAll('.fetch-to-field')) {
-            const item = findParent(toFieldInput, '.fetch-item');
-            const selector = item.querySelector('.fetch-selector');
-            const from = item.querySelector('.fetch-field');
-            if (toFieldInput.value !== field.value || !from.value || !selector.value || !item.querySelector('.fetch-active').checked) {
-                continue
+    function ankiFetchData(param, target = null, from = null) {
+        if (!target) {
+            for (const button of document.querySelectorAll('.fetch-sentence-field')) {
+                if (button.parentElement.parentElement.querySelector('.field-name,.sentence_field').value.trim() === param['fetch-to-field']) {
+                    target = findParent(button, '.form-item,.sentence_setting').querySelector('.spell-content,.field-value');
+                    break
+                }
             }
-            let fromEle = [...document.querySelectorAll('.field-name,.sentence_field')].filter(el => el.value === from.value);
-            fromEle = fromEle ? findParent(fromEle[0], '.form-item,.sentence_setting').querySelector('.spell-content,.field-value') : null;
-            if (!fromEle) {
-                continue;
-            }
-            const target = button.parentElement.parentElement.querySelector('.spell-content,.field-value');
-            const param = convertFetchParam(item);
-            const bold = parseBoldFormat(param);
-            fetchData(item, fromEle, target, param, bold);
-            inputTrim(target, param);
         }
-    };
+        if (!from) {
+            from = [...document.querySelectorAll('.field-name,.sentence_field')].filter(el => el.value === param['fetch-field']);
+            from = from ? findParent(from[0], '.form-item,.sentence_setting').querySelector('.spell-content,.field-value') : null;
+        }
+        if (!target || !from) {
+            return
+        }
+
+        const bold = parseBoldFormat(param);
+        fetchData(from, target, param, bold);
+        inputTrim(target, param);
+    }
+
+    function ankiFetchClickFn(button) {
+        const field = button.parentElement.parentElement.querySelector('.sentence_field,.field-name').value.trim();
+        const target = button.parentElement.parentElement.querySelector('.spell-content,.field-value');
+        let params;
+        if (setting.children.length < 1) {
+            params = GM_getValue('fetch-items')
+        } else {
+            params = [...document.querySelectorAll('.fetch-to-field')].map(el => {
+                const item = findParent(el, '.fetch-item');
+                return convertFetchParam(item);
+            })
+        }
+        if (!params || params.length < 1) {
+            return;
+        }
+        const arr = params.filter(v => v['fetch-to-field'] === field && v['fetch-active']);
+        let from = [...document.querySelectorAll('.field-name,.sentence_field')].filter(el => el.value === arr[0]['fetch-field']);
+        from = from ? findParent(from[0], '.form-item,.sentence_setting').querySelector('.spell-content,.field-value') : null;
+        if (!from) {
+            return;
+        }
+        arr.forEach(v => ankiFetchData(v, target, from));
+    }
 
     PushExpandAnkiInputButton('fetch-sentence-field', '', (ev) => ankiFetchClickFn(ev.target), '', (ev) => {
         boldAll = true
@@ -627,8 +675,7 @@
             </div>
             <div class="select-setting"></div>
         `;
-        let fetchItems = GM_getValue('fetch-items', [{...de}]);
-        fetchItems = fetchItems.length > 0 ? fetchItems : [{...de}];
+
         setting = div.querySelector('.select-setting');
         let currentItem;
 
@@ -676,28 +723,10 @@
         setting.addEventListener('dragend', endDrag);
         setting.addEventListener('dragover', overDrag);
 
-        fetchItems.forEach(item => setting.appendChild(buildFetchItem(item)));
 
-        [...div.querySelectorAll('.fetch-active')].map(f => f.addEventListener('change', fetchActive));
-
-        div.querySelector('.fetch-all').addEventListener('click', () => {
-            [...document.querySelectorAll('.fetch-sentence-field')].forEach(button => button.click());
-        });
-
-        div.querySelector('#fetch').addEventListener('change', function (e) {
-            const add = findParent(this, '.fetch-opera').querySelector('.fetch-add');
-            if (this.checked) {
-                add.style.display = 'block';
-                this.parentElement.nextElementSibling.style.display = 'block';
-                return
-            }
-            add.style.display = 'none';
-            this.parentElement.nextElementSibling.style.display = 'none';
-        })
-        const n = ankiContainer.querySelector('#auto-sentence');
-        n.parentElement.parentElement.insertBefore(div, n.parentElement.nextElementSibling);
+        ankiContainer.querySelector('#auto-sentence').parentElement.insertAdjacentElement('afterend', div);
     });
     return {
-        ankiFetchClickFn
+        ankiFetchClickFn, ankiFetchData
     }
 })();

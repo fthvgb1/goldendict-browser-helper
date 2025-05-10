@@ -41,7 +41,7 @@
     const fn = () => {
         let map = {};
         try {
-            [...document.querySelectorAll('.gdarticle')].forEach(el => {
+            document.querySelectorAll('.gdarticle').forEach(el => {
                 const a = document.createElement('a');
                 a.title = 'copy';
                 a.style.cssText = `
@@ -95,7 +95,7 @@
                                 console.log(e);
                             }
                         }
-                        [...dict.querySelectorAll('img')].forEach(img => {
+                        dict.querySelectorAll('img').forEach(img => {
                             try {
                                 img.src = getBase64Image(img);
                             } catch (e) {
