@@ -288,7 +288,9 @@
                 return;
             }
             //joinEle.innerHTML = bold(joinEle.innerHTML);
-            value.innerHTML = bold(replace(value.innerHTML, param));
+            const d = document.createElement('div');
+            d.innerHTML = bold(replace(value.outerHTML, param));
+            value = d.children[0];
             if (joinEle) {
                 joinEle.innerHTML = replace(joinEle.innerHTML, joinParam);
                 isAppend ? (div.appendChild(joinEle) , div.appendChild(value)) : (div.innerHTML = joinEle.outerHTML + value.outerHTML);
