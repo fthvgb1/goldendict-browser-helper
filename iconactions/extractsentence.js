@@ -31,6 +31,7 @@
     PushHookAnkiChange('#fetch.swal2-checkbox', (ev) => {
         if (!ev.target.checked) {
             saveFetchItems();
+            addOrDelBtn();
             setting.innerHTML = '';
             return
         }
