@@ -1,7 +1,7 @@
 ;const {
     addAnki, getAnkiFormValue,
     anki, ankiSave, showAnkiCard,
-    queryAnki, searchAnki,
+    queryAnki, searchAnki, findParent,
     PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook,
     PushExpandAnkiRichButton,
     PushExpandAnkiInputButton,
@@ -181,7 +181,28 @@
         div.innerHTML = '<br>';
         return div
     })();
+
     const clickFns = {
+        'hammer': async (ev) => {
+            ankiHost = findParent(ev.target, '.form-item').querySelector('#ankiHost').value;
+            GM_setValue('ankiHost', ankiHost);
+            try {
+                const {result: deck} = await anki('deckNames');
+                const {result: modelss} = await anki('modelNames');
+                deckNames = deck;
+                models = modelss;
+                findParent(ev.target, '.anki-container').querySelector('#deckName').innerHTML = buildOption(deckNames, deckName);
+                findParent(ev.target, '.anki-container').querySelector('#model').innerHTML = buildOption(models, model);
+                Swal.resetValidationMessage();
+            } catch (e) {
+                Swal.showValidationMessage('无法获取anki的数据，请检查ankiconnect是否启动或者重新设置地址再点🔨');
+                console.log(e);
+            }
+        },
+        'btn-add-field shadowAddField': (ev) => {
+            const type = parseInt(document.getElementById('shadowField').value);
+            fieldFn[type]();
+        },
         'card-delete': async () => {
             if (confirm('确定删除么？')) {
                 const {error} = await anki('deleteNotes', {notes: [existsNoteId]});
@@ -448,6 +469,18 @@
         showFns.forEach(fn => fn(result, res));
     }
 
+    function findParent(ele, selector) {
+        if (!ele || ele.tagName === 'HTML' || ele === document) {
+            return null
+        }
+        if (ele.matches(selector)) {
+            return ele
+        }
+        return findParent(ele.parentElement, selector)
+    }
+
+    const fieldFn = ['', buildInput, buildTextarea];
+
     function buildInput(rawStr = false, field = '', value = '', checked = false) {
         const li = document.createElement('div');
         const checkeds = checked ? 'checked' : '';
@@ -623,8 +656,28 @@
             const num = parseInt(ev.target.value);
             document.querySelector('.sample-sentence .spell-content').innerHTML = cutSentence(word, offset, sentence, num, wordFormat, sentenceFormat);
             sentenceNum = num
+        },
+        '#model': (ev, value) => {
+            fieldChange(ev.target.value, value);
         }
     };
+
+    function fieldChange(field, value) {
+        if (field === '') {
+            return;
+        }
+        const modelField = GM_getValue('modelFields-' + field, [[1, '正面', false], [2, '背面', false]]);
+        document.querySelector('#shadowFields ol').innerHTML = '';
+        if (modelField.length > 0) {
+            modelField.forEach(v => {
+                let t = value
+                if (value instanceof HTMLElement) {
+                    t = v[0] === 2 ? value.innerHTML : htmlSpecial(value.innerText.trim());
+                }
+                fieldFn[v[0]](false, v[1], v[2] ? t : '', v[2]);
+            })
+        }
+    }
 
     function PushHookAnkiClose(fn) {
         fn && closeFns.push(fn)
@@ -666,9 +719,10 @@
         }
     }
 
+    let deckNames, models, deckName, model;
+
     async function addAnki(value = '') {
         sentenceBackup = calSentence();
-        let deckNames, models;
         existsNoteId = 0;
         if (typeof value === 'string') {
             value = value.trim();
@@ -682,13 +736,14 @@
             console.log(e);
             deckNames = [];
             models = [];
-            setTimeout(() => {
+            const t = setTimeout(() => {
                 Swal.showValidationMessage('无法获取anki的数据，请检查ankiconnect是否启动或者重新设置地址再点🔨');
+                clearTimeout(t);
             }, 1000);
         }
-        const model = GM_getValue('model', '问答题');
+        model = GM_getValue('model', '问答题');
         let modelFields = GM_getValue('modelFields-' + model, [[1, '正面', true], [2, '背面', false]]);
-        const deckName = GM_getValue('deckName', '');
+        deckName = GM_getValue('deckName', '');
         enableSentence = GM_getValue('enableSentence', true);
         const sentenceField = GM_getValue('sentenceField', '句子');
         sentenceNum = GM_getValue('sentenceNum', 1);
@@ -704,58 +759,18 @@
                 <button class="action-switch-text" title="切换为textrea">🖺</button>
                 ${buttons.join('\n')} ${buttonFields[sentenceField].join('\n')}
             </div>`
-        const fieldFn = ['', buildInput, buildTextarea];
+
         const changeFn = ev => {
             for (const selector of Object.keys(changeFns)) {
                 if (ev.target.matches(selector)) {
-                    changeFns[selector](ev);
+                    changeFns[selector](ev, value);
                     return;
                 }
-            }
-            if (ev.target.id !== 'model' && ev.target.id !== 'ankiHost') {
-                return
-            }
-            const filed = ev.target.id === 'model' ? ev.target.value : ev.target.parentElement.nextElementSibling.nextElementSibling.querySelector('#model').value;
-            if (filed === '') {
-                return;
-            }
-            const modelField = GM_getValue('modelFields-' + filed, [[1, '正面', false], [2, '背面', false]]);
-            document.querySelector('#shadowFields ol').innerHTML = '';
-            if (modelField.length > 0) {
-                modelField.forEach(v => {
-                    let t = value
-                    if (value instanceof HTMLElement) {
-                        t = v[0] === 2 ? value.innerHTML : htmlSpecial(value.innerText.trim());
-                    }
-                    fieldFn[v[0]](false, v[1], v[2] ? t : '', v[2]);
-                })
             }
         }
         document.addEventListener('change', changeFn);
         const clickFn = async ev => {
-            if (ev.target.id === 'shadowAddField') {
-                const type = parseInt(document.getElementById('shadowField').value);
-                fieldFn[type]()
-                return
-            }
             const className = ev.target.className;
-            if (className === 'hammer') {
-                ankiHost = ev.target.parentElement.previousElementSibling.value;
-                GM_setValue('ankiHost', ankiHost);
-                try {
-                    const {result: deck} = await anki('deckNames');
-                    const {result: modelss} = await anki('modelNames');
-                    deckNames = deck;
-                    models = modelss;
-                    ev.target.parentElement.parentElement.nextElementSibling.querySelector('#deckName').innerHTML = buildOption(deckNames, deckName);
-                    ev.target.parentElement.parentElement.nextElementSibling.nextElementSibling.querySelector('#model').innerHTML = buildOption(models, model);
-                    Swal.resetValidationMessage();
-                } catch (e) {
-                    Swal.showValidationMessage('无法获取anki的数据，请检查ankiconnect是否启动或者重新设置地址再点🔨');
-                    console.log(e);
-                }
-                return
-            }
             clickFns.hasOwnProperty(className) && clickFns[className] && clickFns[className](ev);
         }
         document.addEventListener('click', clickFn);
@@ -812,7 +827,7 @@
             <option value="1">文本</option>
             <option value="2">富文本</option>
         </select>
-        <button class="btn-add-field" id="shadowAddField">➕</button>
+        <button class="btn-add-field shadowAddField"">➕</button>
     </div>
     
     <div class="form-item" id="shadowFields">
@@ -1011,7 +1026,7 @@
     }
 
     return {
-        addAnki, getAnkiFormValue, ankiSave,
+        addAnki, getAnkiFormValue, ankiSave, findParent,
         anki, queryAnki, showAnkiCard, searchAnki,
         PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook, PushExpandAnkiRichButton, PushExpandAnkiInputButton,
         PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn, PushHookAnkiChange
