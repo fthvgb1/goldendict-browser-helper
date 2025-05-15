@@ -2,7 +2,7 @@
 
     PushHookAnkiStyle(`
     .fetch-sentence-container { display:flex; }
-    .fetch-item:not(:last-child) .fetch-add{ display: none}
+    .fetch-item:nth-child(1) button.fetch-delete{ display: none}
     .fetch-opera { display: grid;}
     .fetch-item { margin-top: 1rem; margin-left: 1rem; }
     .fetch-box { 
@@ -647,10 +647,10 @@
         'fetch-value-replacement': '提取的值去除或替换,[=]前后分为表示要替换的值和替换值，多个用@@分隔，支持正则， 如 去掉·和将。替换为. 为 ·@@。[=].',
         'fetch-value-trim': '提取的值去除首尾空白符如空格等',
         'fetch-value-replacement-ignore-case': '是否忽略大小写',
-        'fetch-active': '是否启用这个提取项',
+        'fetch-active': '是否启用这个操作项',
         'fetch-delete': '删除此项',
         'fetch-copy': '复制此项',
-        'fetch-add': '添加一个操作项',
+        'fetch-add': '在此项后台添加一个操作项',
     };
     const de = {};
     Object.keys(mapTitle).forEach(k => {
@@ -708,9 +708,9 @@
                     <span class="fetch-box">
                         <input type="checkbox" ${data['fetch-active'] ? 'checked' : ''} name="fetch-active" class="swal2-checkbox fetch-active" title="${mapTitle['fetch-active']}" placeholder="${mapTitle['fetch-active']}">
                         <div class="fetch-buttons">
-                            <button class="fetch-button fetch-delete" title="${mapTitle['fetch-delete']}">➖</button>
-                            <button class="fetch-button fetch-copy" title="${mapTitle['fetch-copy']}">🖇</button>
-                            <button class="fetch-button fetch-add" title="${mapTitle['fetch-add']}">➕</button>
+                            <button class="fetch-delete" title="${mapTitle['fetch-delete']}">➖</button>
+                            <button class="fetch-copy" title="${mapTitle['fetch-copy']}">🖇</button>
+                            <button class="fetch-add" title="${mapTitle['fetch-add']}">➕</button>
                         </div>
                     </span>                  
                 </div>
