@@ -2,7 +2,7 @@
 
     PushHookAnkiStyle(`
     .fetch-sentence-container { display:flex; }
-    .fetch-add { display:none;}
+    .fetch-item:not(:last-child) .fetch-add{ display: none}
     .fetch-opera { display: grid;}
     .fetch-item { margin-top: 1rem; margin-left: 1rem; }
     .fetch-box { 
@@ -10,6 +10,8 @@
             vertical-align: middle;
             margin-left: 0.2rem;
         }
+    .fetch-buttons {display: inline-block;}
+    .fetch-buttons button {display: block;}
     .fetch-dd { margin-left: 0rem; }
     .fetch-name {width: 7rem;}
     .fetch-format {width: 20rem}
@@ -31,10 +33,23 @@
 
     PushHookAnkiChange('#model', changeAddDelBtn);
     PushHookAnkiChange('.field-name', changeAddDelBtn);
+
     PushExpandAnkiInputButton('hammer', '', changeAddDelBtn);
 
     PushExpandAnkiInputButton('fetch-all', '', () => {
         document.querySelectorAll('.fetch-sentence-field').forEach(button => button.click());
+    });
+    PushExpandAnkiInputButton('fetch-delete', '', (e) => {
+        findParent(e.target, '.fetch-item').remove();
+    });
+    PushExpandAnkiInputButton('fetch-add', '', (e) => {
+        findParent(e.target, '.fetch-item').insertAdjacentElement('afterend', buildFetchItem({...de}));
+    });
+    PushExpandAnkiInputButton('fetch-copy', '', (e) => {
+        const item = findParent(e.target, '.fetch-item');
+        const copyItem = item.cloneNode(true);
+        copyItem.querySelector('.fetch-active').checked = false;
+        item.insertAdjacentElement('afterend', copyItem);
     });
 
     PushHookAnkiChange('#fetch.swal2-checkbox', (ev) => {
@@ -42,10 +57,8 @@
             saveFetchItems();
             addOrDelBtn();
             setting.innerHTML = '';
-            ev.target.parentElement.querySelector('.fetch-add').style.display = 'none';
             return
         }
-        ev.target.parentElement.querySelector('.fetch-add').style.display = 'initial';
         let fetchItems = GM_getValue('fetch-items', [{...de}]);
         fetchItems = fetchItems.length > 0 ? fetchItems : [{...de}];
         fetchItems.forEach(item => setting.appendChild(buildFetchItem(item)));
@@ -86,7 +99,7 @@
             })
         } else {
             for (const ele of document.querySelectorAll('.fetch-to-field')) {
-                const active = ele.parentElement.parentElement.parentElement.querySelector('.fetch-active').checked;
+                const active = findParent(ele, '.fetch-item').querySelector('.fetch-active').checked;
                 if (!fetchMap.hasOwnProperty(ele.value)) {
                     fetchMap[ele.value] = [[active, ele]]
                 } else {
@@ -98,11 +111,11 @@
 
         Object.keys(fetchMap).map(k => {
             let active = false;
-            const title = fetchMap[k].map(v => {
+            const title = fetchMap[k].filter(v => v[0]).map(v => {
                 if (v[0]) {
                     active = true;
                 }
-                return v[1] instanceof HTMLElement ? v[1].parentElement.parentElement.parentElement.querySelector('.fetch-name').value : v[1]['fetch-name']
+                return v[1] instanceof HTMLElement ? findParent(v[1], '.fetch-item').querySelector('.fetch-name').value : v[1]['fetch-name']
             });
 
             [...document.querySelectorAll('input.field-name,input.sentence_field')].filter(input => input.value === k).forEach(input => {
@@ -242,6 +255,8 @@
         return sentence;
     }
 
+    const textTags = new Set(['INPUT', 'TEXTAREA']);
+
 
     function setValue(target, valElement, param, join = null, boldFieldValue = '') {
         let joinEle, joinRep;
@@ -266,7 +281,11 @@
         }
 
         const setInput = (input, value, isAppend, isRepeat) => {
-            value = replace(value.innerText, param);
+            if (textTags.has(value.tagName)) {
+                value = replace(value.value, param);
+            } else {
+                value = replace(value.innerText, param);
+            }
             if (param['fetch-value-trim']) {
                 value = value.trim();
             }
@@ -308,6 +327,15 @@
                     return;
                 }
                 div.innerHTML = di.innerHTML;
+            }
+
+            if (param['fetch-field'] === param['fetch-to-field']) {
+                if (param['fetch-data-type'] === 'text') {
+                    value.innerText = replace(value.innerText, param);
+                } else {
+                    value.innerHTML = replace(value.innerHTML, param);
+                }
+                return;
             }
 
             const d = document.createElement('div');
@@ -355,7 +383,7 @@
             isAppend ? div.appendChild(value) : (div.innerHTML = html);
         }
 
-        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        if (textTags.has(target.tagName)) {
             const value = target.value;
             if (way === 3 && value) {
                 return;
@@ -457,7 +485,7 @@
     }
 
     function inputTrim(target, param) {
-        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+        if (!textTags.has(target.tagName)) {
             return;
         }
         if (!param['fetch-value-trim']) {
@@ -497,7 +525,10 @@
         if (!param['fetch-parent-selector']) {
             for (const el of fetchLimit(from.querySelectorAll(param['fetch-selector']), param['fetch-num'])) {
                 const joinEle = parseJoin(el, joinSelector, joinExclude);
-                const ele = el.cloneNode(true);
+                let ele = el;
+                if (param['fetch-field'] !== param['fetch-to-field']) {
+                    ele = el.cloneNode(true);
+                }
                 removeEle(ele, param['fetch-exclude-selector']);
                 setValue(target, ele, param, {joinEle, joinRep}, boldFieldValue);
             }
@@ -505,7 +536,10 @@
         }
         from.querySelectorAll(param['fetch-parent-selector']).forEach(parent => {
             for (const el of fetchLimit(parent.querySelectorAll(param['fetch-selector']), param['fetch-num'])) {
-                const ele = el.cloneNode(true);
+                let ele = el;
+                if (param['fetch-field'] !== param['fetch-to-field']) {
+                    ele = el.cloneNode(true);
+                }
                 removeEle(ele, param['fetch-exclude-selector']);
                 const joinEle = parseJoin(el, joinSelector, joinExclude);
                 setValue(target, ele, param, {joinEle, joinRep}, boldFieldValue);
@@ -513,10 +547,6 @@
         })
     }
 
-
-    PushExpandAnkiInputButton('fetch-delete', '', (e) => {
-        e.target.parentElement.parentElement.remove();
-    });
 
     function ankiFetchData(param, target = null, from = null) {
         if (!target) {
@@ -619,6 +649,8 @@
         'fetch-value-replacement-ignore-case': '是否忽略大小写',
         'fetch-active': '是否启用这个提取项',
         'fetch-delete': '删除此项',
+        'fetch-copy': '复制此项',
+        'fetch-add': '添加一个操作项',
     };
     const de = {};
     Object.keys(mapTitle).forEach(k => {
@@ -626,7 +658,7 @@
         de['fetch-num'] = 0;
         de['fetch-repeat'] = true;
         de['fetch-active'] = false;
-        de['fetch-data-handle'] = '1';
+        de['fetch-data-handle'] = 1;
         de['fetch-data-type'] = 'text';
         de['fetch-value-trim'] = false;
         de['fetch-value-replacement-ignore-case'] = false;
@@ -635,7 +667,6 @@
     function buildFetchItem(data = null) {
         specialFields.forEach(v => data[v] = htmlSpecial(data[v]));
         const div = document.createElement('div');
-
         div.innerHTML = `
                 <div class="fetch-item" draggable="true">
                     <span class="fetch-box">
@@ -657,7 +688,7 @@
                         <dd class="fetch-dd">
                             <input name="fetch-format" value="${data['fetch-format']}" class="fetch-format" title="${mapTitle['fetch-format']}" placeholder="${mapTitle['fetch-format']}">
                             <select name="fetch-data-handle" class="fetch-data-handle" title="${mapTitle['fetch-data-handle']}">
-                                ${buildOption([['1', '追加'], ['2', '覆盖'], ['3', '不处理']], data['fetch-data-handle'], 0, 1)}
+                                ${buildOption([['1', '追加'], ['2', '覆盖'], ['3', '不处理']], data['fetch-data-handle'].toString(), 0, 1)}
                             </select>                          
                         </dd>
                         <dd class="fetch-dd">
@@ -676,7 +707,11 @@
                     </span>     
                     <span class="fetch-box">
                         <input type="checkbox" ${data['fetch-active'] ? 'checked' : ''} name="fetch-active" class="swal2-checkbox fetch-active" title="${mapTitle['fetch-active']}" placeholder="${mapTitle['fetch-active']}">
-                        <button class="fetch-delete" title="${mapTitle['fetch-delete']}">➖</button>
+                        <div class="fetch-buttons">
+                            <button class="fetch-button fetch-delete" title="${mapTitle['fetch-delete']}">➖</button>
+                            <button class="fetch-button fetch-copy" title="${mapTitle['fetch-copy']}">🖇</button>
+                            <button class="fetch-button fetch-add" title="${mapTitle['fetch-add']}">➕</button>
+                        </div>
                     </span>                  
                 </div>
         `;
@@ -684,9 +719,7 @@
         return div.children[0];
     }
 
-    PushExpandAnkiInputButton('fetch-add', '', (e) => {
-        e.target.parentElement.nextElementSibling.appendChild(buildFetchItem({...de}));
-    });
+
     PushHookAnkiHtml((ankiContainer) => {
         const div = document.createElement('div');
         div.className = 'form-item fetch-sentence-container';
@@ -695,7 +728,6 @@
                 <label for="fetch" class="form-label">提取词典的句子</label>
                 <input type="checkbox" class="swal2-checkbox" name="fetch" id="fetch" title="显示提取词典设置">
                 <button class="fetch-all" title="一键全部提取">🕸️</button>
-                <button class="fetch-add" title="添加提取项">➕</button>
             </div>
             <div class="select-setting"></div>
         `;
