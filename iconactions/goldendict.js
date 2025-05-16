@@ -1,6 +1,28 @@
 ;(() => {
     const key = GM_getValue('goldDictKey', 'ctrl c,ctrl c');
     const goldDictKey = parseKey(key);
+
+    if (key === 'goldendict') {
+        document.addEventListener('dblclick', (ev) => {
+            const sel = window.getSelection();
+            let str = sel.anchorNode.nodeValue, len = str.length, a = sel.anchorOffset, b = a;
+            while (str[a] !== ' ' && a--) {
+            }
+            if (str[a] === ' ') {
+                a++; // start of word
+            }
+            while (str[b] !== ' ' && b++ < len) {// end of word+1
+            }
+            const s = str.substring(a, b).trim().replaceAll(/[.,()]*/g, '');
+            if (s) {
+                const aa = document.createElement('a');
+                aa.href = `goldendict://${s}`;
+                aa.click()
+            }
+        });
+        return
+    }
+
     function goldenDict(text) {
         request({keys: goldDictKey, text: text})
     }
