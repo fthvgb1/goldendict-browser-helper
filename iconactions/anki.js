@@ -243,11 +243,13 @@
             const b = br.cloneNode(true);
             ev.target.parentElement.previousElementSibling.querySelector('.spell-content').insertAdjacentElement('afterbegin', b);
             focusEle(b);
+            b.parentElement.scrollTop = 0;
         },
         'word-wrap-last': (ev) => {
             const b = br.cloneNode(true);
             ev.target.parentElement.previousElementSibling.querySelector('.spell-content').insertAdjacentElement('beforeend', b);
             focusEle(b);
+            b.parentElement.scrollBy({top: b.offsetTop})
         },
         'upperlowercase': (ev) => {
             const input = ev.target.parentElement.previousElementSibling;

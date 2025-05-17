@@ -2,7 +2,7 @@
 
     PushHookAnkiStyle(`
     .fetch-sentence-container { display:flex; }
-    .fetch-item:nth-child(1) button.fetch-delete{ display: none}
+    .fetch-item:nth-child(1) button.fetch-delete,.fetch-dd:has(option[value="html"]:checked) + .fetch-dd{ display: none}
     .fetch-opera { display: grid;}
     .fetch-item { margin-top: 1rem; margin-left: 1rem; }
     .fetch-box { 
@@ -15,7 +15,7 @@
     .fetch-dd { margin-left: 0rem; }
     .fetch-name {width: 7rem;}
     .fetch-format {width: 20rem}
-    .fetch-bold-field,.fetch-value-replacement {width: 17rem}
+    .fetch-bold-field,.fetch-html-replacement,.fetch-value-replacement {width: 17rem}
     .fetch-num { width:3rem}
     .moving {
             background: transparent;
@@ -75,9 +75,9 @@
     const fetchFields = ['fetch-name', 'fetch-field', 'fetch-to-field', 'fetch-selector', 'fetch-parent-selector', 'fetch-data-type',
         'fetch-exclude-selector', 'fetch-join-selector', 'fetch-format', 'fetch-data-handle', 'fetch-repeat',
         'fetch-bold-field', 'fetch-num', 'fetch-active', 'fetch-value-replacement', 'fetch-value-trim',
-        'fetch-value-replacement-ignore-case'];
+        'fetch-value-replacement-ignore-case', 'fetch-html-replacement', 'fetch-html-replacement-ignore-case'];
     const specialFields = ['fetch-selector', 'fetch-parent-selector', 'fetch-bold-field',
-        'fetch-exclude-selector', 'fetch-join-selector', 'fetch-format', 'fetch-value-replacement',];
+        'fetch-exclude-selector', 'fetch-join-selector', 'fetch-format', 'fetch-value-replacement', 'fetch-html-replacement'];
 
 
     function addOrDelBtn() {
@@ -182,7 +182,7 @@
                 param[sel] = parseInt(item.querySelector(`.${sel}`).value);
                 return
             }
-            if (['fetch-repeat', 'fetch-active', 'fetch-value-trim', 'fetch-value-replacement-ignore-case'].includes(sel)) {
+            if (['fetch-repeat', 'fetch-active', 'fetch-value-trim', 'fetch-html-replacement-ignore-case', 'fetch-value-replacement-ignore-case'].includes(sel)) {
                 param[sel] = item.querySelector(`.${sel}`).checked;
                 return
             }
@@ -340,7 +340,11 @@
 
             const d = document.createElement('div');
             if (param['fetch-data-type'] === 'text') {
-                d.innerHTML = replace(value.innerText, param);
+                d.innerHTML = replace(value.outerHTML, {
+                    'fetch-value-replacement': param['fetch-html-replacement'],
+                    'fetch-value-replacement-ignore-case': param['fetch-html-replacement-ignore-case'],
+                })
+                d.innerHTML = replace(d.innerText, param);
                 d.innerHTML = bold(d.innerHTML, boldFieldValue);
             } else if (param['fetch-data-type'] === 'html') {
                 d.innerHTML = replace(value.outerHTML, param);
@@ -645,8 +649,10 @@
         'fetch-bold-field': htmlSpecial('加粗的字段，如有多个值，可以指定分隔符如 正面@@`,`%%<b>{$bold}</b> %%后为格式'),
         'fetch-num': '提取的数量,默认0为全部',
         'fetch-value-replacement': '提取的值去除或替换,[=]前后分为表示要替换的值和替换值，多个用@@分隔，支持正则， 如 去掉·和将。替换为. 为 ·@@。[=].',
+        'fetch-html-replacement': 'html去除或替换,[=]前后分为表示要替换的值和替换值，多个用@@分隔，支持正则， 如 去掉·和将。替换为. 为 ·@@。[=].，在提取为值之前执行',
         'fetch-value-trim': '提取的值去除首尾空白符如空格等',
         'fetch-value-replacement-ignore-case': '是否忽略大小写',
+        'fetch-html-replacement-ignore-case': '是否忽略大小写',
         'fetch-active': '是否启用这个操作项',
         'fetch-delete': '删除此项',
         'fetch-copy': '复制此项',
@@ -662,10 +668,11 @@
         de['fetch-data-type'] = 'text';
         de['fetch-value-trim'] = false;
         de['fetch-value-replacement-ignore-case'] = false;
+        de['fetch-html-replacement-ignore-case'] = false;
     });
 
     function buildFetchItem(data = null) {
-        specialFields.forEach(v => data[v] = htmlSpecial(data[v]));
+        specialFields.forEach(v => data[v] = data[v] ? htmlSpecial(data[v]) : '');
         const div = document.createElement('div');
         div.innerHTML = `
                 <div class="fetch-item" draggable="true">
@@ -703,6 +710,10 @@
                                <select name="fetch-data-type" class="fetch-data-type" title="${mapTitle['fetch-data-type']}">
                                 ${buildOption([['text', '文本'], ['html', 'html']], data['fetch-data-type'], 0, 1)}
                             </select>   
+                        </dd>
+                        <dd class="fetch-dd">
+                            <input name="fetch-html-replacement" value="${data['fetch-html-replacement']}" class="fetch-html-replacement" title="${mapTitle['fetch-html-replacement']}" placeholder="${mapTitle['fetch-html-replacement']}">
+                            <input type="checkbox" ${data['fetch-html-replacement-ignore-case'] ? 'checked' : ''} name="fetch-html-replacement-ignore-case" class="fetch-html-replacement-ignore-case" title="${mapTitle['fetch-html-replacement-ignore-case']}" placeholder="${mapTitle['fetch-html-replacement-ignore-case']}">
                         </dd>
                     </span>     
                     <span class="fetch-box">
