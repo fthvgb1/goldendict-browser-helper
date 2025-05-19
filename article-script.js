@@ -1,22 +1,22 @@
 (function () {
 
     function getBase64Image(img, width, height) {
-        const canvas = document.createElement('canvas')
-        canvas.width = width || img.width
-        canvas.height = height || img.height
-        const ctx = canvas.getContext('2d')
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        const canvas = document.createElement('canvas');
+        canvas.width = width || img.naturalWidth;
+        canvas.height = height || img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         return canvas.toDataURL()
     }
 
     function getBase64(img) {
-        const image = new Image()
-        image.crossOrigin = ''
-        image.src = img
+        const image = new Image();
+        image.crossOrigin = '';
+        image.src = img;
         return new Promise((resolve) => {
             image.onload = function () {
-                const base64Data = getBase64Image(image)
-                resolve(base64Data)
+                const base64Data = getBase64Image(image);
+                resolve(base64Data);
             }
         })
     }
