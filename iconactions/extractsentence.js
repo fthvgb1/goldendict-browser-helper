@@ -1,4 +1,4 @@
-;const {ankiFetchClickFn, ankiFetchData, setAllBold} = (() => {
+;const {ankiFetchClickFn, ankiFetchData, setAllBold, getAnkiFetchParams} = (() => {
 
     PushHookAnkiStyle(`
     .fetch-sentence-container { display:flex; }
@@ -58,7 +58,7 @@
         const button = ev.target;
         const targetField = button.parentElement.parentElement.querySelector('.sentence_field,.field-name').value.trim();
         const targetEle = button.parentElement.parentElement.querySelector('.spell-content,.field-value');
-        const arr = getParams(targetField, false);
+        const arr = getAnkiFetchParams(targetField, false);
         if (!arr || arr.length < 1) {
             return
         }
@@ -640,7 +640,7 @@
         inputTrim(target, param);
     }
 
-    function getParams(targetField = '', activeFilter = true) {
+    function getAnkiFetchParams(targetField = '', activeFilter = true) {
         let params;
         if (setting.children.length < 1) {
             params = GM_getValue('fetch-items')
@@ -667,7 +667,7 @@
     function ankiFetchClickFn(button) {
         const targetField = button.parentElement.parentElement.querySelector('.sentence_field,.field-name').value.trim();
         const targetEle = button.parentElement.parentElement.querySelector('.spell-content,.field-value');
-        const arr = getParams(targetField, true);
+        const arr = getAnkiFetchParams(targetField, true);
         let from = [...document.querySelectorAll('.field-name,.sentence_field')].filter(el => el.value === arr[0]['fetch-field']);
         from = from ? findParent(from[0], '.form-item,.sentence_setting').querySelector('.spell-content,.field-value') : null;
         if (!from) {
@@ -866,6 +866,6 @@
         ankiContainer.querySelector('#auto-sentence').parentElement.insertAdjacentElement('afterend', div);
     });
     return {
-        ankiFetchClickFn, ankiFetchData, setAllBold
+        ankiFetchClickFn, ankiFetchData, setAllBold, getAnkiFetchParams
     }
 })();
