@@ -1,4 +1,4 @@
-;const {ankiFetchClickFn, ankiFetchData} = (() => {
+;const {ankiFetchClickFn, ankiFetchData, setAllBold} = (() => {
 
     PushHookAnkiStyle(`
     .fetch-sentence-container { display:flex; }
@@ -52,6 +52,43 @@
         item.insertAdjacentElement('afterend', copyItem);
     });
 
+    PushExpandAnkiInputButton('fetch-sentence-field', '', (ev) => {
+        ankiFetchClickFn(ev.target);
+    }, '', (ev) => {
+        const button = ev.target;
+        const targetField = button.parentElement.parentElement.querySelector('.sentence_field,.field-name').value.trim();
+        const targetEle = button.parentElement.parentElement.querySelector('.spell-content,.field-value');
+        const arr = getParams(targetField, false);
+        if (!arr || arr.length < 1) {
+            return
+        }
+        ev.preventDefault();
+        const sel = document.createElement('select');
+        const map = {};
+        const opts = arr.map(v => {
+            map[v['fetch-name']] = v;
+            return [v['fetch-name'], v['fetch-name']];
+        });
+        opts.unshift(['', '选择一个操作']);
+        sel.innerHTML = buildOption(opts, 0, 0, 1);
+        const fn = (ev) => {
+            if (sel.value) {
+                ankiFetchData(map[sel.value], targetEle);
+            }
+            const evt = ev.type === 'click' ? 'change' : 'blur';
+            sel.removeEventListener(evt, fn);
+            sel.parentElement.replaceChild(button, sel)
+        };
+        sel.addEventListener('blur', fn);
+        sel.addEventListener('change', fn);
+        button.parentElement.replaceChild(sel, button);
+    });
+
+    PushHookAnkiDidRender(() => document.addEventListener('mousedown', fullBold));
+    PushHookAnkiDidRender(() => document.addEventListener('mouseup', fullBold));
+    PushHookAnkiClose(() => document.removeEventListener('mousedown', fullBold));
+    PushHookAnkiClose(() => document.removeEventListener('mouseup', fullBold));
+
     PushHookAnkiChange('#fetch.swal2-checkbox', (ev) => {
         if (!ev.target.checked) {
             saveFetchItems();
@@ -79,6 +116,31 @@
     const specialFields = ['fetch-selector', 'fetch-parent-selector', 'fetch-bold-field',
         'fetch-exclude-selector', 'fetch-join-selector', 'fetch-format', 'fetch-value-replacement', 'fetch-html-replacement'];
 
+    let time = 0, t = null;
+
+    function fullBold(ev) {
+        if (!ev.target.matches('.fetch-sentence-field')) {
+            return
+        }
+        if (ev.type === 'mousedown') {
+            time = 0;
+            t = setInterval(() => {
+                time += 1;
+                clearInterval(t);
+            }, 1000);
+            return;
+        }
+        if (ev.type === 'mouseup') {
+            if (time >= 1) {
+                boldAll = true
+                ev.preventDefault();
+                ankiFetchClickFn(ev.target);
+                boldAll = false;
+            }
+        }
+        time = 0;
+        clearInterval(t);
+    }
 
     function addOrDelBtn() {
         const fetchMap = {};
@@ -131,7 +193,7 @@
                     const btn = document.createElement('button');
                     btn.innerHTML = `⚓`;
                     btn.className = 'fetch-sentence-field';
-                    btn.title = `将提取${title.join(',')}`;
+                    btn.title = `将提取${title.join(',')} 右键选择:单个执行操作`;
                     let op = input.parentElement.querySelector('.field-operate');
                     if (op) {
                         op.appendChild(btn);
@@ -169,6 +231,10 @@
     }
 
     let setting, boldAll = false;
+
+    function setAllBold(value) {
+        boldAll = value
+    }
 
     function saveFetchItems() {
         const data = [...setting.children].map(item => convertFetchParam(item));
@@ -574,9 +640,7 @@
         inputTrim(target, param);
     }
 
-    function ankiFetchClickFn(button) {
-        const field = button.parentElement.parentElement.querySelector('.sentence_field,.field-name').value.trim();
-        const target = button.parentElement.parentElement.querySelector('.spell-content,.field-value');
+    function getParams(targetField = '', activeFilter = true) {
         let params;
         if (setting.children.length < 1) {
             params = GM_getValue('fetch-items')
@@ -589,21 +653,29 @@
         if (!params || params.length < 1) {
             return;
         }
-        const arr = params.filter(v => v['fetch-to-field'] === field && v['fetch-active']);
+        if (!targetField) {
+            return params;
+        }
+        return params.filter(param => {
+            if (activeFilter) {
+                return param['fetch-active'] && param['fetch-to-field'] === targetField
+            }
+            return param['fetch-to-field'] === targetField
+        });
+    }
+
+    function ankiFetchClickFn(button) {
+        const targetField = button.parentElement.parentElement.querySelector('.sentence_field,.field-name').value.trim();
+        const targetEle = button.parentElement.parentElement.querySelector('.spell-content,.field-value');
+        const arr = getParams(targetField, true);
         let from = [...document.querySelectorAll('.field-name,.sentence_field')].filter(el => el.value === arr[0]['fetch-field']);
         from = from ? findParent(from[0], '.form-item,.sentence_setting').querySelector('.spell-content,.field-value') : null;
         if (!from) {
             return;
         }
-        arr.forEach(v => ankiFetchData(v, target, from));
+        arr.forEach(v => ankiFetchData(v, targetEle, from));
     }
 
-    PushExpandAnkiInputButton('fetch-sentence-field', '', (ev) => ankiFetchClickFn(ev.target), '', (ev) => {
-        boldAll = true
-        ankiFetchClickFn(ev.target);
-        ev.preventDefault();
-        boldAll = false;
-    });
 
     function parseBoldFormat(param) {
         if (!param['fetch-bold-field']) {
@@ -794,6 +866,6 @@
         ankiContainer.querySelector('#auto-sentence').parentElement.insertAdjacentElement('afterend', div);
     });
     return {
-        ankiFetchClickFn, ankiFetchData
+        ankiFetchClickFn, ankiFetchData, setAllBold
     }
 })();
