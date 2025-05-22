@@ -307,10 +307,16 @@
         } else {
             words = boldFieldValue.split(' ');
         }
-
+        if (words.length < 1) {
+            return sentence;
+        }
         words = words.sort((a, b) => a.length <= b.length ? 1 : -1);
         const formats = format ? format.split('{$bold}').join('\$&') : '<b>\$&</b>';
         for (const word of words) {
+            /*const reg = new RegExp(`<${word}.*?>.*</${word}>`, 'gi');
+            if (reg.test(sentence)) {
+                continue;
+            }*/
             const l = sentence.length;
             sentence = sentence.replaceAllX(word, formats, 'gi');
             if (l !== sentence.length && !boldAll) {
