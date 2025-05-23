@@ -425,6 +425,7 @@
                 } else {
                     value.innerHTML = replace(value.innerHTML, param);
                 }
+                value.innerHTML = bold(value, boldFieldValue);
                 return;
             }
 
