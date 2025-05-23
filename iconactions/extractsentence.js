@@ -300,13 +300,13 @@
         if (el.childNodes.length < 1) {
             return 0;
         }
+        const d = document.createElement('div');
         let replacedNum = 0;
         for (const node of el.childNodes) {
             if (node.nodeType === node.TEXT_NODE) {
                 const o = node.nodeValue;
                 const n = node.nodeValue.replaceAllX(word, formats, 'gi');
                 if (o !== n) {
-                    const d = document.createElement('div');
                     d.innerHTML = n;
                     node.replaceWith(...d.childNodes)
                     replacedNum++;
