@@ -296,9 +296,33 @@
         }, value);
     }
 
+    function eleBold(el, word, formats) {
+        if (el.childNodes.length < 1) {
+            return 0;
+        }
+        let replacedNum = 0;
+        for (const node of el.childNodes) {
+            if (node.nodeType === node.TEXT_NODE) {
+                const o = node.nodeValue;
+                const n = node.nodeValue.replaceAllX(word, formats, 'gi');
+                if (o !== n) {
+                    const d = document.createElement('div');
+                    d.innerHTML = n;
+                    node.replaceWith(...d.childNodes)
+                    replacedNum++;
+                }
+                continue;
+            }
+            if (node.nodeType === node.ELEMENT_NODE) {
+                replacedNum += eleBold(node, word, formats);
+            }
+        }
+        return replacedNum;
+    }
+
     function bold(sentence, boldFieldValue) {
         if (!boldFieldValue) {
-            return sentence;
+            return sentence.innerHTML;
         }
         let words, format;
         if (Array.isArray(boldFieldValue)) {
@@ -308,23 +332,17 @@
             words = boldFieldValue.split(' ');
         }
         if (words.length < 1) {
-            return sentence;
+            return sentence.innerHTML;
         }
         words = words.sort((a, b) => a.length <= b.length ? 1 : -1);
         const formats = format ? format.split('{$bold}').join('\$&') : '<b>\$&</b>';
         for (const word of words) {
-            /*const reg = new RegExp(`<${word}.*?>.*</${word}>`, 'gi');
-            if (reg.test(sentence)) {
-                continue;
-            }*/
-            const l = sentence.length;
-            sentence = sentence.replaceAllX(word, formats, 'gi');
-            if (l !== sentence.length && !boldAll) {
+            if (eleBold(sentence, word, formats) > 0 && !boldAll) {
                 break
             }
         }
 
-        return sentence;
+        return sentence.innerHTML;
     }
 
     const textTags = new Set(['INPUT', 'TEXTAREA']);
@@ -417,10 +435,10 @@
                     'fetch-value-replacement-ignore-case': param['fetch-html-replacement-ignore-case'],
                 })
                 d.innerHTML = replace(d.innerText, param);
-                d.innerHTML = bold(d.innerHTML, boldFieldValue);
+                d.innerHTML = bold(d, boldFieldValue);
             } else if (param['fetch-data-type'] === 'html') {
                 d.innerHTML = replace(value.outerHTML, param);
-                d.innerHTML = bold(d.innerHTML, boldFieldValue);
+                d.innerHTML = bold(d, boldFieldValue);
             }
 
             value = d.children.length > 0 ? d.children[0] : d;
