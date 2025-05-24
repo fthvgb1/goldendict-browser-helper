@@ -2,7 +2,7 @@
 
     PushHookAnkiStyle(`
     .fetch-sentence-container { display:flex; }
-    .fetch-item:nth-child(1) button.fetch-delete,.fetch-hidden,.fetch-dd:has(option[value="html"]:checked) + .fetch-dd{ display: none}
+    .fetch-item:nth-child(2) button.fetch-delete,.fetch-hidden,.fetch-dd:has(option[value="html"]:checked) + .fetch-dd{ display: none}
     .fetch-opera { display: grid;}
     .fetch-item { margin-top: 1rem; margin-left: 1rem; border: 1px dashed #e9b985; padding:.4rem}
     .fetch-item-specific { border-color: #13195a}
@@ -97,8 +97,11 @@
         if (!ev.target.classList.contains('fetch-item')) {
             return
         }
+        const sel = setting.children[0];
         let unfold = false;
+        const items = [];
         setting.querySelectorAll('.fetch-item').forEach(item => {
+            items.push(item.querySelector('.fetch-name').value);
             if (item.classList.contains('fetch-hidden')) {
                 item.classList.remove('fetch-hidden', 'fetch-item-specific');
                 ev.target.classList.add('fetch-item-specific');
@@ -110,20 +113,43 @@
             }
         });
         if (unfold) {
-            ev.target.scrollIntoView()
+            sel.classList.add('fetch-hidden');
+            ev.target.scrollIntoView();
+            GM_setValue('fetch-display-type', 1);
+            return;
         }
+        const opts = items.map(name => [name, name])
+        sel.innerHTML = buildOption(opts, ev.target.querySelector('.fetch-name').value, 0, 1)
+        sel.classList.remove('fetch-hidden');
+        GM_setValue('fetch-display-type', 2);
     }
+
+    PushHookAnkiChange('.fetch-item-select', (ev) => {
+        const name = ev.target.value;
+        const t = setting.querySelector(`.fetch-name[value="${name}"]`);
+        if (!t) {
+            return
+        }
+        setting.querySelectorAll('.fetch-item:not(.fetch-hidden)').forEach(e => e.classList.add('fetch-hidden'));
+        findParent(t, '.fetch-item').classList.remove('fetch-hidden');
+    });
 
     PushHookAnkiChange('#fetch.swal2-checkbox', (ev) => {
         if (!ev.target.checked) {
             saveFetchItems();
             addOrDelBtn();
-            setting.innerHTML = '';
+            setting.children[0].classList.add('fetch-hidden');
+            [...setting.children].slice(1).map(e => e.remove());
             return
         }
         let fetchItems = GM_getValue('fetch-items', [{...de}]);
         fetchItems = fetchItems.length > 0 ? fetchItems : [{...de}];
         fetchItems.forEach(item => setting.appendChild(buildFetchItem(item)));
+        if (GM_getValue('fetch-display-type', 1) === 2) {
+            setting.children[0].innerHTML = buildOption(fetchItems.map(m => [m['fetch-name'], m['fetch-name']]), '', 0, 1);
+            setting.children[0].classList.remove('fetch-hidden');
+            setting.children.length > 2 && [...setting.children].slice(2).forEach(e => e.classList.add('fetch-hidden'));
+        }
     });
 
     PushHookAnkiChange('.fetch-active', fetchActive);
@@ -175,7 +201,7 @@
             hadMap[input.value] = el;
         }
 
-        if (setting.children.length < 1) {
+        if ([...setting.children].slice(1).length < 1) {
             let fetchItems = GM_getValue('fetch-items', [{...de}]);
             fetchItems.forEach(v => {
                 if (!fetchMap.hasOwnProperty(v['fetch-to-field'])) {
@@ -262,7 +288,7 @@
     }
 
     function saveFetchItems() {
-        const data = [...setting.children].map(item => convertFetchParam(item));
+        const data = [...setting.children].slice(1).map(item => convertFetchParam(item));
         data.length > 0 && GM_setValue('fetch-items', data);
     }
 
@@ -692,7 +718,7 @@
 
     function getAnkiFetchParams(targetField = '', activeFilter = true) {
         let params;
-        if (setting.children.length < 1) {
+        if ([...setting.children].slice(1).length < 1) {
             params = GM_getValue('fetch-items')
         } else {
             params = [...document.querySelectorAll('.fetch-to-field')].map(el => {
@@ -862,7 +888,7 @@
                 <input type="checkbox" class="swal2-checkbox" name="fetch" id="fetch" title="显示提取词典设置">
                 <button class="fetch-all" title="一键全部提取">🕸️</button>
             </div>
-            <div class="select-setting"></div>
+            <div class="select-setting"><select class="fetch-item-select fetch-hidden"></select></div>
         `;
 
         setting = div.querySelector('.select-setting');
@@ -875,7 +901,8 @@
         };
         const enterDrag = (e) => {
             e.preventDefault();
-            if (e.target === currentItem || setting.children.length <= 1 || e.target === setting || ![...setting.children].includes(e.target)) {
+            const childNum = [...setting.children].slice(1).length;
+            if (e.target === currentItem || childNum <= 1 || e.target === setting || ![...setting.children].slice(1).includes(e.target)) {
                 return
             }
             let liArray = Array.from(setting.childNodes);
