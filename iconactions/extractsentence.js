@@ -126,7 +126,7 @@
 
     PushHookAnkiChange('.fetch-item-select', (ev) => {
         const name = ev.target.value;
-        const t = setting.querySelector(`.fetch-name[value="${name}"]`);
+        const t = setting.querySelector(`.fetch-name[value='${name}']`);
         if (!t) {
             return
         }
@@ -139,7 +139,7 @@
             saveFetchItems();
             addOrDelBtn();
             setting.children[0].classList.add('fetch-hidden');
-            [...setting.children].slice(1).map(e => e.remove());
+            getFetchItemEles().map(e => e.remove());
             return
         }
         let fetchItems = GM_getValue('fetch-items', [{...de}]);
@@ -193,6 +193,10 @@
         clearInterval(t);
     }
 
+    function getFetchItemEles() {
+        return [...setting.children].slice(1);
+    }
+
     function addOrDelBtn() {
         const fetchMap = {};
         const hadMap = {};
@@ -201,7 +205,7 @@
             hadMap[input.value] = el;
         }
 
-        if ([...setting.children].slice(1).length < 1) {
+        if (getFetchItemEles().length < 1) {
             let fetchItems = GM_getValue('fetch-items', [{...de}]);
             fetchItems.forEach(v => {
                 if (!fetchMap.hasOwnProperty(v['fetch-to-field'])) {
@@ -288,7 +292,7 @@
     }
 
     function saveFetchItems() {
-        const data = [...setting.children].slice(1).map(item => convertFetchParam(item));
+        const data = getFetchItemEles().map(item => convertFetchParam(item));
         data.length > 0 && GM_setValue('fetch-items', data);
     }
 
@@ -718,7 +722,7 @@
 
     function getAnkiFetchParams(targetField = '', activeFilter = true) {
         let params;
-        if ([...setting.children].slice(1).length < 1) {
+        if (getFetchItemEles().length < 1) {
             params = GM_getValue('fetch-items')
         } else {
             params = [...document.querySelectorAll('.fetch-to-field')].map(el => {
@@ -901,8 +905,8 @@
         };
         const enterDrag = (e) => {
             e.preventDefault();
-            const childNum = [...setting.children].slice(1).length;
-            if (e.target === currentItem || childNum <= 1 || e.target === setting || ![...setting.children].slice(1).includes(e.target)) {
+            const children = getFetchItemEles();
+            if (e.target === currentItem || children.length <= 1 || e.target === setting || !children.includes(e.target)) {
                 return
             }
             let liArray = Array.from(setting.childNodes);
