@@ -2,9 +2,10 @@
 
     PushHookAnkiStyle(`
     .fetch-sentence-container { display:flex; }
-    .fetch-item:nth-child(1) button.fetch-delete,.fetch-dd:has(option[value="html"]:checked) + .fetch-dd{ display: none}
+    .fetch-item:nth-child(1) button.fetch-delete,.fetch-hidden,.fetch-dd:has(option[value="html"]:checked) + .fetch-dd{ display: none}
     .fetch-opera { display: grid;}
-    .fetch-item { margin-top: 1rem; margin-left: 1rem; }
+    .fetch-item { margin-top: 1rem; margin-left: 1rem; border: 1px dashed #e9b985; padding:.4rem}
+    .fetch-item-specific { border-color: #13195a}
     .fetch-box { 
             display: inline-block;
             vertical-align: middle;
@@ -88,6 +89,30 @@
     PushHookAnkiDidRender(() => document.addEventListener('mouseup', fullBold));
     PushHookAnkiClose(() => document.removeEventListener('mousedown', fullBold));
     PushHookAnkiClose(() => document.removeEventListener('mouseup', fullBold));
+
+    PushHookAnkiDidRender(() => setting.addEventListener('dblclick', settingItemSwitchDisplay));
+    PushHookAnkiClose(() => setting.removeEventListener('dblclick', settingItemSwitchDisplay));
+
+    function settingItemSwitchDisplay(ev) {
+        if (!ev.target.classList.contains('fetch-item')) {
+            return
+        }
+        let unfold = false;
+        setting.querySelectorAll('.fetch-item').forEach(item => {
+            if (item.classList.contains('fetch-hidden')) {
+                item.classList.remove('fetch-hidden', 'fetch-item-specific');
+                ev.target.classList.add('fetch-item-specific');
+                unfold = true
+                return;
+            }
+            if (item !== ev.target) {
+                item.classList.add('fetch-hidden');
+            }
+        });
+        if (unfold) {
+            ev.target.scrollIntoView()
+        }
+    }
 
     PushHookAnkiChange('#fetch.swal2-checkbox', (ev) => {
         if (!ev.target.checked) {
