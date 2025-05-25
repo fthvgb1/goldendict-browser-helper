@@ -3,7 +3,7 @@
     PushHookAnkiStyle(`
     .fetch-sentence-container { display:flex; }
     .fetch-item:nth-child(2) button.fetch-delete,.fetch-hidden,.fetch-dd:has(option[value="html"]:checked) + .fetch-dd{ display: none}
-    .fetch-opera { display: grid;}
+    .fetch-opera { display: grid; justify-items: center}
     .fetch-item { margin-top: 1rem; margin-left: 1rem; border: 1px dashed #e9b985; padding:.4rem}
     .fetch-item-specific { border-color: #13195a}
     .fetch-box { 
@@ -45,6 +45,62 @@
     });
     PushExpandAnkiInputButton('fetch-add', '', (e) => {
         findParent(e.target, '.fetch-item').insertAdjacentElement('afterend', buildFetchItem({...de}));
+    });
+    PushExpandAnkiInputButton('fetch-export', '', () => {
+        const data = JSON.stringify(getAnkiFetchParams('', false));
+        download('fetch-rule.json', data);
+    });
+    PushExpandAnkiInputButton('fetch-import', '', (ev) => {
+        ev.target.parentElement.lastElementChild.click();
+    });
+
+    function diff(a, b, fn) {
+        return a.filter(aa => {
+            let flag = false
+            for (const bb of b) {
+                if (fn(aa, bb)) {
+                    flag = true
+                    break
+                }
+            }
+            return !flag;
+        })
+    }
+
+    function objectsEqual(o1, o2) {
+        return Object.keys(o1).length === Object.keys(o2).length
+            && Object.keys(o1).every(p => o1[p] === o2[p])
+    }
+
+    PushHookAnkiChange('.fetch-file', async (ev) => {
+        const file = ev.target.files[0];
+        if (!file) {
+            Swal.showValidationMessage('没有文件！');
+            return
+        }
+        const items = await file.text().then(JSON.parse);
+        if (!items || items.length < 1 || !items[0].hasOwnProperty('fetch-name') || !items[0].hasOwnProperty('fetch-to-field')) {
+            Swal.showValidationMessage('不是正确的规则文件！');
+            return
+        }
+        const hadRule = getAnkiFetchParams('', false);
+        const newRule = diff(items, hadRule, objectsEqual);
+        if (newRule.length < 1) {
+            Swal.showValidationMessage('无需导入！');
+            return
+        }
+        const names = [];
+        newRule.forEach(item => {
+            const t = buildFetchItem(item);
+            t.classList.add('fetch-item-specific');
+            setting.appendChild(t);
+            names.push([item['fetch-name'], item['fetch-name']]);
+        });
+        Swal.showValidationMessage(`已导入${newRule.length}条记录！`);
+        if (GM_getValue('fetch-display-type', 1) === 2) {
+            const options = buildOption(names, '', 0, 1);
+            setting.children[0].insertAdjacentHTML('beforeend', options);
+        }
     });
     PushExpandAnkiInputButton('fetch-copy', '', (e) => {
         const item = findParent(e.target, '.fetch-item');
@@ -93,28 +149,47 @@
     PushHookAnkiDidRender(() => setting.addEventListener('dblclick', settingItemSwitchDisplay));
     PushHookAnkiClose(() => setting.removeEventListener('dblclick', settingItemSwitchDisplay));
 
+    function download(filename, text, type = "text/plain") {
+        // Create an invisible A element
+        const a = document.createElement("a");
+        a.style.display = "none";
+        document.body.appendChild(a);
+
+        // Set the HREF to a Blob representation of the data to be downloaded
+        a.href = window.URL.createObjectURL(
+            new Blob([text], {type})
+        );
+
+        // Use download attribute to set set desired file name
+        a.setAttribute("download", filename);
+
+        // Trigger the download by simulating click
+        a.click();
+
+        // Cleanup
+        window.URL.revokeObjectURL(a.href);
+        document.body.removeChild(a);
+    }
+
     function settingItemSwitchDisplay(ev) {
         if (!ev.target.classList.contains('fetch-item')) {
             return
         }
         const sel = setting.children[0];
-        let unfold = false;
         const items = [];
+        const displayType = GM_getValue('fetch-display-type', 1);
         setting.querySelectorAll('.fetch-item').forEach(item => {
             items.push(item.querySelector('.fetch-name').value);
-            if (item.classList.contains('fetch-hidden')) {
-                item.classList.remove('fetch-hidden', 'fetch-item-specific');
-                ev.target.classList.add('fetch-item-specific');
-                unfold = true
-                return;
-            }
-            if (item !== ev.target) {
+            if (displayType === 1 && item !== ev.target) {
                 item.classList.add('fetch-hidden');
+                return
             }
+            item.classList.remove('fetch-hidden');
         });
-        if (unfold) {
+        if (displayType === 2) {
             sel.classList.add('fetch-hidden');
             ev.target.scrollIntoView();
+            ev.target.classList.add('fetch-item-specific');
             GM_setValue('fetch-display-type', 1);
             return;
         }
@@ -140,6 +215,7 @@
             addOrDelBtn();
             setting.children[0].classList.add('fetch-hidden');
             getFetchItemEles().map(e => e.remove());
+            ev.target.parentElement.querySelectorAll('.fetch-import,.fetch-export').forEach(btn => btn.classList.add('fetch-hidden'))
             return
         }
         let fetchItems = GM_getValue('fetch-items', [{...de}]);
@@ -150,6 +226,7 @@
             setting.children[0].classList.remove('fetch-hidden');
             setting.children.length > 2 && [...setting.children].slice(2).forEach(e => e.classList.add('fetch-hidden'));
         }
+        ev.target.parentElement.querySelectorAll('.fetch-import,.fetch-export').forEach(btn => btn.classList.remove('fetch-hidden'))
     });
 
     PushHookAnkiChange('.fetch-active', fetchActive);
@@ -201,7 +278,7 @@
         const fetchMap = {};
         const hadMap = {};
         for (const el of document.querySelectorAll('.fetch-sentence-field')) {
-            let input = el.parentElement.parentElement.querySelector('.field-name,.sentence_field');
+            let input = findParent(el, '.form-item').querySelector('.field-name,.sentence_field');
             hadMap[input.value] = el;
         }
 
@@ -213,7 +290,7 @@
                 } else {
                     fetchMap[v['fetch-to-field']].push([v['fetch-active'], v]);
                 }
-            })
+            });
         } else {
             for (const ele of document.querySelectorAll('.fetch-to-field')) {
                 const active = findParent(ele, '.fetch-item').querySelector('.fetch-active').checked;
@@ -229,40 +306,30 @@
         Object.keys(fetchMap).map(k => {
             let active = false;
             const title = fetchMap[k].filter(v => v[0]).map(v => {
-                if (v[0]) {
-                    active = true;
-                }
+                active = true;
                 return v[1] instanceof HTMLElement ? findParent(v[1], '.fetch-item').querySelector('.fetch-name').value : v[1]['fetch-name']
             });
-
-            [...document.querySelectorAll('input.field-name,input.sentence_field')].filter(input => input.value === k).forEach(input => {
-                if (hadMap.hasOwnProperty(k)) {
-                    delete hadMap[k];
-                }
-                const btn = input.parentElement.querySelector(`.fetch-sentence-field`);
-                if (active && btn) {
-                    btn.title = `将提取${title.join(',')}`;
-                    return;
-                }
-                if (active && !btn) {
-                    const btn = document.createElement('button');
-                    btn.innerHTML = `⚓`;
-                    btn.className = 'fetch-sentence-field';
-                    btn.title = `将提取${title.join(',')} 右键选择:单个执行操作`;
-                    let op = input.parentElement.querySelector('.field-operate');
-                    if (op) {
-                        op.appendChild(btn);
-                        return;
-                    }
-                    input.parentElement.parentElement.querySelector('.field-operate').appendChild(btn);
-                    return
-                }
-
-                btn && btn.remove();
-            });
-            Object.keys(hadMap).forEach(k => hadMap[k].remove());
+            const input = document.querySelector(`:where(input.field-name,input.sentence_field)[value='${k}']`);
+            if (hadMap.hasOwnProperty(k)) {
+                delete hadMap[k];
+            }
+            const btn = input.parentElement.querySelector(`.fetch-sentence-field`);
+            if (active && btn) {
+                btn.title = `将提取${title.join(',')}`;
+                return;
+            }
+            if (active && !btn) {
+                const btn = document.createElement('button');
+                btn.innerHTML = `⚓`;
+                btn.className = 'fetch-sentence-field';
+                btn.title = `将提取${title.join(',')} 右键选择:单个执行操作`;
+                const op = findParent(input, '.form-item').querySelector('.field-operate');
+                op && op.appendChild(btn);
+                return;
+            }
+            btn && btn.remove();
         })
-
+        Object.keys(hadMap).forEach(k => hadMap[k].remove());
     }
 
     function fetchActive(ev) {
@@ -888,9 +955,12 @@
         div.className = 'form-item fetch-sentence-container';
         div.innerHTML = `
             <div class="fetch-opera">
-                <label for="fetch" class="form-label">提取词典的句子</label>
-                <input type="checkbox" class="swal2-checkbox" name="fetch" id="fetch" title="显示提取词典设置">
-                <button class="fetch-all" title="一键全部提取">🕸️</button>
+                <label for="fetch" class="form-label">简易字段加工处理器</label>
+                <input type="checkbox" class="swal2-checkbox" name="fetch" id="fetch" title="显示设置">
+                <button class="fetch-all" title="一键执行全部操作">🕸️</button>
+                <button class="fetch-import fetch-hidden" title="导入">🚚</button>
+                <button class="fetch-export fetch-hidden" title="导出">🚍</button>
+                <input type="file" accept="text/plain, application/json" class="fetch-file fetch-hidden">
             </div>
             <div class="select-setting"><select class="fetch-item-select fetch-hidden"></select></div>
         `;
