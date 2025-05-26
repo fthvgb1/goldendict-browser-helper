@@ -55,16 +55,30 @@
     });
 
     function diff(a, b, fn) {
-        return a.filter(aa => {
-            let flag = false
-            for (const bb of b) {
+        if (b.length <= 2 || (a.length <= b.length)) {
+            return a.filter(aa => {
+                let flag = false
+                for (const bb of b) {
+                    if (fn(aa, bb)) {
+                        flag = true
+                        break
+                    }
+                }
+                return !flag;
+            })
+        }
+        // maybe have some optimization
+        const hadIndex = new Set();
+        b.forEach(bb => {
+            for (const i in a) {
+                const aa = a[i];
                 if (fn(aa, bb)) {
-                    flag = true
+                    hadIndex.add(parseInt(i));
                     break
                 }
             }
-            return !flag;
-        })
+        });
+        return a.filter((aa, i) => !hadIndex.has(i));
     }
 
     function objectsEqual(o1, o2) {
