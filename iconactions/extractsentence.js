@@ -1,4 +1,4 @@
-;const {ankiFetchClickFn, ankiFetchData, setAllBold, getAnkiFetchParams} = (() => {
+;const {ankiFetchClickFn, ankiFetchData, setAllBold, getAnkiFetchParams, arrayDiff} = (() => {
 
     PushHookAnkiStyle(`
     .fetch-sentence-container { display:flex; }
@@ -1031,6 +1031,6 @@
         ankiContainer.querySelector('#auto-sentence').parentElement.insertAdjacentElement('afterend', div);
     });
     return {
-        ankiFetchClickFn, ankiFetchData, setAllBold, getAnkiFetchParams
+        ankiFetchClickFn, ankiFetchData, setAllBold, getAnkiFetchParams, arrayDiff: diff
     }
 })();
