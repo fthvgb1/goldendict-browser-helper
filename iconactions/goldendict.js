@@ -4,16 +4,32 @@
 
     if (key === 'goldendict') {
         document.addEventListener('dblclick', (ev) => {
-            const sel = window.getSelection();
-            let str = sel.anchorNode.nodeValue, len = str.length, a = sel.anchorOffset, b = a;
-            while (str[a] !== ' ' && a--) {
+            const selection = document.getSelection();
+            if (!selection.anchorNode.data) {
+                return
             }
-            if (str[a] === ' ') {
-                a++; // start of word
+            const chars = new Set([' ', '/', '／', '(', ')']);
+            let left = selection.baseOffset, right = selection.extentOffset;
+            if (left > 0) {
+                for (; left > 0; left--) {
+                    if (chars.has(selection.anchorNode.data[left])) {
+                        left++;
+                        break
+                    }
+                }
             }
-            while (str[b] !== ' ' && b++ < len) {// end of word+1
+            while (true) {
+                if (chars.has(selection.anchorNode.data[right]) || right >= selection.anchorNode.data.length) {
+                    break
+                }
+                right++;
             }
-            const s = str.substring(a, b).trim().replaceAll(/[.,()]*/g, '');
+            const str = selection.anchorNode.data.slice(left, right);
+            const r = /(\b[\w-]+\b)/.exec(str);
+            if (!r || r.length < 2) {
+                return
+            }
+            const s = r[1];
             if (s) {
                 const aa = document.createElement('a');
                 aa.href = `goldendict://${s}`;

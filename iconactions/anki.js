@@ -77,15 +77,17 @@
         sel.className = inputs.className;
         const precision = `deck:${deck} "${field}:${value}"`;
         const str = value.split(' ');
+        const wordMod = str.length > 1 ? str.map(v => `${field}:re:\\b${v}\\b`).join(' ') : `${field}:re:\\b${value}\\b`;
         const vague = str.length > 1 ? str.map(v => `${field}:*${v}*`).join(' ') : `${field}:*${value}*`;
         const deckVague = `deck:${deck} ` + vague;
         if (type !== null) {
-            return [vague, deckVague, precision, value][type];
+            return [wordMod, vague, deckVague, precision, value][type];
         }
         const searchType = GM_getValue('searchType', 0);
         const m = {};
         const nbsp = '&nbsp;'.repeat(5);
         const options = [
+            [wordMod, `单词模式不指定组牌查询:   ${nbsp}${wordMod}`],
             [vague, `模糊不指定组牌查询:   ${nbsp}${vague}`],
             [deckVague, `模糊指定组牌查询:    ${nbsp}${deckVague}`],
             [precision, `精确查询:    ${nbsp}${precision}`],
@@ -144,7 +146,7 @@
             sel.className = inputs.className;
             const {options, m} = getSearchType(ev);
             sel.innerHTML = buildOption(options, m[GM_getValue('searchType', 0)], 0, 1);
-            inputs.parentElement.replaceChild(sel, inputs);
+            inputs.replaceWith(sel);
             sel.focus();
             const fn = () => {
                 GM_setValue('searchType', m[htmlSpecial(sel.value)]);
@@ -178,7 +180,7 @@
 
     const br = (() => {
         const div = document.createElement('div');
-        div.innerHTML = '<br>';
+        div.innerHTML = createHtml('<br>');
         return div
     })();
 
@@ -349,17 +351,16 @@
             result = await queryAnki(queryStr);
             if (!result) {
                 setExistsNoteId(0);
-                sels && sels.parentElement.replaceChild(inputs, sels);
+                sels && sels.replaceWith(inputs);
                 return
             }
         } catch (e) {
+            sels && sels.replaceWith(inputs);
             Swal.showValidationMessage(e);
             return
         }
         if (result.length === 1) {
-            if (sels && sels.parentElement) {
-                sels.parentElement.replaceChild(inputs, sels);
-            }
+            sels && sels.replaceWith(inputs);
             await showAnkiCard(result[0]);
             return
         }
@@ -795,7 +796,7 @@
         const hookStyles = styles.length > 0 ? `<style>${styles.filter(v => v !== '').join('\n')}</style>` : '';
 
         const style = `<style>${select2Css} ${frameCss} ${spellCss} ${diagStyle} </style> ${hookStyles}`;
-        const ankiHtml = `${style} 
+        const ankiHtml = createHtml(`${style} 
     <div class="form-item">
         <label for="ankiHost" class="form-label">ankiConnect监听地址</label>
         <input id="ankiHost" value="${ankiHost}" placeholder="ankiConnector监听地址" class="swal2-input">
@@ -855,7 +856,7 @@
         <label for="force-update" class="form-label">更新</label>
         <input type="checkbox" class="swal2-checkbox" name="update" id="force-update">
         <input type="button" class="card-delete" value="删除">
-    </div>`;
+    </div>`);
         const ankiContainer = document.createElement('div');
         ankiContainer.className = 'anki-container';
         ankiContainer.innerHTML = createHtml(ankiHtml);
