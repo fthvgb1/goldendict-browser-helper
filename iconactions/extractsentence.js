@@ -1,4 +1,18 @@
 ;const {ankiFetchClickFn, ankiFetchData, setAllBold, getAnkiFetchParams, arrayDiff} = (() => {
+    if (!Array.prototype.filterAndMapX) {
+        Array.prototype.filterAndMapX = function (fn) {
+            const arr = [];
+            for (const item of this) {
+                const r = fn(item);
+                if (r === false) {
+                    continue
+                }
+                arr.push(r)
+            }
+            return arr;
+        }
+    }
+
 
     PushHookAnkiStyle(`
     .fetch-sentence-container { display:flex; }
@@ -436,28 +450,47 @@
         if (el.childNodes.length < 1) {
             return 0;
         }
-        let flag = 'i';
-        boldAll && (flag += 'g');
-        // todo \\b(${words.join('|')})\\b
-        const wordReg = new RegExp(`(${words.join('|')})`, flag);
+        const flag = 'ig';
+        const wordReg = new RegExp(`\\b(${words.join('|')}).*?\\b`, flag);
         const d = document.createElement('div');
         let replacedNum = 0;
         // wtf! loop nodes with for ...of none other than dynamic
-        el.childNodes.forEach(node => {
+        for (const node of [...el.childNodes]) {
             if (node.nodeType === node.TEXT_NODE) {
                 const o = node.nodeValue;
-                const n = node.nodeValue.replace(wordReg, formats);
+                let n = node.nodeValue.replace(wordReg, formats);
                 if (o !== n) {
                     d.innerHTML = n;
                     node.replaceWith(...d.childNodes)
                     replacedNum++;
+                    if (!boldAll) {
+                        return;
+                    }
+                    continue;
                 }
-                return
+                let wordsEx = [...words];
+                while (true) {
+                    wordsEx = wordsEx.filterAndMapX(v => v.length - 2 > 2 ? v.slice(0, -2) : false);
+                    if (wordsEx.length < 1) {
+                        break
+                    }
+                    const wordReg = new RegExp(`\\b(${wordsEx.join('|')}).*?\\b`, flag);
+                    n = node.nodeValue.replace(wordReg, formats);
+                    if (o !== n) {
+                        d.innerHTML = n;
+                        node.replaceWith(...d.childNodes)
+                        replacedNum++;
+                        if (!boldAll) {
+                            return;
+                        }
+                        break;
+                    }
+                }
             }
             if (node.nodeType === node.ELEMENT_NODE) {
                 replacedNum += eleBold(node, words, formats);
             }
-        });
+        }
         return replacedNum;
     }
 
