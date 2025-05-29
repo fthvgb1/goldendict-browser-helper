@@ -455,7 +455,7 @@
                 }
                 let wordsEx = [...words];
                 while (true) {
-                    wordsEx = wordsEx.filterAndMapX(v => v.length > 2 ? v.slice(0, -1) : false);
+                    wordsEx = wordsEx.filterAndMapX(v => v.length > 3 ? v.slice(0, -1) : false);
                     if (wordsEx.length < 1) {
                         break
                     }
