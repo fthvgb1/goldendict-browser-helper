@@ -1,19 +1,4 @@
 ;const {ankiFetchClickFn, ankiFetchData, setAllBold, getAnkiFetchParams, arrayDiff} = (() => {
-    if (!Array.prototype.filterAndMapX) {
-        Array.prototype.filterAndMapX = function (fn) {
-            const arr = [];
-            for (const item of this) {
-                const r = fn(item);
-                if (r === false) {
-                    continue
-                }
-                arr.push(r)
-            }
-            return arr;
-        }
-    }
-
-
     PushHookAnkiStyle(`
     .fetch-sentence-container { display:flex; }
     .fetch-item:nth-child(2) button.fetch-delete,.fetch-hidden,.fetch-dd:has(option[value="html"]:checked) + .fetch-dd{ display: none}
@@ -464,13 +449,13 @@
                     node.replaceWith(...d.childNodes)
                     replacedNum++;
                     if (!boldAll) {
-                        return;
+                        break;
                     }
                     continue;
                 }
                 let wordsEx = [...words];
                 while (true) {
-                    wordsEx = wordsEx.filterAndMapX(v => v.length - 2 > 2 ? v.slice(0, -2) : false);
+                    wordsEx = wordsEx.filterAndMapX(v => v.length > 2 ? v.slice(0, -1) : false);
                     if (wordsEx.length < 1) {
                         break
                     }
@@ -481,7 +466,7 @@
                         node.replaceWith(...d.childNodes)
                         replacedNum++;
                         if (!boldAll) {
-                            return;
+                            return replacedNum;
                         }
                         break;
                     }

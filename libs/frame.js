@@ -17,6 +17,20 @@
     decodeHtmlSpecial,
     base64ToUint8Array,
 } = (() => {
+    if (!Array.prototype.filterAndMapX) {
+        Array.prototype.filterAndMapX = function (fn) {
+            const arr = [];
+            for (const item of this) {
+                const r = fn(item);
+                if (r === false) {
+                    continue
+                }
+                arr.push(r)
+            }
+            return arr;
+        }
+    }
+
     const contextMenuActions = [];
     const iconActions = [];
     const helperServerHost = GM_getValue('host', 'http://127.0.0.1:9999');
