@@ -432,27 +432,32 @@
         }, value);
     }
 
-    function eleBold(el, word, formats) {
+    function eleBold(el, words, formats, boldAll) {
         if (el.childNodes.length < 1) {
             return 0;
         }
+        let flag = 'i';
+        boldAll && (flag += 'g');
+        // todo \\b(${words.join('|')})\\b
+        const wordReg = new RegExp(`(${words.join('|')})`, flag);
         const d = document.createElement('div');
         let replacedNum = 0;
-        for (const node of el.childNodes) {
+        // wtf! loop nodes with for ...of none other than dynamic
+        el.childNodes.forEach(node => {
             if (node.nodeType === node.TEXT_NODE) {
                 const o = node.nodeValue;
-                const n = node.nodeValue.replaceAllX(word, formats, 'gi');
+                const n = node.nodeValue.replace(wordReg, formats);
                 if (o !== n) {
                     d.innerHTML = n;
                     node.replaceWith(...d.childNodes)
                     replacedNum++;
                 }
-                continue;
+                return
             }
             if (node.nodeType === node.ELEMENT_NODE) {
-                replacedNum += eleBold(node, word, formats);
+                replacedNum += eleBold(node, words, formats);
             }
-        }
+        });
         return replacedNum;
     }
 
@@ -472,11 +477,7 @@
         }
         words = words.sort((a, b) => a.length <= b.length ? 1 : -1);
         const formats = format ? format.split('{$bold}').join('\$&') : '<b>\$&</b>';
-        for (const word of words) {
-            if (eleBold(sentence, word, formats) > 0 && !boldAll) {
-                break
-            }
-        }
+        eleBold(sentence, words, formats, boldAll)
 
         return sentence.innerHTML;
     }

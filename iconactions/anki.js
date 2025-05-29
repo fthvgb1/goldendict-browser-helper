@@ -349,7 +349,7 @@
         let result;
         try {
             result = await queryAnki(queryStr);
-            if (!result) {
+            if (!result || result.length < 1) {
                 setExistsNoteId(0);
                 sels && sels.replaceWith(inputs);
                 return
@@ -386,8 +386,7 @@
         const blurFn = async () => {
             sel.removeEventListener('change', changeFn);
             inputs.value = sel.value;
-            sel.parentElement.replaceChild(inputs, sel);
-            await showAnkiCard(values[sel.value]);
+            sel.replaceWith(inputs);
         };
         sel.addEventListener('change', changeFn);
         sel.addEventListener('blur', blurFn);
