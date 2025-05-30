@@ -432,7 +432,7 @@
     }
 
     function buildRegular(words, flag) {
-        return new RegExp(`\\b(${words.map(v=>v.length<=2?(v):v+'.*?').join('|')})\\b`, flag);
+        return new RegExp(`\\b(${words.map(v => v.length<= 3 ? v : (v + '.*?')).join('|')})\\b`, flag);
     }
 
     function eleBold(el, words, formats, boldAll) {
