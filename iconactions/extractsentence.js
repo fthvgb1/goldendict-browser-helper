@@ -431,12 +431,16 @@
         }, value);
     }
 
+    function buildRegular(words, flag) {
+        return new RegExp(`\\b(${words.map(v=>v.length<=2?(v):v+'.*?').join('|')})\\b`, flag);
+    }
+
     function eleBold(el, words, formats, boldAll) {
         if (el.childNodes.length < 1) {
             return 0;
         }
         const flag = 'ig';
-        const wordReg = new RegExp(`\\b(${words.join('|')}).*?\\b`, flag);
+        const wordReg = buildRegular(words, flag);
         const d = document.createElement('div');
         let replacedNum = 0;
         // wtf! loop nodes with for ...of none other than dynamic
@@ -459,7 +463,7 @@
                     if (wordsEx.length < 1) {
                         break
                     }
-                    const wordReg = new RegExp(`\\b(${wordsEx.join('|')}).*?\\b`, flag);
+                    const wordReg = buildRegular(wordsEx, flag);
                     n = node.nodeValue.replace(wordReg, formats);
                     if (o !== n) {
                         d.innerHTML = n;
@@ -493,6 +497,13 @@
         if (words.length < 1) {
             return sentence.innerHTML;
         }
+        [...words].forEach(word => {
+            const irs = lemmatizer.irregularConjugationOrPluralities(word);
+            if (irs.length < 1) {
+                return
+            }
+            irs.forEach(v => v[0].forEach(vv => words.push(vv)));
+        })
         words = words.sort((a, b) => a.length <= b.length ? 1 : -1);
         const formats = format ? format.split('{$bold}').join('\$&') : '<b>\$&</b>';
         eleBold(sentence, words, formats, boldAll)

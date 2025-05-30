@@ -92,11 +92,13 @@ const Lemmatizer = function (wn_data, wn_files = {
 
     this.wordlists = {};
     this.exceptions = {};
+    this.exceptionsEx = {};
 
     // initialize wordlists and exceptions
     for (let key in this.morphological_substitutions) {
         this.wordlists[key] = {};
         this.exceptions[key] = {};
+        this.exceptionsEx[key] = {};
     }
 
     // store dictionary data to localStorage from wn_files
@@ -194,6 +196,11 @@ Lemmatizer.prototype = {
         this.fetch_data(key_exc).forEach(function (item) {
             let w = item[0];
             self.exceptions[pos][w] = item[1];
+            if (self.exceptionsEx[pos].hasOwnProperty(item[1])) {
+                self.exceptionsEx[pos][item[1]].push(w);
+            } else {
+                self.exceptionsEx[pos][item[1]] = [w];
+            }
         });
     },
 
@@ -440,6 +447,10 @@ Lemmatizer.prototype = {
             }
         });
         return result;
+    },
+    irregularConjugationOrPluralities: function (pos) {
+        this.form = pos;
+        return Object.keys(this.exceptionsEx).filterAndMapX(form => this.exceptionsEx[form].hasOwnProperty(this.form) ? [this.exceptionsEx[form][this.form], form] : false);
     }
 };
 
