@@ -432,7 +432,40 @@
     }
 
     function buildRegular(words, flag) {
-        return new RegExp(`\\b(${words.map(v => v.length<= 3 ? v : (v + '.*?')).join('|')})\\b`, flag);
+        let suffix = '';
+        const w = [];
+        words.forEach(word => {
+            if (!word) {
+                return
+            }
+            if (word.length <= 3) {
+                return w.push(word);
+            }
+            if (word[length - 1] === '-') {
+                const prefix = word.slice(0, -1);
+                if (!words.includes(prefix)) {
+                    w.push(word + '.*?')
+                    w.push(prefix + '.*?');
+                    return
+                }
+            }
+            if (word === suffix) {
+                suffix = '';
+                w.push(word + '.*?');
+                w.push('\\w*?' + word);
+                return
+            }
+            if (word[0] === '-') {
+                suffix = word.slice(1);
+                if (!words.includes(suffix)) {
+                    w.push('\\w*?' + suffix);
+                }
+                w.push('\\w*?' + word);
+                return
+            }
+            w.push(word + '.*?');
+        });
+        return new RegExp(`\\b(${w.join('|')})\\b`, flag);
     }
 
     function eleBold(el, words, formats, boldAll) {
@@ -874,24 +907,19 @@
         }
         let boldFieldValue = '';
         const fields = param['fetch-bold-field'].split('@@');
-        for (const input of document.querySelectorAll('input.field-name')) {
-            if (input => input.value === fields[0]) {
-                const ip = input.nextElementSibling;
-                if (ip && ip.matches('input.field-value')) {
-                    boldFieldValue = ip.value;
-                    if (fields.length > 1) {
-                        const f = fields[1].split('%%');
-                        if (f.length < 1) {
-                            break;
-                        }
-                        if (f.length === 1 && f[0].includes('{$bold}')) {
-                            boldFieldValue = [boldFieldValue, f[0]];
-                            break;
-                        }
-                        boldFieldValue = [boldFieldValue.split(f[0].replaceAll('`', '')).join(' '), f[1]];
-                    }
-                    break
+        const input = document.querySelector(`input.field-name[value='${fields[0]}']`);
+        if (!input) {
+            return boldFieldValue;
+        }
+        const ip = input.nextElementSibling;
+        if (ip && ip.matches('input.field-value')) {
+            boldFieldValue = ip.value;
+            if (fields.length > 1) {
+                const f = fields[1].split('%%');
+                if (f.length === 1 && f[0].includes('{$bold}')) {
+                    return [boldFieldValue, f[0]];
                 }
+                return [boldFieldValue.split(f[0].replaceAll('`', '')).join(' '), f[1]];
             }
         }
         return boldFieldValue;
