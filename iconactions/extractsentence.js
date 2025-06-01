@@ -440,7 +440,7 @@
             if (!word) {
                 return
             }
-            if (word.length <= 2 || (word.length === 3 && !find)) {
+            if (word.length <= 2) { //  || (word.length === 3 && !find)
                 w.push(word);
                 return;
             }
