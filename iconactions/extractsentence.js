@@ -431,39 +431,41 @@
         }, value);
     }
 
-    function buildRegular(words, flag) {
+    function buildRegular(words, flag, find = false) {
         let suffix = '';
         const w = [];
+        const ends = find ? '.+?' : '.*?';
+        const begin = find ? '\\w+?' : '\\w*?';
         words.forEach(word => {
             if (!word) {
                 return
             }
-            if (word.length <= 3) {
+            if (word.length <= 2) {
                 return w.push(word);
             }
             if (word[length - 1] === '-') {
                 const prefix = word.slice(0, -1);
                 if (!words.includes(prefix)) {
-                    w.push(word + '.*?')
-                    w.push(prefix + '.*?');
+                    w.push(word + ends)
+                    w.push(prefix + ends);
                     return
                 }
             }
             if (word === suffix) {
                 suffix = '';
-                w.push(word + '.*?');
-                w.push('\\w*?' + word);
+                w.push(word + ends);
+                w.push(begin + word);
                 return
             }
             if (word[0] === '-') {
                 suffix = word.slice(1);
                 if (!words.includes(suffix)) {
-                    w.push('\\w*?' + suffix);
+                    w.push(begin + suffix);
                 }
-                w.push('\\w*?' + word);
+                w.push(begin + word);
                 return
             }
-            w.push(word + '.*?');
+            w.push(word + ends);
         });
         return new RegExp(`\\b(${w.join('|')})\\b`, flag);
     }
@@ -496,7 +498,7 @@
                     if (wordsEx.length < 1) {
                         break
                     }
-                    const wordReg = buildRegular(wordsEx, flag);
+                    const wordReg = buildRegular(wordsEx, flag, true);
                     n = node.nodeValue.replace(wordReg, formats);
                     if (o !== n) {
                         d.innerHTML = n;
