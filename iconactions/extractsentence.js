@@ -440,8 +440,9 @@
             if (!word) {
                 return
             }
-            if (word.length <= 2) {
-                return w.push(word);
+            if (word.length <= 2 || (word.length === 3 && !find)) {
+                w.push(word);
+                return;
             }
             if (word[length - 1] === '-') {
                 const prefix = word.slice(0, -1);
