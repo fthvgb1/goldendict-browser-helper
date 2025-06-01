@@ -901,7 +901,7 @@
             },
             title: "anki制卡",
             showCancelButton: true,
-            width: '55rem',
+            width: '55vw',
             html: ankiContainer,
             focusConfirm: false,
             didDestroy: () => {

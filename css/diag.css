@@ -5,12 +5,12 @@
 }
 
 .form-label {
-    width: 8rem
+    width: 8vw
 }
 
 .form-item ol {
     padding-inline-start: 0;
-    width: 50rem;
+    width: 50vw;
 }
 
 .form-item ol .form-item .swal2-input {
@@ -19,16 +19,16 @@
 }
 
 .form-item ol .form-item .field-name {
-    width: 8rem
+    width: 8vw
 }
 
 .form-item .spell {
-    margin-top: 1rem;
+    margin-top: 1vw;
 }
 
 .form-item .spell-content {
     text-align: left;
-    height: 17rem;
+    height: 17vw;
     resize: both;
 }
 
@@ -41,9 +41,9 @@
 }
 
 .btn-add-field {
-    width: 2rem;
-    height: 2rem;
-    margin-top: 1.5rem;
+    width: 2vw;
+    height: 2vw;
+    margin-top: 1.5vw;
 }
 
 .sentence_setting {
@@ -51,7 +51,7 @@
 }
 
 .sentence_field {
-    width: 8rem;
+    width: 8vw;
 }
 
 #sentence_type {
@@ -68,15 +68,15 @@
 }
 
 #sentence_field {
-    width: 8rem;
+    width: 8vw;
 }
 
 .swal2-select {
-    height: 3rem;
+    height: 3vw;
 }
 
 #sentence_num {
-    width: 5rem;
+    width: 5vw;
 }
 
 .sentence-format, .anki-tag-search {
@@ -84,11 +84,11 @@
 }
 
 .sentence-format-input {
-    width: 18rem;
+    width: 18vw;
 }
 
 .select2-container {
-    margin-left: 1rem;
+    margin-left: 1vw;
 }
 
 .select2-dropdown {
@@ -96,5 +96,5 @@
 }
 
 .select2-search__field {
-    height: 2rem !important;
+    height: 2vw !important;
 }

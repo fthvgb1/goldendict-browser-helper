@@ -3,20 +3,20 @@
     .fetch-sentence-container { display:flex; }
     .fetch-item:nth-child(2) button.fetch-delete,.fetch-hidden,.fetch-dd:has(option[value="html"]:checked) + .fetch-dd{ display: none}
     .fetch-opera { display: grid; justify-items: center}
-    .fetch-item { margin-top: 1rem; margin-left: 1rem; border: 1px dashed #e9b985; padding:.4rem}
+    .fetch-item { margin-top: 1vw; margin-left: 1vw; border: 1px dashed #e9b985; padding:.4vw}
     .fetch-item-specific { border-color: #13195a}
     .fetch-box { 
             display: inline-block;
             vertical-align: middle;
-            margin-left: 0.2rem;
+            margin-left: 0.2vw;
         }
     .fetch-buttons {display: inline-block;}
     .fetch-buttons button {display: block;}
-    .fetch-dd { margin-left: 0rem; }
-    .fetch-name {width: 7rem;}
-    .fetch-format {width: 20rem}
-    .fetch-bold-field,.fetch-html-replacement,.fetch-value-replacement {width: 17rem}
-    .fetch-num { width:3rem}
+    .fetch-dd { margin-left: 0vw; }
+    .fetch-name {width: 7vw;}
+    .fetch-format {width: 20vw}
+    .fetch-bold-field,.fetch-html-replacement,.fetch-value-replacement {width: 17vw}
+    .fetch-num { width:3vw}
     .moving {
             background: transparent;
             color: transparent;
