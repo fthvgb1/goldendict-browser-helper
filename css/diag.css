@@ -71,10 +71,6 @@
     width: 8vw;
 }
 
-.swal2-select {
-    height: 3vw;
-}
-
 #sentence_num {
     width: 5vw;
 }
@@ -87,7 +83,7 @@
     width: 18vw;
 }
 
-.select2-container {
+span.select2.select2-container {
     margin-left: 1vw;
 }
 
@@ -95,6 +91,6 @@
     z-index: 10510;
 }
 
-.select2-search__field {
-    height: 2vw !important;
+.select2-container .select2-search--inline .select2-search__field {
+    height: 1.5vw;
 }

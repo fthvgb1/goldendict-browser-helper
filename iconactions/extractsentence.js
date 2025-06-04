@@ -444,13 +444,13 @@
                 w.push(word);
                 return;
             }
-            if (word[length - 1] === '-') {
+            if (word[word.length - 1] === '-') {
                 const prefix = word.slice(0, -1);
+                w.push(word + '.+?');
                 if (!words.includes(prefix)) {
-                    w.push(word + ends)
                     w.push(prefix + ends);
-                    return
                 }
+                return
             }
             if (word === suffix) {
                 suffix = '';
