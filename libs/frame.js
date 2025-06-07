@@ -420,28 +420,33 @@
         return div
     }
 
+    /**
+     *
+     * @param arr [{},{}]|[[],[]]
+     * @param select selected value
+     * @param key option value field or index
+     * @param val option innerText field or index
+     * @param attr option other attributes
+     * @returns {*} options string
+     */
     function buildOption(arr, select = '', key = 'k', val = 'v', attr = null) {
         return arr.map(v => {
-            if (typeof v === 'string') {
+            let att = '';
+            if (attr !== null && v[attr] && typeof v[attr] === 'object') {
+                att = Object.keys(v[attr]).map(k => `${k}="${v[attr][k]}"`).join(' ');
+            }
+            if (typeof v === 'string' || typeof v === 'number') {
                 let sel = '';
                 if (v === select) {
                     sel = 'selected'
                 }
-                let arr = '';
-                if (attr !== '' && v[attr] && typeof v[attr] === 'object') {
-                    arr = Object.keys(v[attr]).map(k => `${k}="${v[attr][k]}"`).join(' ');
-                }
-                return `<option ${arr} ${sel} value="${v}">${v}</option>`
+                return `<option ${att} ${sel} value="${v}">${v}</option>`
             } else if (typeof v === 'object' || v instanceof Array) {
                 let sel = '';
                 if (v[key] === select) {
                     sel = 'selected'
                 }
-                let arr = '';
-                if (attr > -1 && v[attr] && typeof v[attr] === 'object') {
-                    arr = Object.keys(v[attr]).map(k => `${k}="${v[attr][k]}"`).join(' ');
-                }
-                return `<option ${arr} ${sel} value="${v[key]}">${v[val]}</option>`
+                return `<option ${att} ${sel} value="${v[key]}">${v[val]}</option>`
             }
             return ''
         }).join('\n');

@@ -215,7 +215,7 @@
     PushHookAnkiChange('.fetch-item-select', (ev) => {
         const fn = (name) => {
             const t = setting.querySelector(`.fetch-name[value='${name}']`);
-            if (!t) { //缩进
+            if (!t) {
                 return
             }
             findParent(t, '.fetch-item').classList.remove('fetch-hidden');
