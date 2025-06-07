@@ -1,6 +1,6 @@
 // trimmed from https://github.com/barrer/tampermonkey-script/blob/master/translate/translate-dictionary.js
 
-; const {
+;const {
     PushContextMenu,
     PushIconAction,
     PushInitialFn,
@@ -18,17 +18,20 @@
     base64ToUint8Array,
 } = (() => {
     if (!Array.prototype.filterAndMapX) {
-        Array.prototype.filterAndMapX = function (fn) {
-            const arr = [];
-            for (const item of this) {
-                const r = fn(item);
-                if (r === false) {
-                    continue
+        Object.defineProperty(Array.prototype, 'filterAndMapX', {
+            value: function (fn) {
+                const arr = [];
+                for (const item of this) {
+                    const r = fn(item);
+                    if (r === false) {
+                        continue
+                    }
+                    arr.push(r)
                 }
-                arr.push(r)
-            }
-            return arr;
-        }
+                return arr;
+            },
+            writable: true,
+        });
     }
 
     const contextMenuActions = [];
@@ -385,7 +388,7 @@
     }
 
     async function readClipboard(type = 0) {
-        const { responseText: text } = await requestEx(helperServerHost + '/clipboard?type=' + (type === 1 ? 'img' : 'text'));
+        const {responseText: text} = await requestEx(helperServerHost + '/clipboard?type=' + (type === 1 ? 'img' : 'text'));
         return text
     }
 
@@ -417,20 +420,28 @@
         return div
     }
 
-    function buildOption(arr, select = '', key = 'k', val = 'v') {
+    function buildOption(arr, select = '', key = 'k', val = 'v', attr = null) {
         return arr.map(v => {
             if (typeof v === 'string') {
                 let sel = '';
                 if (v === select) {
                     sel = 'selected'
                 }
-                return `<option ${sel} value="${v}">${v}</option>`
+                let arr = '';
+                if (attr !== '' && v[attr] && typeof v[attr] === 'object') {
+                    arr = Object.keys(v[attr]).map(k => `${k}="${v[attr][k]}"`).join(' ');
+                }
+                return `<option ${arr} ${sel} value="${v}">${v}</option>`
             } else if (typeof v === 'object' || v instanceof Array) {
                 let sel = '';
                 if (v[key] === select) {
                     sel = 'selected'
                 }
-                return `<option ${sel} value="${v[key]}">${v[val]}</option>`
+                let arr = '';
+                if (attr > -1 && v[attr] && typeof v[attr] === 'object') {
+                    arr = Object.keys(v[attr]).map(k => `${k}="${v[attr][k]}"`).join(' ');
+                }
+                return `<option ${arr} ${sel} value="${v[key]}">${v[val]}</option>`
             }
             return ''
         }).join('\n');

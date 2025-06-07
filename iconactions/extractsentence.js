@@ -213,13 +213,25 @@
     }
 
     PushHookAnkiChange('.fetch-item-select', (ev) => {
-        const name = ev.target.value;
-        const t = setting.querySelector(`.fetch-name[value='${name}']`);
-        if (!t) {
+        const fn = (name) => {
+            const t = setting.querySelector(`.fetch-name[value='${name}']`);
+            if (!t) { //缩进
+                return
+            }
+            findParent(t, '.fetch-item').classList.remove('fetch-hidden');
+        };
+        const hidden = () => setting.querySelectorAll('.fetch-item:not(.fetch-hidden)').forEach(e => e.classList.add('fetch-hidden'));
+
+        const el = ev.target.querySelector(`option[value=${ev.target.value}]`)
+        if (el.dataset.hasOwnProperty('names')) {
+            hidden()
+            el.dataset.names.split(',').forEach(v => {
+                fn(v);
+            })
             return
         }
-        setting.querySelectorAll('.fetch-item:not(.fetch-hidden)').forEach(e => e.classList.add('fetch-hidden'));
-        findParent(t, '.fetch-item').classList.remove('fetch-hidden');
+        hidden();
+        fn(ev.target.value);
     });
 
     PushHookAnkiChange('#fetch.swal2-checkbox', (ev) => {
@@ -235,7 +247,14 @@
         fetchItems = fetchItems.length > 0 ? fetchItems : [{...de}];
         fetchItems.forEach(item => setting.appendChild(buildFetchItem(item)));
         if (GM_getValue('fetch-display-type', 1) === 2) {
-            setting.children[0].innerHTML = buildOption(fetchItems.map(m => [m['fetch-name'], m['fetch-name']]), '', 0, 1);
+            const arr = Object.groupBy(fetchItems, item => item['fetch-to-field']);
+            const options = [];
+            const nb = '&ensp;'.repeat(6);
+            Object.keys(arr).forEach(k => {
+                options.push([k, k, {'data-names': arr[k].map(m => m['fetch-name']).join(',')}]);
+                arr[k].forEach(m => options.push([m['fetch-name'], nb + m['fetch-name']]));
+            });
+            setting.children[0].innerHTML = buildOption(options, options[1][0], 0, 1, 2);
             setting.children[0].classList.remove('fetch-hidden');
             setting.children.length > 2 && [...setting.children].slice(2).forEach(e => e.classList.add('fetch-hidden'));
         }
@@ -1037,7 +1056,7 @@
                 <button class="fetch-export fetch-hidden" title="导出">🚍</button>
                 <input type="file" accept="text/plain, application/json" class="fetch-file fetch-hidden">
             </div>
-            <div class="select-setting"><select class="fetch-item-select fetch-hidden"></select></div>
+            <div class="select-setting"><select name="fetch-item-select" class="fetch-item-select fetch-hidden"></select></div>
         `;
 
         setting = div.querySelector('.select-setting');
