@@ -920,7 +920,7 @@
         }
         return params.filter(param => {
             if (activeFilter) {
-                return param['fetch-active'] && param['fetch-to-field'] === '*' || param['fetch-to-field'] === targetField
+                return param['fetch-active'] && (param['fetch-to-field'] === '*' || param['fetch-to-field'] === targetField)
             }
             return param['fetch-to-field'] === '*' || param['fetch-to-field'] === targetField
         });
