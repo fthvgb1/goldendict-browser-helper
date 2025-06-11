@@ -1,6 +1,6 @@
 // altered from https://github.com/ninja33/ODH/blob/master/src/fg/js/text.js
 ;const {
-    getSentence, calSentence, cutSentence
+    getSentence, calSentence, cutSentence, escapeRegExp
 } = (() => {
     const HtmlTagsToReplace = {
         '&': '&amp;',
@@ -246,6 +246,6 @@
     }
 
     return {
-        getSentence, calSentence, cutSentence
+        getSentence, calSentence, cutSentence, escapeRegExp
     }
 })();

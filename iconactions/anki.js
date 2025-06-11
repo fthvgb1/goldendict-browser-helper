@@ -841,7 +841,7 @@
             <label for="sentence_field" class="form-label">字段</label>
             <input type="text" value="${sentenceField}" id="sentence_field" placeholder="句子字段" class="swal2-input sentence_field" name="sentence_field" >       
             <label class="form-label" for="sentence_num">句子数量</label>
-            <input type="number" min="0" id="sentence_num" value="${sentenceNum}" class="swal2-input sentence_field" placeholder="提取的句子数量">
+            <input type="number" min="0" id="sentence_num" value="${sentenceNum}" class="swal2-input" placeholder="提取的句子数量">
             <input type="checkbox" class="sentence-format-setting swal2-checkbox" title="设置句子加粗和整句格式">
             <dd class="sentence-format">
                 <input type="text" name="sentence_bold" value="${htmlSpecial(sentenceBold)}" class="sentence_bold sentence-format-input" title="加粗格式,默认: <b>{$bold}</b}" placeholder="加粗格式,默认: <b>{$bold}</b}">

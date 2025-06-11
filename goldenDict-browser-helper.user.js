@@ -2,7 +2,7 @@
 // @name         goldenDict-browser-helper
 // @namespace    https://github.com/fthvgb1
 // @homepage     https://github.com/fthvgb1/goldendict-browser-helper
-// @version      1.21
+// @version      1.22
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1
 // @match        http://*/*
@@ -19,8 +19,8 @@
 // @grant        GM_getResourceURL
 
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/libs/trustpolicy.js
-
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/libs/eld.M60.js
+
 // @require      https://cdn.jsdelivr.net/npm/sweetalert2@11
 // @require      https://cdnjs.cloudflare.com/ajax/libs/js-sha1/0.6.0/sha1.min.js
 // @require      https://code.jquery.com/jquery-4.0.0-beta.2.min.js

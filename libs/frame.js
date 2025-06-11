@@ -422,30 +422,30 @@
 
     /**
      *
-     * @param arr [{},{}]|[[],[]]
-     * @param select selected value
+     * @param arr [string, {} , [], ...]
+     * @param select selected value or values
      * @param key option value field or index
      * @param val option innerText field or index
      * @param attr option other attributes
      * @returns {*} options string
      */
     function buildOption(arr, select = '', key = 'k', val = 'v', attr = null) {
+        const sels = new Set();
+        if (Array.isArray(select)) {
+            select.forEach(sels.add);
+        } else if (select) {
+            sels.add(select);
+        }
         return arr.map(v => {
-            let att = '';
+            let att = '', sel = '';
             if (attr !== null && v[attr] && typeof v[attr] === 'object') {
                 att = Object.keys(v[attr]).map(k => `${k}="${v[attr][k]}"`).join(' ');
             }
             if (typeof v === 'string' || typeof v === 'number') {
-                let sel = '';
-                if (v === select) {
-                    sel = 'selected'
-                }
+                sel = sels.has(v) ? 'selected' : '';
                 return `<option ${att} ${sel} value="${v}">${v}</option>`
             } else if (typeof v === 'object' || v instanceof Array) {
-                let sel = '';
-                if (v[key] === select) {
-                    sel = 'selected'
-                }
+                sel = sels.has(v[key]) ? 'selected' : '';
                 return `<option ${att} ${sel} value="${v[key]}">${v[val]}</option>`
             }
             return ''
