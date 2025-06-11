@@ -351,6 +351,9 @@
             if (hadMap.hasOwnProperty(k)) {
                 delete hadMap[k];
             }
+            if (!input) {
+                return;
+            }
             const btn = input.parentElement.querySelector(`.fetch-sentence-field`);
             const titles = title.join(',');
             const r = titles === '' || title.length > 1 ? ' 右键选择:单个执行操作' : ''

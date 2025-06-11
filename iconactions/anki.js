@@ -752,14 +752,14 @@
         const lastValues = {ankiHost, model, deckName,}
         const deckNameOptions = buildOption(deckNames, deckName);
         const modelOptions = buildOption(models, model);
-
+        const butts = buttonFields.hasOwnProperty(sentenceField) ? buttonFields[sentenceField].join('\n') : '';
         const sentenceHtml = `<div class="wait-replace"></div>            
             <div class="field-operate">
                 <button class="paste-html" title="粘贴">✍️</button>
                 <button class="text-clean" title="清空">🧹</button>
                 <button class="action-copy" title="复制innerHTML">⭕</button>
                 <button class="action-switch-text" title="切换为textrea">🖺</button>
-                ${buttons.join('\n')} ${buttonFields[sentenceField].join('\n')}
+                ${buttons.join('\n')} ${butts}
             </div>`
 
         const changeFn = ev => {
