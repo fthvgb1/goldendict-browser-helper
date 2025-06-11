@@ -562,7 +562,6 @@
             return sentence.innerHTML;
         }
         [...words].forEach(word => {
-            word = escapeRegExp(word);
             const irs = lemmatizer.irregularConjugationOrPluralities(word);
             if (irs.length < 1) {
                 return
