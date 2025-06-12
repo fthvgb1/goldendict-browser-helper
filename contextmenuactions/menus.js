@@ -38,23 +38,19 @@
                             <input type="text" name="qr-text" class="qr-text" value="${location.href}">
                             <div class="qr-img"></div>
                         </div>`);
-                let fn;
+                const qr = new QRCode(html.querySelector('.qr-img'), {
+                    text: location.href,
+                    correctLevel: QRCode.CorrectLevel.L,
+                    height: 365,
+                    width: 365,
+                });
                 html.querySelector('.qr-text').addEventListener('change', function () {
-                    this.value && fn(this.value);
+                    this.value && qr(this.value);
                 });
                 Swal.fire({
                     title: "<h3>qrcode</h3>",
                     html: html,
                     width: '32vw',
-                    didRender() {
-                        const qr = new QRCode(document.querySelector('.qr-img'), {
-                            text: location.href,
-                            correctLevel: QRCode.CorrectLevel.L,
-                            height: 365,
-                            width: 365,
-                        });
-                        fn = value => qr.makeCode(value);
-                    },
                 });
             },
             key: 'm'
