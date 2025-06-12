@@ -422,7 +422,7 @@
 
     /**
      *
-     * @param arr [string, {} , [], ...]
+     * @param arr ['', {} , [], ...]
      * @param select selected value or values
      * @param key option value field or index
      * @param val option innerText field or index
