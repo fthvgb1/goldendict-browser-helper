@@ -45,7 +45,7 @@
                     width: 365,
                 });
                 html.querySelector('.qr-text').addEventListener('change', function () {
-                    this.value && qr(this.value);
+                    this.value && qr.makeCode(this.value);
                 });
                 Swal.fire({
                     title: "<h3>qrcode</h3>",
