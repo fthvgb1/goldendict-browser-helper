@@ -27,9 +27,8 @@
         {
             title: 'qrcode',
             action() {
-                Swal.fire({
-                    title: "<h3>qrcode</h3>",
-                    html: `
+                const html = document.createElement('div');
+                html.innerHTML = createHtml(`
                         <style>
                             .qr-text{ width: 26vw; margin-bottom: 1vw; height: 2vw; font-size: 100%; }
                             .qr-img img{ margin: auto }
@@ -38,8 +37,15 @@
                         <div class="qr-container">
                             <input type="text" name="qr-text" class="qr-text" value="${location.href}">
                             <div class="qr-img"></div>
-                        </div>`,
-                    confirmButtonText: `<i class="fa fa-thumbs-up"></i> ok`,
+                        </div>`);
+                let fn;
+                html.querySelector('.qr-text').addEventListener('change', function () {
+                    this.value && fn(this.value);
+                });
+                Swal.fire({
+                    title: "<h3>qrcode</h3>",
+                    html: html,
+                    width: '32vw',
                     didRender() {
                         const qr = new QRCode(document.querySelector('.qr-img'), {
                             text: location.href,
@@ -47,9 +53,7 @@
                             height: 365,
                             width: 365,
                         });
-                        document.querySelector('.qr-text').addEventListener('change', function () {
-                            this.value && qr.makeCode(this.value);
-                        });
+                        fn = value => qr.makeCode(value);
                     },
                 });
             },

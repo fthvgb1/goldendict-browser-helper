@@ -8,6 +8,13 @@
     width: 8vw
 }
 
+.anki-container input {
+    pointer-events: initial;
+    opacity: initial;
+    margin: initial;
+    position: initial;
+}
+
 .form-item ol {
     padding-inline-start: 0;
     width: 50vw;
