@@ -222,7 +222,7 @@
         };
         const hidden = () => setting.querySelectorAll('.fetch-item:not(.fetch-hidden)').forEach(e => e.classList.add('fetch-hidden'));
 
-        const el = ev.target.querySelector(`option[value=${ev.target.value === '*' ? '\\*' : ev.target.value}]`);
+        const el = ev.target.querySelector(`option[value='${ev.target.value === '*' ? '\\*' : ev.target.value}']`);
         if (el.dataset.hasOwnProperty('names')) {
             hidden()
             el.dataset.names.split(',').forEach(v => {
