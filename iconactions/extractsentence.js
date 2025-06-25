@@ -272,9 +272,13 @@
     const fetchFields = ['fetch-name', 'fetch-field', 'fetch-to-field', 'fetch-selector', 'fetch-parent-selector', 'fetch-data-type',
         'fetch-exclude-selector', 'fetch-join-selector', 'fetch-format', 'fetch-data-handle', 'fetch-repeat',
         'fetch-bold-field', 'fetch-num', 'fetch-active', 'fetch-value-replacement', 'fetch-value-trim',
-        'fetch-value-replacement-ignore-case', 'fetch-html-replacement', 'fetch-html-replacement-ignore-case'];
+        'fetch-value-replacement-ignore-case', 'fetch-html-replacement', 'fetch-html-replacement-ignore-case',
+        'fetch-tag-selector', 'fetch-tag',
+    ];
     const specialFields = ['fetch-selector', 'fetch-parent-selector', 'fetch-bold-field',
-        'fetch-exclude-selector', 'fetch-join-selector', 'fetch-format', 'fetch-value-replacement', 'fetch-html-replacement'];
+        'fetch-exclude-selector', 'fetch-join-selector', 'fetch-format', 'fetch-value-replacement', 'fetch-html-replacement',
+        'fetch-tag-selector',
+    ];
 
     let time = 0, t = null;
 
@@ -420,7 +424,7 @@
 
             if (specialFields.includes(sel)) {
                 param[sel] = item.querySelector(`.${sel}`).value;
-                param[sel] = (param[sel]);
+                param[sel] = param[sel];
                 return;
             }
             param[sel] = item.querySelector(`.${sel}`).value.trim();
@@ -576,6 +580,21 @@
         eleBold(sentence, words, formats, boldAll)
 
         return sentence.innerHTML;
+    }
+
+    function setTags(from, param) {
+        if (!from instanceof Element) {
+            return
+        }
+        if (from.querySelectorAll(param['fetch-tag-selector']).length > 0) {
+            const tags = $('#anki-tags');
+            const hadSelected = tags.val();
+            if (hadSelected.indexOf(param['fetch-tag']) < 0) {
+                hadSelected.push(param['fetch-tag']);
+                addNewTags(tags, hadSelected);
+                tags.val(hadSelected).trigger('change');
+            }
+        }
     }
 
     const textTags = new Set(['INPUT', 'TEXTAREA']);
@@ -893,6 +912,10 @@
         if (!from) {
             from = getFromEle(param['fetch-field'], target)
         }
+        if (param['fetch-tag-selector'] && param['fetch-tag']) {
+            setTags(from, param);
+            return;
+        }
         if (!target || !from) {
             return
         }
@@ -998,6 +1021,8 @@
         'fetch-value-trim': '提取的值去除首尾空白符如空格等',
         'fetch-value-replacement-ignore-case': '是否忽略大小写',
         'fetch-html-replacement-ignore-case': '是否忽略大小写',
+        'fetch-tag-selector': '标签的选择器',
+        'fetch-tag': '设置的标签',
         'fetch-active': '是否启用这个操作项',
         'fetch-delete': '删除此项',
         'fetch-copy': '复制此项',
@@ -1059,6 +1084,10 @@
                         <dd class="fetch-dd">
                             <input name="fetch-html-replacement" value="${data['fetch-html-replacement']}" class="fetch-html-replacement" title="${mapTitle['fetch-html-replacement']}" placeholder="${mapTitle['fetch-html-replacement']}">
                             <input type="checkbox" ${data['fetch-html-replacement-ignore-case'] ? 'checked' : ''} name="fetch-html-replacement-ignore-case" class="fetch-html-replacement-ignore-case" title="${mapTitle['fetch-html-replacement-ignore-case']}" placeholder="${mapTitle['fetch-html-replacement-ignore-case']}">
+                        </dd>
+                        <dd class="fetch-dd">
+                            <input name="fetch-selector" value="${data['fetch-tag-selector']}" class="fetch-tag-selector" title="${mapTitle['fetch-tag-selector']}" placeholder="${mapTitle['fetch-tag-selector']}">
+                            <input name="fetch-tag" value="${data['fetch-tag']}" class="fetch-tag" title="${mapTitle['fetch-tag']}" placeholder="${mapTitle['fetch-tag']}">
                         </dd>
                     </span>     
                     <span class="fetch-box">

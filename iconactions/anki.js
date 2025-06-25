@@ -5,7 +5,8 @@
     PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook,
     PushExpandAnkiRichButton,
     PushExpandAnkiInputButton,
-    PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn, PushHookAnkiChange
+    PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn, PushHookAnkiChange,
+    addNewTags
 } = (() => {
     let ankiHost = GM_getValue('ankiHost', 'http://127.0.0.1:8765');
     let richTexts = [];
@@ -216,19 +217,14 @@
             }
         },
         'anki-tag-search': (ev) => {
-            const tags = $('#tags');
+            const tags = $('#anki-tags');
             if (tags.length < 1) {
                 return
             }
             const frontField = GM_getValue('front-field');
             let el;
             if (frontField) {
-                for (const front of document.querySelectorAll('.field-name')) {
-                    if (frontField === front.value) {
-                        el = front.nextElementSibling;
-                        break
-                    }
-                }
+                el = document.querySelector(`input.field-name[value='${frontField}'] + *`);
             }
             if (!el) {
                 el = document.querySelector("#shadowFields .field-value");
@@ -414,7 +410,7 @@
 
     async function showAnkiCard(result) {
         setExistsNoteId(result.noteId);
-        const tags = $('#tags');
+        const tags = $('#anki-tags');
         addNewTags(tags, result.tags);
         tags.val(result.tags).trigger('change');
         const res = await anki('cardsInfo', {cards: [result.cards[0]]});
@@ -808,13 +804,13 @@
         <select id="deckName" class="swal2-select">${deckNameOptions}</select>
     </div>
     <div class="form-item">
-        <label for="model" class="form-label">模板</label>
+        <label for="model" class="form-label">模板</label> 
         <select id="model" class="swal2-select">${modelOptions}</select>
     </div>
     
     <div class="form-item">
         <label for="tags" class="form-label">标签</label>
-        <select class="swal2-select js-example-basic-multiple js-states form-control" id="tags"></select>
+        <select class="swal2-select js-example-basic-multiple js-states form-control" id="anki-tags"></select>
         <button class="anki-tag-search" title="左键搜索 右键设置正面字段">🔍</button>
     </div>
     
@@ -885,7 +881,7 @@
                     ankTags.add(v);
                     return {id: v, text: v}
                 });
-                const tag = $('#tags');
+                const tag = $('#anki-tags');
                 tag.select2({
                     tags: true,
                     placeholder: '选择或输入标签',
@@ -979,9 +975,9 @@
         if (Object.values(form).map(v => v === '' ? 0 : 1).reduce((p, c) => p + c, 0) < Object.keys(form).length) {
             throw '还有参数为空!请检查！';
         }
-        const $tags = $('#tags');
+        const $tags = $('#anki-tags');
         const tags = $tags.val();
-        addNewTags($tags, tags);
+        tags.length > 0 && addNewTags($tags, tags);
         if (enableSentence) {
             const el = document.querySelector('.sentence_setting .spell-content');
             fields[document.querySelector('#sentence_field').value] = await checkAndStoreMedia(el.tagName === 'DIV' ? el.innerHTML : el.value);
@@ -1031,7 +1027,8 @@
         addAnki, getAnkiFormValue, ankiSave, findParent,
         anki, queryAnki, showAnkiCard, searchAnki,
         PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook, PushExpandAnkiRichButton, PushExpandAnkiInputButton,
-        PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn, PushHookAnkiChange
+        PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn, PushHookAnkiChange,
+        addNewTags
     };
 
 })();
