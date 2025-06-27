@@ -1,0 +1,14 @@
+{
+  "dictImageMap": {
+    "replace with dictionary name": "replace with fetch img selector"
+  },
+  "customizeResource": {
+    "dictionary name": [
+      "replace with script or css name"
+    ]
+  },
+  "generalResource": [
+    "copy.js",
+    "replace with others script or css name"
+  ]
+}
