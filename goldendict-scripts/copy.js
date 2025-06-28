@@ -1,4 +1,18 @@
 ;(function () {
+    const copySign = '____customize-copy';
+    if (window.hasOwnProperty(copySign)) {
+        return
+    }
+
+    function getImageBlob(img, width, height) {
+        const canvas = document.createElement('canvas')
+        canvas.width = width || img.naturalWidth
+        canvas.height = height || img.naturalHeight
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        return new Promise(resolve => canvas.toBlob(resolve));
+    }
+
     function getBase64Image(img, width, height) {
         const canvas = document.createElement('canvas');
         canvas.width = width || img.naturalWidth;
@@ -149,9 +163,10 @@
                 if (document.queryCommandSupported && document.queryCommandSupported('copy')) {
                     //先检测是否支持document.queryCommandSupported和copy指令
                     //如果都支持直接执行指令
-                    document.execCommand('copy')
+                    document.execCommand('copy');
                     //去除选中区域，取消拖蓝效果
-                    selection.removeAllRanges()
+                    selection.removeAllRanges();
+                    showToast('copy success!');
                 }
             }
             copyFn().catch(console.log);
@@ -160,4 +175,62 @@
         el.insertBefore(a, el.querySelector('.gddictnamebodyseparator').nextElementSibling);
         copyImages(el, a);
     });
+
+    async function copySingleImage(ev) {
+        if (ev.target.tagName !== 'IMG') {
+            return
+        }
+        ev.preventDefault();
+        const blob = await getImageBlob(ev.target);
+        const data = [new ClipboardItem({[blob.type]: blob})];
+        await navigator.clipboard.write(data);
+        showToast('copy this image success!');
+    }
+
+
+    function showToast(message, duration = 1000) {
+        const toast = document.getElementById("___toast-container");
+        toast.innerText = message;
+        toast.classList.add("show");
+        const t = setTimeout(() => {
+            toast.classList.remove("show");
+            clearTimeout(t);
+        }, duration);
+    }
+
+    document.addEventListener('contextmenu', copySingleImage);
+
+    const s = `
+#___toast-container {
+  display: none; 
+  background-color: #FEFFC4; 
+  text-align: center; 
+  border-radius: 2px; 
+  padding: .5rem; 
+  position: fixed; 
+  z-index: 100; 
+  border: 2px solid black;
+  font-size: 1.2rem;
+  left: 4%;
+  bottom: 4%;
+  opacity: 0; 
+  transition: opacity 0.5s, bottom 0.5s; /* Smooth transitions */
+}
+
+#___toast-container.show {
+  display: block; 
+  opacity: 1; 
+}
+    `
+
+    if (!document.querySelector('#___toast-container')) {
+        const div = document.createElement('div');
+        div.id = '___toast-container';
+        document.body.appendChild(div);
+        const style = document.createElement('style');
+        style.innerText = s;
+        document.head.appendChild(style);
+    }
+    window.showToast = showToast;
+    window[copySign] = true
 })();

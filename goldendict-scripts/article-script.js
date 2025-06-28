@@ -1,4 +1,8 @@
 (async function () {
+    const Loader = '___customize-resourceLoader';
+    if (window.hasOwnProperty(Loader)) {
+        return
+    }
     let customizeResource;
 
     async function loadConf() {
@@ -15,12 +19,19 @@
         const generalResource = conf.hasOwnProperty('generalResource') ? conf.generalResource : [];
         if (generalResource.length > 0) {
             generalResource.forEach(filename => {
-                const suf = filename.split('.');
-                const el = createResource[suf[suf.length - 1]](article.src.replace('article-script.js', filename));
+                if (!filename) {
+                    return
+                }
+                const suf = getSuffix(filename);
+                if (!suffixes.has(suf)) {
+                    return;
+                }
+                const el = createResource[suf](article.src.replace('article-script.js', filename));
                 load(el, article, false);
             });
         }
         loadCustomizeResource();
+        window[Loader] = true;
     }
 
     function load(resource, ele, before = true) {
@@ -44,10 +55,20 @@
         }
     }
 
+    function getSuffix(name) {
+        const suf = name.split('.');
+        return suf[suf.length - 1];
+    }
+
+    const suffixes = new Set(['css', 'js']);
+
     function loadCustomizeResource() {
         function loadx(resource, div, name) {
-            const suf = resource.split('.');
-            const el = createResource[suf[suf.length - 1]](`bres://${name}/${resource}`);
+            const suf = getSuffix(resource);
+            if (!suffixes.has(suf)) {
+                return
+            }
+            const el = createResource[suf](`bres://${name}/${resource}`);
             load(el, div);
         }
 
