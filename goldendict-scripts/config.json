@@ -4,11 +4,11 @@
   },
   "customizeResource": {
     "dictionary name": [
-      "replace with script or css name"
+      "replace this item with script or css name, script or css's path is same as dictionary's folder"
     ]
   },
   "generalResource": [
     "copy.js",
-    "replace with others script or css name"
+    "replace this item with others script or css name, script or css's path is same as article-script( goldendict configuration folder )"
   ]
 }
