@@ -50,6 +50,25 @@
         return visible;
     }
 
+    async function copyImgs(images) {
+        const div = document.createElement('div');
+        const had = {};
+        for (const img of images) {
+            if (had.hasOwnProperty(img.src)) {
+                continue
+            }
+            const i = document.createElement('img');
+            i.src = getBase64Image(img);
+            div.appendChild(i);
+            had[img.src] = '';
+        }
+        const item = new ClipboardItem({
+            'text/html': new Blob([div.innerHTML], {type: 'text/html'}),
+        })
+        await navigator.clipboard.write([item]).catch(console.log);
+        imgs.splice(0).forEach(cancelSelecting);
+    }
+
     function copyImages(el, a) {
         const dictName = el.querySelector('.gddicttitle').innerText;
         if (!window.hasOwnProperty('dictImageMap') || !window.dictImageMap.hasOwnProperty(dictName)) {
@@ -64,21 +83,13 @@
         imgCopy.title = 'copy images';
         imgCopy.innerText = '🧲';
         imgCopy.addEventListener('click', async () => {
-            const div = document.createElement('div');
-            const had = {};
-            for (const img of images) {
-                if (had.hasOwnProperty(img.src)) {
-                    continue
-                }
-                const i = document.createElement('img');
-                i.src = getBase64Image(img);
-                div.appendChild(i);
-                had[img.src] = '';
+            if (imgs.length > 0) {
+                await copyImgs(imgs);
+                showToast('copy selected images success!');
+                return
             }
-            const item = new ClipboardItem({
-                'text/html': new Blob([div.innerHTML], {type: 'text/html'}),
-            })
-            await navigator.clipboard.write([item]).catch(console.log)
+            await copyImgs(images);
+            showToast('copy images success!');
         });
         a.insertAdjacentElement('beforebegin', imgCopy);
     }
@@ -147,6 +158,9 @@
                 dict.querySelectorAll('img').forEach(img => {
                     try {
                         img.src = getBase64Image(img);
+                        const title = img.getAttribute('data-title');
+                        img.title = title ? title : '';
+                        !img.title && img.removeAttribute(title);
                     } catch (e) {
                         console.log(e);
                     }
@@ -181,14 +195,56 @@
             return
         }
         ev.preventDefault();
+        if (imgs.length > 0) {
+            await copyImgs(imgs);
+            showToast('copy selected images success!');
+            return
+        }
         const blob = await getImageBlob(ev.target);
         const data = [new ClipboardItem({[blob.type]: blob})];
         await navigator.clipboard.write(data);
         showToast('copy this image success!');
     }
 
+    function cancelSelecting(img) {
+        img.classList.remove('img-selected');
+    }
 
-    function showToast(message, duration = 1000) {
+    const imgs = [];
+
+    function selectImage(ev) {
+        const cw = ev.target.clientWidth;
+        const ch = ev.target.clientHeight;
+        if (ev.target.tagName !== 'IMG' && !ev.target.matches('a[title="copy images"]')) {
+            if (imgs.length > 0) {
+                showToast('abandoned selected images!');
+            }
+            imgs.splice(0).forEach(cancelSelecting);
+            return
+        }
+        if (ev.target.tagName !== 'IMG') {
+            return;
+        }
+        ev.target.setAttribute('stop', false);
+        const w = cw - ev.offsetX;
+        const h = ch - ev.offsetY;
+        //console.log(w / ev.target.clientHeight, h / ev.target.clientHeight, ev);
+        if (w / ev.target.clientHeight <= 0.3 && h / ev.target.clientHeight >= 0.7) {
+            ev.target.setAttribute('stop', true);
+            const index = imgs.indexOf(ev.target)
+            if (index < 0) {
+                imgs.push(ev.target);
+                ev.target.classList.add('img-selected');
+                showToast('selected this image!');
+                return;
+            }
+
+            imgs.splice(index, 1).forEach(cancelSelecting);
+            showToast('canceled this image selecting!');
+        }
+    }
+
+    function showToast(message, duration = 1500) {
         const toast = document.getElementById("___toast-container");
         toast.innerText = message;
         toast.classList.add("show");
@@ -198,9 +254,32 @@
         }, duration);
     }
 
+    function stop(ev) {
+        if (ev.target.tagName !== 'IMG') {
+            return;
+        }
+        if (ev.target.getAttribute('stop') === 'true') {
+            ev.stopPropagation();
+            ev.stopImmediatePropagation();
+            ev.target.setAttribute('stop', false);
+        }
+    }
+
+    document.querySelectorAll('img').forEach(img => {
+        if (img.clientHeight < 200) {
+            return
+        }
+        img.setAttribute('data-title', img.title);
+        img.title = 'select this image when click right up image angle, right click mouse copy selected or single this images';
+    })
+    document.addEventListener('click', stop, true);
+    document.addEventListener('mousedown', selectImage);
     document.addEventListener('contextmenu', copySingleImage);
 
     const s = `
+    img:hover { border: black 1px dashed; }
+    .img-selected{ border: brown 1px dashed !important;}
+    
 #___toast-container {
   display: none; 
   background-color: #FEFFC4; 

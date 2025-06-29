@@ -73,13 +73,17 @@
         }
 
         document.querySelectorAll('.gddicttitle').forEach(el => {
-            if (!customizeResource.hasOwnProperty(el.innerText)) {
-                return
-            }
             const m = el.parentElement.parentElement.querySelector('.mdict');
             if (!m) {
                 return;
             }
+            if (!m.hasAttribute('dictname')) {
+                m.setAttribute('dictname', el.innerText);
+            }
+            if (!customizeResource.hasOwnProperty(el.innerText) || !m) {
+                return
+            }
+
             const resource = customizeResource[el.innerText];
             const div = m.querySelector('*:not(link,script)');
             const name = el.parentElement.id.split('-')[1];
