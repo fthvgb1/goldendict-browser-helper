@@ -270,7 +270,7 @@
             return
         }
         img.setAttribute('data-title', img.title);
-        img.title = 'select this image when click right up image angle, right click mouse copy selected or single this images';
+        img.title = 'select this image when click image top right concern, right click mouse copy selected or single this images';
     })
     document.addEventListener('click', stop, true);
     document.addEventListener('mousedown', selectImage);
