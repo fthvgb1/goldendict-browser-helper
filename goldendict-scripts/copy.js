@@ -213,6 +213,9 @@
     const imgs = [];
 
     function selectImage(ev) {
+        if (ev.which !== 1) {
+            return;
+        }
         const cw = ev.target.clientWidth;
         const ch = ev.target.clientHeight;
         if (ev.target.tagName !== 'IMG' && !ev.target.matches('a[title="copy images"]')) {
