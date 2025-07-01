@@ -218,6 +218,9 @@
         }
         const cw = ev.target.clientWidth;
         const ch = ev.target.clientHeight;
+        if (cw < 20 && ch < 20) {
+            return;
+        }
         if (ev.target.tagName !== 'IMG' && !ev.target.matches('a[title="copy images"]')) {
             if (imgs.length > 0) {
                 showToast('abandoned selected images!');
@@ -269,7 +272,7 @@
     }
 
     document.querySelectorAll('img').forEach(img => {
-        if (img.clientHeight < 200) {
+        if (img.clientHeight < 50 && img.clientWidth < 50) {
             return
         }
         img.setAttribute('data-title', img.title);
