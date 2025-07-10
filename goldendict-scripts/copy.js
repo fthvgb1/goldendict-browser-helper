@@ -18,19 +18,20 @@
                 type: 'GET',
                 dataType: 'text',
                 success: (r) => {
+                    const src = 'data:image/svg+xml;base64,' + btoa(r);
+                    if (type === 'base64') {
+                        resolve(src);
+                        return
+                    }
                     const im = new Image(img.clientWidth, img.clientHeight);
                     im.onload = async () => {
-                        if (type === 'blob') {
-                            const b = await getImageBlob(im, img.clientWidth, img.clientHeight, (ctx) => {
-                                ctx.fillStyle = "#fff";
-                                ctx.fillRect(0, 0, img.clientWidth, img.clientHeight);
-                            });
-                            resolve(b);
-                            return
-                        }
-                        resolve(await getBase64Image(im, img.clientWidth, img.clientHeight));
+                        const b = await getImageBlob(im, img.clientWidth, img.clientHeight, ctx => {
+                            ctx.fillStyle = "#fff";
+                            ctx.fillRect(0, 0, img.clientWidth, img.clientHeight);
+                        });
+                        resolve(b);
                     }
-                    im.src = 'data:image/svg+xml;base64,' + btoa(r);
+                    im.src = src;
                 }
             })
         });
@@ -48,7 +49,7 @@
 
     async function getBase64Image(img, width, height, call = null) {
         if (img.src.toLocaleString().includes('.svg')) {
-            return await getSvg(img, '');
+            return await getSvg(img, 'base64');
         }
         return buildCanvas(img, width, height, call).toDataURL()
     }
