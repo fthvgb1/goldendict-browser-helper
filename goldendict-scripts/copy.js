@@ -18,20 +18,19 @@
                 type: 'GET',
                 dataType: 'text',
                 success: (r) => {
-                    const src = 'data:image/svg+xml;base64,' + btoa(r);
-                    if (type === 'base64') {
-                        resolve(src);
-                        return
-                    }
                     const im = new Image(img.clientWidth, img.clientHeight);
                     im.onload = async () => {
-                        const b = await getImageBlob(im, img.clientWidth, img.clientHeight, ctx => {
-                            ctx.fillStyle = "#fff";
-                            ctx.fillRect(0, 0, img.clientWidth, img.clientHeight);
-                        });
-                        resolve(b);
+                        if (type === 'blob') {
+                            const b = await getImageBlob(im, img.clientWidth, img.clientHeight, (ctx) => {
+                                ctx.fillStyle = "#fff";
+                                ctx.fillRect(0, 0, img.clientWidth, img.clientHeight);
+                            });
+                            resolve(b);
+                            return
+                        }
+                        resolve(await getBase64Image(im, img.clientWidth, img.clientHeight));
                     }
-                    im.src = src;
+                    im.src = 'data:image/svg+xml;base64,' + btoa(r);
                 }
             })
         });
