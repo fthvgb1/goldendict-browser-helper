@@ -4,22 +4,53 @@
         return
     }
 
-    function getImageBlob(img, width, height) {
-        const canvas = document.createElement('canvas')
-        canvas.width = width || img.naturalWidth
-        canvas.height = height || img.naturalHeight
-        const ctx = canvas.getContext('2d')
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-        return new Promise(resolve => canvas.toBlob(resolve));
+    function getImageBlob(img, width, height, call = null) {
+        if (img.src.toLocaleString().includes('.svg')) {
+            return getSvg(img)
+        }
+        return new Promise(resolve => buildCanvas(img, width, height, call).toBlob(resolve));
     }
 
-    function getBase64Image(img, width, height) {
+    function getSvg(img, type = 'blob') {
+        return new Promise(resolve => {
+            $.ajax({
+                url: img.src,
+                type: 'GET',
+                dataType: 'text',
+                success: (r) => {
+                    const im = new Image(img.clientWidth, img.clientHeight);
+                    im.onload = async () => {
+                        if (type === 'blob') {
+                            const b = await getImageBlob(im, img.clientWidth, img.clientHeight, (ctx) => {
+                                ctx.fillStyle = "#fff";
+                                ctx.fillRect(0, 0, img.clientWidth, img.clientHeight);
+                            });
+                            resolve(b);
+                            return
+                        }
+                        resolve(await getBase64Image(im, img.clientWidth, img.clientHeight));
+                    }
+                    im.src = 'data:image/svg+xml;base64,' + btoa(r);
+                }
+            })
+        });
+    }
+
+    function buildCanvas(img, width, height, call = null) {
         const canvas = document.createElement('canvas');
         canvas.width = width || img.naturalWidth;
         canvas.height = height || img.naturalHeight;
         const ctx = canvas.getContext('2d');
+        call && call(ctx);
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        return canvas.toDataURL()
+        return canvas
+    }
+
+    async function getBase64Image(img, width, height, call = null) {
+        if (img.src.toLocaleString().includes('.svg')) {
+            return await getSvg(img, '');
+        }
+        return buildCanvas(img, width, height, call).toDataURL()
     }
 
     function getBase64(img) {
@@ -58,7 +89,7 @@
                 continue
             }
             const i = document.createElement('img');
-            i.src = getBase64Image(img);
+            i.src = await getBase64Image(img);
             div.appendChild(i);
             had[img.src] = '';
         }
@@ -155,17 +186,16 @@
                         console.log(e);
                     }
                 }
-                dict.querySelectorAll('img').forEach(img => {
+                for (const img of dict.querySelectorAll('img')) {
                     try {
-                        img.src = getBase64Image(img);
+                        img.src = await getBase64Image(img);
                         const title = img.getAttribute('data-title');
                         img.title = title ? title : '';
                         !img.title && img.removeAttribute(title);
                     } catch (e) {
                         console.log(e);
                     }
-
-                })
+                }
                 //range.selectNode和range.selectNodeContents。其中selectNode表示选中整个节点而selectNodeContents表示选中节点中的内容，针对文字的复制需要选中节点的内容，而图片的复制需要选中节点本身。
                 range.selectNode(dict);
                 let selection = window.getSelection() //获取selection对象
