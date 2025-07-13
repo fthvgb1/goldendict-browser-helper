@@ -12,27 +12,27 @@
     }
 
     function getSvg(img, type = 'blob') {
-        return new Promise(resolve => {
-            $.ajax({
-                url: img.src,
-                type: 'GET',
-                dataType: 'text',
-                success: (r) => {
-                    const im = new Image(img.clientWidth, img.clientHeight);
-                    im.onload = async () => {
-                        if (type === 'blob') {
-                            const b = await getImageBlob(im, img.clientWidth, img.clientHeight, (ctx) => {
-                                ctx.fillStyle = "#fff";
-                                ctx.fillRect(0, 0, img.clientWidth, img.clientHeight);
-                            });
-                            resolve(b);
-                            return
-                        }
-                        resolve(await getBase64Image(im, img.clientWidth, img.clientHeight));
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', img.src);
+            xhr.onerror = reject;
+            xhr.onload = response => {
+                const r = response.target.responseText;
+                const im = new Image(img.clientWidth, img.clientHeight);
+                im.onload = async () => {
+                    if (type === 'blob') {
+                        const b = await getImageBlob(im, img.clientWidth, img.clientHeight, (ctx) => {
+                            ctx.fillStyle = "#fff";
+                            ctx.fillRect(0, 0, img.clientWidth, img.clientHeight);
+                        });
+                        resolve(b);
+                        return
                     }
-                    im.src = 'data:image/svg+xml;base64,' + btoa(r);
+                    resolve(await getBase64Image(im, img.clientWidth, img.clientHeight));
                 }
-            })
+                im.src = 'data:image/svg+xml;base64,' + btoa(r);
+            }
+            xhr.send();
         });
     }
 
