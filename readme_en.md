@@ -1,3 +1,4 @@
+### goldenDict-browser-helper
 A browser userscript which can invoke other program or some shortcut keys in system such
 as [goldendict-ng](https://github.com/xiaoyifang/goldendict-ng) and a handy Anki card maker.
 

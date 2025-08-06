@@ -1,5 +1,7 @@
 ### goldenDict-browser-helper
 
+[English readme](readme_en.md)
+
 一个浏览器调用goldenDict或goldenDict-ng的脚本。
 
 虽然本来划词的扩展已经很多了，但感觉还是不如本地多样可定制的mdx词典强大，如果系统装有umi-ocr的话也可以调用，如下图所示。
