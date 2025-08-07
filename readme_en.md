@@ -9,22 +9,27 @@ choose.
 
 ### Primary features
 
-#### Invoke goldendict-ng
-
-If can’t find word due to verb conjugation or noun plurality, try to right click mouse.
+#### Invoke Goldendict-ng or other Applications
 
 ![dict](example/dict.webp)
 
-#### tts
+It's should running the server program for invoking other application or tapping any hotkeys
+
+Hint: If can’t find word due to verb conjugation or noun plurality, try to right click mouse.
+
+#### TTS
 
 The script can call browser speech synthesis voice Api; you should download the voice pack in all settings ->time &
-language ->speech add voice with windows system. MacOS also can add speech voice, but I not really kwon how to add in
+language ->speech add voice with windows system. MacOS also can add speech voice, but I not really know how to add in
 Linux.
 
 #### OCR
 
 First install umi-ocr, then add screenshot OCR and tick copy result. It can be translated when setting the translate api
-in goldendict-ng
+in goldendict-ng.
+
+It's need run server program and set the screenshot hotkey to `win+alt+c` in umi-ocr.
+
 ![ocr](example/ocr.webp)
 
 #### Anki
@@ -47,4 +52,4 @@ select and map wordhead, sentence, content of dictionary to Anki's fields.
 
 #### Warning
 
-Don't install this project releasing's server process in online server. It's not safe.
+Don't install this project releasing's golang server program in online server. It's not safe.
