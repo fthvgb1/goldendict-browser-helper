@@ -13,19 +13,20 @@ choose.
 
 ![dict](example/dict.webp)
 
-It's should running the server program for invoking other application or tapping any hotkeys
+It should run the server program for invoking other application or tapping any hotkeys
 
-Hint: If can’t find word due to verb conjugation or noun plurality, try to right click mouse.
+Hint: If you can’t find word due to verb conjugation or noun plurality, try to right-click mouse.
 
 #### TTS
 
 The script can call browser speech synthesis voice Api; you should download the voice pack in all settings ->time &
-language ->speech add voice with windows system. MacOS also can add speech voice, but I not really know how to add in
+language ->speech add voice with Windows system. MacOS also can add speech voice, but I not really know how to add in
 Linux.
 
 #### OCR
 
-First install umi-ocr, then add screenshot OCR and tick copy result. It can be translated when setting the translate api
+First install umi-ocr, then add screenshot OCR and tick copy result. It can be translated when setting the translation
+api
 in goldendict-ng.
 
 It's need run server program and set the screenshot hotkey to `win+alt+c` in umi-ocr.
