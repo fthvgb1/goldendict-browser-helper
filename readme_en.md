@@ -29,7 +29,7 @@ First install umi-ocr, then add screenshot OCR and tick copy result. It can be t
 api
 in goldendict-ng.
 
-It's need run server program and set the screenshot hotkey to `win+alt+c` in umi-ocr.
+It's need run server program, set the screenshot hotkey to `win+alt+c` and turn `copy result` on in umi-ocr.
 
 ![ocr](example/ocr.webp)
 
