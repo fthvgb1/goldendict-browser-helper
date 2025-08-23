@@ -24,8 +24,14 @@ language ->speech add voice with Windows system. MacOS also can add speech voice
 Linux.
 
 If your system is windows, you can use [NaturalVoiceSAPIAdapter](https://github.com/gexgd0419/NaturalVoiceSAPIAdapter)
-to speak with the Microsoft nature voice. It comes info effect in Firefox browser. As to Chrome, I don't know how to be
-in force.
+to speak with the Microsoft nature voice. It comes info effect in Firefox browser. As to Chrome or other Chromium
+browsers or shell application such as anki and so on, ~~I don't know how to be
+in force.~~ [check here](https://github.com/gexgd0419/NaturalVoiceSAPIAdapter/issues/5). To put it in a nutshell,
+execute follow shell in powershell with administrator access, then restart application.
+
+```shell
+Copy-Item HKLM:\SOFTWARE\Microsoft\Speech\Voices\TokenEnums\ HKLM:\SOFTWARE\Microsoft\Speech_OneCore\Voices\ -Recurse
+```
 
 #### OCR
 
