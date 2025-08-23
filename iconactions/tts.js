@@ -86,7 +86,7 @@
                 </div>
                 <div class="item">
                     <label for="speakspeed">语速:</label>
-                    <input id="speakspeed" value="1" min="0" step="0.1" type="number">
+                    <input id="speakspeed" value="${rate}" min="0.1" step="0.1" type="number">
                 </div>
                 <div class="item">
                     <label for="language">语言:</label>
