@@ -21,6 +21,7 @@
                     !img.classList.contains('anki-thumb-img') && img.classList.add('anki-thumb-img');
                     img.addEventListener('dblclick', () => {
                         img.classList.contains('anki-thumb-img') ? img.classList.remove('anki-thumb-img') : img.classList.add('anki-thumb-img');
+                        document.querySelectorAll(".resize-frame,.resizer").forEach(item => item.remove());
                     });
                 });
             }
