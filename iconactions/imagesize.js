@@ -6,6 +6,9 @@
                 continue;
             }
             for (const node of mutation.addedNodes) {
+                if (node.nodeType !== node.ELEMENT_NODE) {
+                    continue;
+                }
                 const imgs = [];
                 node.tagName === 'IMG' ? imgs.push(node) : imgs.push(...node.querySelectorAll('img'));
                 imgs.forEach(img => {
