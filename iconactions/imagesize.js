@@ -1,5 +1,5 @@
 (function () {
-    PushHookAnkiStyle(`.anki-thumb-img { width:100px;height:100px;}`)
+    PushHookAnkiStyle(`.anki-thumb-img { width:100px !important;height:100px !important;}`)
     const callback = (mutationList, observer) => {
         for (const mutation of mutationList) {
             if (!mutation.target.matches('div.spell-content') || !findParent(mutation.target, 'div.spell-content') || mutation.addedNodes.length < 1) {
