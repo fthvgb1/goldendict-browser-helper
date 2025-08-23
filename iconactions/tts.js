@@ -1,5 +1,5 @@
 ;(() => {
-    let vices = [], utterance, vice, viceMap = {}, playStat = 0, icon;
+    let voices = speechSynthesis.getVoices(), utterance, vice, viceMap = {}, playStat = 0, icon;
     let selectVice = GM_getValue('ttsVice', '自动选择');
     let rate = GM_getValue('ttsrate', 1);
     const setIcon = (i) => {
@@ -10,8 +10,8 @@
         pp && (pp.innerHTML = i);
     }
     speechSynthesis.addEventListener("voiceschanged", () => {
-        if (vices.length < 1) {
-            vices = speechSynthesis.getVoices();
+        if (voices.length < 1) {
+            voices = speechSynthesis.getVoices();
             utterance = new SpeechSynthesisUtterance();
 
             utterance.addEventListener('end', () => {
@@ -26,7 +26,7 @@
                 playStat = 1;
                 setIcon('⏸️');
             })
-            vices.map(v => viceMap[v.voiceURI] = v);
+            voices.map(v => viceMap[v.voiceURI] = v);
         }
     });
 
@@ -45,7 +45,7 @@
         }
         const la = eld.detect(speakText).language;
         console.log(la);
-        for (const value of vices) {
+        for (const value of voices) {
             const lang = value.lang.toLowerCase();
             if (lang.indexOf(la) > -1) {
                 vice = value
@@ -64,7 +64,7 @@
         id: 'icon-speech',
         image: GM_getResourceURL('icon-speak'),
         trigger: function (speakText, _, ev) {
-            if (vices.length < 1) {
+            if (voices.length < 1) {
                 ev.target.title = 'tts还没有准备好，请稍等';
                 return
             }
@@ -75,7 +75,7 @@
                 e.preventDefault();
                 const content = img.parentElement.querySelector('tr-content');
                 content.style.display = 'block';
-                const arr = vices.map(v => [`${v.lang} - ${v.localService ? 'local' : ''}-${v.name}`, v.voiceURI]);
+                const arr = voices.map(v => [`${v.lang} - ${v.localService ? 'local' : ''}-${v.name}`, v.voiceURI]);
                 arr.unshift(['自动选择', '']);
                 const options = buildOption(arr, selectVice, 1, 0);
                 content.querySelector('div').innerHTML = `

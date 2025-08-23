@@ -23,6 +23,10 @@ The script can call browser speech synthesis voice Api; you should download the 
 language ->speech add voice with Windows system. MacOS also can add speech voice, but I not really know how to add in
 Linux.
 
+If your system is windows, you can use [NaturalVoiceSAPIAdapter](https://github.com/gexgd0419/NaturalVoiceSAPIAdapter)
+to speak with the Microsoft nature voice. It comes info effect in Firefox browser. As to Chrome, I don't know how to be
+in force.
+
 #### OCR
 
 First install umi-ocr, then add screenshot OCR and tick copy result. It can be translated when setting the translation

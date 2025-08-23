@@ -79,16 +79,18 @@
         const precision = `deck:${deck} "${field}:${value}"`;
         const str = value.split(' ');
         const wordMod = str.length > 1 ? str.map(v => `${field}:re:\\b${v}\\b`).join(' ') : `${field}:re:\\b${value}\\b`;
+        const wordMod2 = str.length > 1 ? (`deck:${deck} ` + str.map(v => `${field}:re:\\b${v}\\b`).join(' ')) : `deck:${deck} ${field}:re:\\b${value}\\b`;
         const vague = str.length > 1 ? str.map(v => `${field}:*${v}*`).join(' ') : `${field}:*${value}*`;
         const deckVague = `deck:${deck} ` + vague;
         if (type !== null) {
-            return [wordMod, vague, deckVague, precision, value][type];
+            return [wordMod, wordMod2, vague, deckVague, precision, value][type];
         }
-        const searchType = GM_getValue('searchType', 0);
+        const searchType = GM_getValue('searchType_' + field, 0);
         const m = {};
         const nbsp = '&nbsp;'.repeat(5);
         const options = [
             [wordMod, `单词模式不指定组牌查询:   ${nbsp}${wordMod}`],
+            [wordMod2, `单词模式指定组牌查询:   ${nbsp}${wordMod2}`],
             [vague, `模糊不指定组牌查询:   ${nbsp}${vague}`],
             [deckVague, `模糊指定组牌查询:    ${nbsp}${deckVague}`],
             [precision, `精确查询:    ${nbsp}${precision}`],
@@ -141,16 +143,17 @@
         },
         'anki-search': async (ev) => {
             ev.preventDefault();
+            const field = ev.target.parentElement.parentElement.querySelector('.field-name').value;
             const sel = document.createElement('select');
             const inputs = ev.target.parentElement.previousElementSibling;
             sel.name = inputs.name;
             sel.className = inputs.className;
             const {options, m} = getSearchType(ev);
-            sel.innerHTML = buildOption(options, m[GM_getValue('searchType', 0)], 0, 1);
+            sel.innerHTML = buildOption(options, m[GM_getValue('searchType_' + field, 0)], 0, 1);
             inputs.replaceWith(sel);
             sel.focus();
             const fn = () => {
-                GM_setValue('searchType', m[htmlSpecial(sel.value)]);
+                GM_setValue('searchType_' + field, m[htmlSpecial(sel.value)]);
                 searchAnki(ev, sel.value, inputs, sel);
                 sel.removeEventListener('blur', fn);
                 sel.removeEventListener('change', fn);
@@ -233,7 +236,8 @@
             searchAnki(ev, express, el);
         },
         'anki-search': (ev) => {
-            const express = getSearchType(ev, GM_getValue('searchType', 0));
+            const field = ev.target.parentElement.parentElement.querySelector('.field-name').value;
+            const express = getSearchType(ev, GM_getValue('searchType_' + field, 0));
             const inputs = ev.target.parentElement.previousElementSibling;
             searchAnki(ev, express, inputs);
         },
@@ -753,6 +757,8 @@
             <div class="field-operate">
                 <button class="paste-html" title="粘贴">✍️</button>
                 <button class="text-clean" title="清空">🧹</button>
+                <button class="word-wrap-first" title="在首行换行">🔼</button>
+                <button class="word-wrap-last" title="在最后换行">🔽</button>
                 <button class="action-copy" title="复制innerHTML">⭕</button>
                 <button class="action-switch-text" title="切换为textrea">🖺</button>
                 ${buttons.join('\n')} ${butts}
