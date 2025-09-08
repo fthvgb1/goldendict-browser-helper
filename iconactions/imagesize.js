@@ -24,9 +24,23 @@
                         document.querySelectorAll(".resize-frame,.resizer").forEach(item => item.remove());
                     });
                 });
+                const sp = findParent(node, '.spell-content');
+                limitChildrenMaxWidth(sp, sp.clientWidth)
             }
         }
     };
+
+    function limitChildrenMaxWidth(ele, width) {
+        for (const eleElement of ele.children) {
+            if (eleElement.clientWidth > width && eleElement.style.width !== '' && eleElement.tagName !== 'IMG') {
+                eleElement.style.width = '';
+            }
+            if (eleElement.children.length > 0) {
+                limitChildrenMaxWidth(eleElement, width);
+            }
+        }
+    }
+
     const observer = new MutationObserver(callback);
 
 
