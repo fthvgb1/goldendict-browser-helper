@@ -37,6 +37,7 @@
     text-align: left;
     height: 17vw;
     resize: both;
+    max-width: 40vw;
 }
 
 #shadowAddField, .form-item > .field-operate > button, .form-item > .field-operate > input {
@@ -68,6 +69,7 @@
 .sentence_setting .spell-content {
     height: 12vw;
     width: inherit;
+    max-width: initial;
 }
 
 .sentence_setting .form-label {
