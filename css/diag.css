@@ -15,7 +15,7 @@
     position: initial;
 }
 
-.form-item ol {
+.form-item > ol {
     padding-inline-start: 0;
     width: 50vw;
 }
