@@ -31,7 +31,7 @@
                 html.innerHTML = createHtml(`
                         <style>
                             .qr-text{ width: 26vw; margin-bottom: 1vw; height: 2vw; font-size: 100%; }
-                            .qr-img img{ margin: auto }
+                            .qr-img img{ margin: auto; max-width: 27vw }
                         </style>
                         
                         <div class="qr-container">
