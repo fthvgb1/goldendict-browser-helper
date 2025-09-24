@@ -15,8 +15,7 @@ before:
     - sudo apt install gcc-multilib
     - sudo apt install gcc-mingw-w64
     - sudo apt install libz-mingw-w64-dev
-    # for darwin
-    - sudo apt install clang
+
 
 builds:
   - binary: goldenDictHelperServer
