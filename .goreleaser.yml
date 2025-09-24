@@ -63,9 +63,7 @@ archives:
       {{- else if eq .Arch "arm" }}armv{{ .Arm }}
       {{- else }}{{ .Arch }}{{ end }}
     wrap_in_directory: true
-    format_overrides:
-      - goos: windows
-        format: zip
+    format: binary
     files:
       - readme.md
       - LICENSE
