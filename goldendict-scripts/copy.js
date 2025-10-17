@@ -81,49 +81,178 @@
         return visible;
     }
 
-    async function copyImgs(images) {
+    function checkConfAndInsertButton(el, dict, a, dictName) {
+        return (...configs) => {
+            configs.forEach(config => {
+                if (!window.hasOwnProperty(config.name) || !window[config.name].hasOwnProperty(dictName)) {
+                    return
+                }
+                const elements = dict.querySelectorAll(window[config.name][dictName]);
+                if (elements.length < 1) {
+                    return;
+                }
+                const imgCopy = a.cloneNode(true);
+                imgCopy.title = config.title;
+                imgCopy.innerText = config.innerText;
+                imgCopy.addEventListener('click', ev => config.click(elements, ev));
+                a.insertAdjacentElement('beforebegin', imgCopy);
+            })
+        };
+    }
+
+    function copySpecifyElement() {
+        return {
+            name: 'copyElementMap',
+            title: 'copy elements',
+            innerText: '🎀',
+            click: (elements) => copyElement(elements[0])
+        }
+    }
+
+    function htmlToImages() {
+        const reg = /\d+(\.\d*)*/;
+        return {
+            name: 'dictElementToImageMap',
+            title: 'copy elements to images',
+            innerText: '🧰',
+            click: async (elements) => {
+                const images = [];
+                for (const ele of elements) {
+                    const imm = ele.querySelector('img');
+                    if (imm) {
+                        imm.src = await getBase64Image(imm);
+                    }
+                    const s = getComputedStyle(ele);
+                    const ss = {};
+                    Object.keys(s).forEach(k => /\d+/.test(k) ? '' : ss[k] = s[k]);
+                    const offset = [ss.paddingRight, ss.paddingLeft].map(v => Math.ceil(parseFloat(reg.exec(v)[0] ?? '0')))
+                        .reduce((previousValue, currentValue) => previousValue + currentValue)
+                    const dataUrl = await htmlToImage.toPng(ele, {
+                        width: ele.clientWidth + offset,
+                        height: ele.clientHeight,
+                        pixelRatio: 1,
+                        style: ss
+                    });
+                    const im = new Image();
+                    im.src = dataUrl;
+                    images.push(im);
+                }
+                await copyImgs(images, true);
+                showToast('copy success!');
+            }
+        }
+
+        /*const copyStyle = (cloneEle, el) => {
+            const s = getComputedStyle(el);
+            const ss = {};
+            Object.keys(s).forEach(k => /\d+/.test(k) ? '' : ss[k] = s[k]);
+            Object.assign(cloneEle.style, ss);
+            if (cloneEle.children.length > 0) {
+                [...cloneEle.children].forEach((child, i) => {
+                    copyStyle(child, el.children[i]);
+                })
+            }
+        };*/
+    }
+
+    async function copyImgs(images, hadBase64 = false) {
         const div = document.createElement('div');
+
         const had = {};
         for (const img of images) {
             if (had.hasOwnProperty(img.src)) {
                 continue
             }
-            const i = document.createElement('img');
-            i.src = await getBase64Image(img);
-            div.appendChild(i);
+            if (hadBase64) {
+                div.appendChild(img);
+            } else {
+                const i = document.createElement('img');
+                i.src = await getBase64Image(img);
+                div.appendChild(i);
+            }
+
             had[img.src] = '';
         }
         const item = new ClipboardItem({
             'text/html': new Blob([div.innerHTML], {type: 'text/html'}),
         })
         await navigator.clipboard.write([item]).catch(console.log);
-        imgs.splice(0).forEach(cancelSelecting);
+        !hadBase64 && imgs.splice(0).forEach(cancelSelecting);
     }
 
-    function copyImages(el, a) {
-        const dictName = el.querySelector('.gddicttitle').innerText;
-        if (!window.hasOwnProperty('dictImageMap') || !window.dictImageMap.hasOwnProperty(dictName)) {
-            return
-        }
-        const dict = getDictEle(el);
-        const images = dict.querySelectorAll(window.dictImageMap[dictName]);
-        if (images.length < 1) {
-            return;
-        }
-        const imgCopy = a.cloneNode(true);
-        imgCopy.title = 'copy images';
-        imgCopy.innerText = '🧲';
-        imgCopy.addEventListener('click', async () => {
-            if (imgs.length > 0) {
-                await copyImgs(imgs);
-                showToast('copy selected images success!');
-                return
+    function copyImages() {
+        return {
+            name: 'dictImageMap',
+            title: 'copy images',
+            innerText: '🧲',
+            click: async images => {
+                if (imgs.length > 0) {
+                    await copyImgs(imgs);
+                    showToast('copy selected images success!');
+                    return
+                }
+                await copyImgs(images);
+                showToast('copy images success!');
             }
-            await copyImgs(images);
-            showToast('copy images success!');
-        });
-        a.insertAdjacentElement('beforebegin', imgCopy);
+        }
     }
+
+    async function copyElement(ele) {
+        const range = document.createRange() //创建range
+        for (const node of [...ele.querySelectorAll('*')]) {
+            const style = getComputedStyle(node);
+            let prop = style.getPropertyValue('background-image'); // 从样式中获取background-image属性值。
+            if (prop === 'none' || !isVisible(node)) {
+                continue
+            }
+
+            let match = srcChecker.exec(prop);
+            if (!match) {
+                continue
+            }
+            if (map.hasOwnProperty(match[1])) {
+                node.style.cssText = `background-image:url('${map[match[1]]}')`;
+                continue;
+            }
+            try {
+                const b = await getBase64(match[1]);
+                if (typeof b === 'string') {
+                    node.style.cssText = `background-image:url('${b}')`;
+                    map[match[1]] = b;
+                }
+            } catch (e) {
+                console.log(e);
+            }
+        }
+        for (const img of ele.querySelectorAll('img')) {
+            try {
+                img.src = await getBase64Image(img);
+                const title = img.getAttribute('data-title');
+                img.title = title ? title : '';
+                !img.title && img.removeAttribute(title);
+            } catch (e) {
+                console.log(e);
+            }
+        }
+        //range.selectNode和range.selectNodeContents。其中selectNode表示选中整个节点而selectNodeContents表示选中节点中的内容，针对文字的复制需要选中节点的内容，而图片的复制需要选中节点本身。
+        range.selectNode(ele);
+        let selection = window.getSelection() //获取selection对象
+        if (selection.rangeCount > 0) {
+            //如果有已经选中的区域，直接全部去除
+            selection.removeAllRanges()
+        }
+        selection.addRange(range); //加入到选区中
+        if (document.queryCommandSupported && document.queryCommandSupported('copy')) {
+            //先检测是否支持document.queryCommandSupported和copy指令
+            //如果都支持直接执行指令
+            document.execCommand('copy');
+            //去除选中区域，取消拖蓝效果
+            selection.removeAllRanges();
+            showToast('copy success!');
+        }
+    }
+
+    window['copyElement'] = copyElement;
 
     function getDictEle(button) {
         let dict = button.querySelector('.mdict');
@@ -157,67 +286,19 @@
         `
         a.innerText = '✍️';
         a.addEventListener('click', () => {
-            const range = document.createRange() //创建range
             const dict = getDictEle(el);
-
-            const copyFn = async () => {
-                for (const node of [...dict.querySelectorAll('*')]) {
-                    const style = getComputedStyle(node);
-                    let prop = style.getPropertyValue('background-image'); // 从样式中获取background-image属性值。
-                    if (prop === 'none' || !isVisible(node)) {
-                        continue
-                    }
-
-                    let match = srcChecker.exec(prop);
-                    if (!match) {
-                        continue
-                    }
-                    if (map.hasOwnProperty(match[1])) {
-                        node.style.cssText = `background-image:url('${map[match[1]]}')`;
-                        continue;
-                    }
-                    try {
-                        const b = await getBase64(match[1]);
-                        if (typeof b === 'string') {
-                            node.style.cssText = `background-image:url('${b}')`;
-                            map[match[1]] = b;
-                        }
-                    } catch (e) {
-                        console.log(e);
-                    }
-                }
-                for (const img of dict.querySelectorAll('img')) {
-                    try {
-                        img.src = await getBase64Image(img);
-                        const title = img.getAttribute('data-title');
-                        img.title = title ? title : '';
-                        !img.title && img.removeAttribute(title);
-                    } catch (e) {
-                        console.log(e);
-                    }
-                }
-                //range.selectNode和range.selectNodeContents。其中selectNode表示选中整个节点而selectNodeContents表示选中节点中的内容，针对文字的复制需要选中节点的内容，而图片的复制需要选中节点本身。
-                range.selectNode(dict);
-                let selection = window.getSelection() //获取selection对象
-                if (selection.rangeCount > 0) {
-                    //如果有已经选中的区域，直接全部去除
-                    selection.removeAllRanges()
-                }
-                selection.addRange(range); //加入到选区中
-                if (document.queryCommandSupported && document.queryCommandSupported('copy')) {
-                    //先检测是否支持document.queryCommandSupported和copy指令
-                    //如果都支持直接执行指令
-                    document.execCommand('copy');
-                    //去除选中区域，取消拖蓝效果
-                    selection.removeAllRanges();
-                    showToast('copy success!');
-                }
-            }
-            copyFn().catch(console.log);
+            copyElement(dict).catch(console.log);
 
         });
         el.insertBefore(a, el.querySelector('.gddictnamebodyseparator').nextElementSibling);
-        copyImages(el, a);
+        const dictName = el.querySelector('.gddicttitle').innerText;
+        const dict = getDictEle(el);
+        checkConfAndInsertButton(el, dict, a, dictName)(
+            copySpecifyElement(),
+            htmlToImages(),
+            copyImages(),
+        )
+
     });
 
     async function copySingleImage(ev) {

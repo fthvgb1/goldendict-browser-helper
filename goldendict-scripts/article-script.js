@@ -3,6 +3,26 @@
     if (window.hasOwnProperty(Loader)) {
         return
     }
+
+    function toBase64(dataArr) {
+        return btoa(dataArr.reduce((data, val) => {
+            return data + String.fromCharCode(val);
+        }, ''));
+    }
+
+    function fetchToBase64(url) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', url);
+            xhr.onerror = reject;
+            xhr.onload = () => resolve(toBase64(new Uint8Array(xhr.response)));
+            xhr.responseType = 'arraybuffer';
+            xhr.send();
+        })
+    }
+
+    window['fetchToBase64'] = fetchToBase64;
+
     let customizeResource;
 
     async function loadConf() {
@@ -14,8 +34,8 @@
         let conf;
         const r = await fetch(confSrc).then(r => r.text());
         conf = JSON.parse(r);
+        Object.assign(window, conf);
         customizeResource = conf.hasOwnProperty('customizeResource') ? conf.customizeResource : {};
-        window.dictImageMap = conf.hasOwnProperty('dictImageMap') ? conf.dictImageMap : {};
         const generalResource = conf.hasOwnProperty('generalResource') ? conf.generalResource : [];
         if (generalResource.length > 0) {
             generalResource.forEach(filename => {

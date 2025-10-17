@@ -2,6 +2,12 @@
   "dictImageMap": {
     "replace with dictionary name": "replace with fetch img selector"
   },
+  "dictElementToImageMap": {
+    "replace with dictionary name": "replace with fetch element selector then convert to image"
+  },
+  "copyElementMap": {
+    "replace with dictionary name": "replace with fetch element selector"
+  },
   "customizeResource": {
     "dictionary name": [
       "replace this item with script or css name, script or css's path is same as dictionary's folder"
