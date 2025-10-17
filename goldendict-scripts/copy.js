@@ -4,7 +4,7 @@
         return
     }
 
-    function getImageBlob(img, width, height, call = null) {
+    function getImageBlob(img, width = null, height = null, call = null) {
         if (img.src.toLocaleString().includes('.svg')) {
             return getSvg(img)
         }
@@ -36,7 +36,7 @@
         });
     }
 
-    function buildCanvas(img, width, height, call = null) {
+    function buildCanvas(img, width = null, height = null, call = null) {
         const canvas = document.createElement('canvas');
         canvas.width = width || img.naturalWidth;
         canvas.height = height || img.naturalHeight;
@@ -46,7 +46,7 @@
         return canvas
     }
 
-    async function getBase64Image(img, width, height, call = null) {
+    async function getBase64Image(img, width = null, height = null, call = null) {
         if (img.src.toLocaleString().includes('.svg')) {
             return await getSvg(img, 'base64');
         }
@@ -111,6 +111,11 @@
 
     function htmlToImages() {
         const reg = /\d+(\.\d*)*/;
+        const offsetFn = (x, y) => {
+            return [x, y]
+                .map(v => Math.ceil(parseFloat(reg.exec(v)[0] ?? '0')))
+                .reduce((previousValue, currentValue) => previousValue + currentValue);
+        }
         return {
             name: 'dictElementToImageMap',
             title: 'copy elements to images',
@@ -118,18 +123,16 @@
             click: async (elements) => {
                 const images = [];
                 for (const ele of elements) {
-                    const imm = ele.querySelector('img');
-                    if (imm) {
+                    const imms = ele.querySelectorAll('img');
+                    for (const imm of imms) {
                         imm.src = await getBase64Image(imm);
                     }
                     const s = getComputedStyle(ele);
                     const ss = {};
                     Object.keys(s).forEach(k => /\d+/.test(k) ? '' : ss[k] = s[k]);
-                    const offset = [ss.paddingRight, ss.paddingLeft].map(v => Math.ceil(parseFloat(reg.exec(v)[0] ?? '0')))
-                        .reduce((previousValue, currentValue) => previousValue + currentValue)
                     const dataUrl = await htmlToImage.toPng(ele, {
-                        width: ele.clientWidth + offset,
-                        height: ele.clientHeight,
+                        width: ele.clientWidth + offsetFn(ss.paddingRight, ss.paddingLeft),
+                        height: ele.clientHeight + offsetFn(ss.paddingTop, ss.paddingBottom),
                         pixelRatio: 1,
                         style: ss
                     });

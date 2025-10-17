@@ -14,6 +14,7 @@
     ]
   },
   "generalResource": [
+    "html-to-image.min.js",
     "copy.js",
     "replace this item with others script or css name, script or css's path is same as article-script( goldendict configuration folder )"
   ]
