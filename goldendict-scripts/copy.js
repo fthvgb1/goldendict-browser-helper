@@ -114,7 +114,7 @@
         const offsetFn = (x, y) => {
             return [x, y]
                 .map(v => Math.ceil(parseFloat(reg.exec(v)[0] ?? '0')))
-                .reduce((previousValue, currentValue) => previousValue + currentValue);
+                .reduce((previousValue, currentValue) => previousValue + currentValue, 0);
         }
         return {
             name: 'dictElementToImageMap',

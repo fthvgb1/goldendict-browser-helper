@@ -15,14 +15,17 @@
                 const imgs = [];
                 node.tagName === 'IMG' ? imgs.push(node) : imgs.push(...node.querySelectorAll('img'));
                 imgs.forEach(img => {
-                    if (img.width * img.height < 10000) {
-                        return
+                    const fn = () => {
+                        if (img.naturalWidth * img.naturalHeight < 10000) {
+                            return
+                        }
+                        !img.classList.contains('anki-thumb-img') && img.classList.add('anki-thumb-img');
+                        img.addEventListener('dblclick', () => {
+                            img.classList.contains('anki-thumb-img') ? img.classList.remove('anki-thumb-img') : img.classList.add('anki-thumb-img');
+                            document.querySelectorAll(".resize-frame,.resizer").forEach(item => item.remove());
+                        });
                     }
-                    !img.classList.contains('anki-thumb-img') && img.classList.add('anki-thumb-img');
-                    img.addEventListener('dblclick', () => {
-                        img.classList.contains('anki-thumb-img') ? img.classList.remove('anki-thumb-img') : img.classList.add('anki-thumb-img');
-                        document.querySelectorAll(".resize-frame,.resizer").forEach(item => item.remove());
-                    });
+                    img.complete ? fn() : img.onload = fn;
                 });
                 const sp = findParent(node, '.spell-content');
                 limitChildrenMaxWidth(sp, sp.clientWidth)
