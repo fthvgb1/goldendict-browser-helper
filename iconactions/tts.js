@@ -2,22 +2,11 @@
     const voiceSort = (a, b) => a.name.includes('Natural') &&
     !b.name.includes('Natural') ? -1 : 1;
 
-    let voices = speechSynthesis.getVoices().sort(voiceSort), utterance, vice, viceMap = {}, playStat = 0,
-        icon;
-    let selectVice = GM_getValue('ttsVice', '自动选择');
-    let rate = GM_getValue('ttsrate', 1);
-    const setIcon = (i) => {
-        if (!icon) {
-            return
-        }
-        const pp = icon.parentElement.querySelector('button.pp');
-        pp && (pp.innerHTML = i);
-    }
-    speechSynthesis.addEventListener("voiceschanged", () => {
-        if (voices.length < 1) {
-            voices = speechSynthesis.getVoices().sort(voiceSort);
-            utterance = new SpeechSynthesisUtterance();
+    let voices = speechSynthesis.getVoices().sort(voiceSort), utterance, vice, viceMap = {}, playStat = 0, icon;
 
+    (() => {
+        const fn = () => {
+            utterance = new SpeechSynthesisUtterance();
             utterance.addEventListener('end', () => {
                 playStat = 0;
                 setIcon('▶️');
@@ -31,8 +20,20 @@
                 setIcon('⏸️');
             })
             voices.map(v => viceMap[v.voiceURI] = v);
+        };
+        voices.length > 1 ? fn() : speechSynthesis.addEventListener("voiceschanged", () => (voices = speechSynthesis.getVoices().sort(voiceSort), fn()));
+        return voices;
+    })();
+
+    let selectVice = GM_getValue('ttsVice', '自动选择');
+    let rate = GM_getValue('ttsrate', 1);
+    const setIcon = (i) => {
+        if (!icon) {
+            return
         }
-    });
+        const pp = icon.parentElement.querySelector('button.pp');
+        pp && (pp.innerHTML = i);
+    };
 
     function play(text, vice = null) {
         utterance.voice = vice ? vice : viceMap[selectVice];
