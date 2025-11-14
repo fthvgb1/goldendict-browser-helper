@@ -1,19 +1,11 @@
 ;(() => {
-    let voices = prioritizeNaturalVoices(speechSynthesis.getVoices()), utterance, vice, viceMap = {}, playStat = 0,
+    const voiceSort = (a, b) => a.name.includes('Natural') &&
+    !b.name.includes('Natural') ? -1 : 1;
+
+    let voices = speechSynthesis.getVoices().sort(voiceSort), utterance, vice, viceMap = {}, playStat = 0,
         icon;
     let selectVice = GM_getValue('ttsVice', '自动选择');
     let rate = GM_getValue('ttsrate', 1);
-
-    function prioritizeNaturalVoices(voices) {
-        const arr = [];
-        if (voices.length < 1) {
-            return [];
-        }
-        const allVoices = voices.filterAndMapX(voice => voice.name.includes('Natural') ? voice : (arr.push(voice) , false));
-        allVoices.push(...arr);
-        return allVoices
-    }
-
     const setIcon = (i) => {
         if (!icon) {
             return
@@ -23,7 +15,7 @@
     }
     speechSynthesis.addEventListener("voiceschanged", () => {
         if (voices.length < 1) {
-            voices = prioritizeNaturalVoices(speechSynthesis.getVoices());
+            voices = speechSynthesis.getVoices().sort(voiceSort);
             utterance = new SpeechSynthesisUtterance();
 
             utterance.addEventListener('end', () => {
