@@ -1,28 +1,16 @@
 ;(() => {
-    const voiceSort = (a, b) => {
-        if (a.name.includes('Natural') && b.name.includes('Natural')) {
-            if (!a.name.includes('Online') && b.name.includes('Online')) {
-                return -1
-            }
-            return (a.localService && !b.localService) ? -1 : 1;
+    function prioritizeNaturalVoices(voices) {
+        const arr = [];
+        if (voices.length < 1) {
+            return [];
         }
-        if (a.localService && b.localService) {
-            if (a.name.includes('Natural') && !b.name.includes('Natural')) {
-                return -1
-            }
-            if (a.name.includes('Natural') && b.name.includes('Natural')) {
-                return (!a.name.includes('Online') && b.name.includes('Online')) ? -1 : 1;
-            }
-            return 1;
-        }
+        const allVoices = voices.filterAndMapX(voice => voice.name.includes('Natural') ? voice : (arr.push(voice) , false));
+        allVoices.push(...arr);
+        return allVoices
+    }
 
-        if (a.name.includes('Natural') && !a.name.includes('Natural')) {
-            return -1
-        }
-        return 1
-    };
-
-    let voices = speechSynthesis.getVoices().sort(voiceSort), utterance, vice, viceMap = {}, playStat = 0, icon;
+    let voices = prioritizeNaturalVoices(speechSynthesis.getVoices()), utterance, vice, viceMap = {}, playStat = 0,
+        icon;
 
     (() => {
         const fn = () => {
@@ -41,7 +29,7 @@
             })
             voices.map(v => viceMap[v.voiceURI] = v);
         };
-        voices.length > 1 ? fn() : speechSynthesis.addEventListener("voiceschanged", () => (voices = speechSynthesis.getVoices().sort(voiceSort), fn()));
+        voices.length > 1 ? fn() : speechSynthesis.addEventListener("voiceschanged", () => (voices = prioritizeNaturalVoices(speechSynthesis.getVoices()), fn()));
         return voices;
     })();
 
