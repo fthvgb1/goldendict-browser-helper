@@ -1,6 +1,26 @@
 ;(() => {
-    const voiceSort = (a, b) => a.name.includes('Natural') &&
-    !b.name.includes('Natural') ? -1 : 1;
+    const voiceSort = (a, b) => {
+        if (a.name.includes('Natural') && b.name.includes('Natural')) {
+            if (!a.name.includes('Online') && b.name.includes('Online')) {
+                return -1
+            }
+            return (a.localService && !b.localService) ? -1 : 1;
+        }
+        if (a.localService && b.localService) {
+            if (a.name.includes('Natural') && !b.name.includes('Natural')) {
+                return -1
+            }
+            if (a.name.includes('Natural') && b.name.includes('Natural')) {
+                return (!a.name.includes('Online') && b.name.includes('Online')) ? -1 : 1;
+            }
+            return 1;
+        }
+
+        if (a.name.includes('Natural') && !a.name.includes('Natural')) {
+            return -1
+        }
+        return 1
+    };
 
     let voices = speechSynthesis.getVoices().sort(voiceSort), utterance, vice, viceMap = {}, playStat = 0, icon;
 
