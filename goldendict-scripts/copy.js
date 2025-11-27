@@ -87,6 +87,9 @@
                 if (!window.hasOwnProperty(config.name) || !window[config.name].hasOwnProperty(dictName)) {
                     return
                 }
+                if (!dict) {
+                    return;
+                }
                 const elements = dict.querySelectorAll(window[config.name][dictName]);
                 if (elements.length < 1) {
                     return;
@@ -260,14 +263,9 @@
     function getDictEle(button) {
         let dict = button.querySelector('.mdict');
         if (!dict) {
-            dict = button.querySelector('iframe').contentDocument.body;
-            if (!dict) {
-                return
-            }
-        } else {
-            dict = dict.parentElement
+            return button.querySelector('iframe').contentDocument.body ?? null;
         }
-        return dict
+        return dict.parentElement;
     }
 
 
@@ -290,6 +288,9 @@
         a.innerText = '✍️';
         a.addEventListener('click', () => {
             const dict = getDictEle(el);
+            if (!dict) {
+                return;
+            }
             copyElement(dict).catch(console.log);
 
         });
