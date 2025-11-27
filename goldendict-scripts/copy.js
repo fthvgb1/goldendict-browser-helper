@@ -263,7 +263,7 @@
     function getDictEle(button) {
         let dict = button.querySelector('.mdict');
         if (!dict) {
-            return button.querySelector('iframe').contentDocument.body ?? null;
+            return button.querySelector('iframe').contentDocument?.body ?? null;
         }
         return dict.parentElement;
     }
