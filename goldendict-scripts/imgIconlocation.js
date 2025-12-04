@@ -27,6 +27,7 @@
     };
     if (document.readyState === 'complete') {
         fn();
+        return
     }
     console.log(document.readyState)
     document.addEventListener("readystatechange", () => {
