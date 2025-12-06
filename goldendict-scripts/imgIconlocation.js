@@ -1,5 +1,6 @@
 ;(() => {
     let rendered = false;
+    console.log(document.readyState);
     const fn = () => {
         if (rendered) {
             return
@@ -7,9 +8,9 @@
         const m = {};
         const as = [...document.querySelectorAll('a[title="copy images"],a[title="copy elements to images"]')]
             .map(el => {
-                const div = el.previousElementSibling.previousElementSibling;
-                m[div.id] = el;
-                return `<li><a href="#${div.id}" data-id="${div.id}">${div.querySelector('.gddicttitle').innerText}</a></li>`
+                const div = el.parentElement.querySelector('.gddictname');
+                m[div.id + el.title] = el;
+                return `<li><a href="#${div.id}" data-id="${div.id + el.title}">${el.title} ${div.querySelector('.gddicttitle').innerText}}</a></li>`
             });
         if (as.length < 1) {
             return;
@@ -29,7 +30,6 @@
         fn();
         return
     }
-    console.log(document.readyState)
     document.addEventListener("readystatechange", () => {
         console.log(document.readyState)
         fn();

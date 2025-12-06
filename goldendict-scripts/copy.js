@@ -124,27 +124,60 @@
             title: 'copy elements to images',
             innerText: '🧰',
             click: async (elements) => {
+                console.log('copy element', elements);
                 const images = [];
+                const fns = [];
                 for (const ele of elements) {
+                    let maxSize = ele.clientWidth * ele.clientHeight, mh = ele.clientHeight, mw = ele.clientWidth,
+                        w = mw, h = mh, size = maxSize;
                     const imms = ele.querySelectorAll('img');
                     for (const imm of imms) {
+                        const size = imm.naturalHeight * imm.naturalWidth;
+                        if (size > maxSize) {
+                            maxSize = size;
+                            mh = imm.naturalHeight;
+                            mw = imm.naturalWidth
+                        }
                         imm.src = await getBase64Image(imm);
                     }
+                    console.log(mh, mw);
+                    let re = false;
+                    if (maxSize !== size) {
+                        if (ele.style.width === '') {
+                            re = true;
+                        }
+                        ele.style.width = mw + 'px';
+                        ele.style.height = mh + 'px';
+                    }
+
                     const s = getComputedStyle(ele);
                     const ss = {};
                     Object.keys(s).forEach(k => /\d+/.test(k) ? '' : ss[k] = s[k]);
                     const dataUrl = await htmlToImage.toPng(ele, {
-                        width: ele.clientWidth + offsetFn(ss.paddingRight, ss.paddingLeft),
-                        height: ele.clientHeight + offsetFn(ss.paddingTop, ss.paddingBottom),
+                        width: mw + offsetFn(ss.paddingRight, ss.paddingLeft),
+                        height: mh + offsetFn(ss.paddingTop, ss.paddingBottom),
                         pixelRatio: 1,
                         style: ss
                     });
                     const im = new Image();
                     im.src = dataUrl;
                     images.push(im);
+                    if (maxSize !== size) {
+                        fns.push(() => {
+                            if (re) {
+                                ele.style.width = '';
+                                ele.style.height = '';
+                                return
+                            }
+                            ele.style.width = w + 'px';
+                            ele.style.height = h + 'px';
+                        })
+
+                    }
                 }
                 await copyImgs(images, true);
                 showToast('copy success!');
+                fns.map(fn => fn())
             }
         }
 
@@ -297,6 +330,7 @@
         el.insertBefore(a, el.querySelector('.gddictnamebodyseparator').nextElementSibling);
         const dictName = el.querySelector('.gddicttitle').innerText;
         const dict = getDictEle(el);
+        console.log('copy')
         checkConfAndInsertButton(el, dict, a, dictName)(
             copySpecifyElement(),
             htmlToImages(),
