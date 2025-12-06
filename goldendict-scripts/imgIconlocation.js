@@ -10,7 +10,7 @@
             .map(el => {
                 const div = el.parentElement.querySelector('.gddictname');
                 m[div.id + el.title] = el;
-                return `<li><a href="#${div.id}" data-id="${div.id + el.title}">${el.title} ${div.querySelector('.gddicttitle').innerText}}</a></li>`
+                return `<li><a href="#${div.id}" data-id="${div.id + el.title}">${el.title} ${div.querySelector('.gddicttitle').innerText}</a></li>`
             });
         if (as.length < 1) {
             return;

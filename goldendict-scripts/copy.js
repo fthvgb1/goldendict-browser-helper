@@ -140,7 +140,6 @@
                         }
                         imm.src = await getBase64Image(imm);
                     }
-                    console.log(mh, mw);
                     let re = false;
                     if (maxSize !== size) {
                         if (ele.style.width === '') {
@@ -172,7 +171,6 @@
                             ele.style.width = w + 'px';
                             ele.style.height = h + 'px';
                         })
-
                     }
                 }
                 await copyImgs(images, true);
