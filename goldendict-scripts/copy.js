@@ -127,26 +127,43 @@
                 console.log('copy element', elements);
                 const images = [];
                 const fns = [];
+                const fields = ['maxWidth', 'minWidth', 'maxHeight', 'minHeight'];
                 for (const ele of elements) {
-                    let maxSize = ele.clientWidth * ele.clientHeight, mh = ele.clientHeight, mw = ele.clientWidth,
-                        w = mw, h = mh, size = maxSize;
+                    let maxSize = ele.clientWidth * ele.clientHeight,
+                        mh = ele.clientHeight, mw = ele.clientWidth, size = maxSize;
                     const imms = ele.querySelectorAll('img');
                     for (const imm of imms) {
                         const size = imm.naturalHeight * imm.naturalWidth;
                         if (size > maxSize) {
                             maxSize = size;
                             mh = imm.naturalHeight;
-                            mw = imm.naturalWidth
+                            mw = imm.naturalWidth;
                         }
                         imm.src = await getBase64Image(imm);
-                    }
-                    let re = false;
-                    if (maxSize !== size) {
-                        if (ele.style.width === '') {
-                            re = true;
+                        if (imm.naturalWidth * imm.naturalHeight > imm.clientHeight * imm.clientWidth) {
+                            const ww = imm.style.width, hh = imm.style.height;
+                            imm.style.height = imm.naturalHeight + 'px';
+                            imm.style.width = imm.naturalWidth + 'px';
+                            const m = {};
+                            fields.forEach(f => (m[f] = imm.style[f], imm.style[f] = f.includes('Width') ? (imm.naturalWidth + 'px') : (imm.naturalHeight + 'px')));
+                            fns.push(() => {
+                                fields.forEach(f => imm.style[f] = m[f]);
+                                imm.style.width = ww;
+                                imm.style.height = hh;
+                            });
                         }
+                    }
+                    if (maxSize !== size) {
+                        const w = ele.style.width, h = ele.style.height;
                         ele.style.width = mw + 'px';
                         ele.style.height = mh + 'px';
+                        const m = {};
+                        fields.forEach(f => (m[f] = ele.style[f], ele.style[f] = f.includes('Width') ? (mw + 'px') : (mh + 'px')));
+                        fns.push(() => {
+                            fields.forEach(f => ele.style[f] = m[f]);
+                            ele.style.width = w;
+                            ele.style.height = h;
+                        });
                     }
 
                     const s = getComputedStyle(ele);
@@ -161,17 +178,6 @@
                     const im = new Image();
                     im.src = dataUrl;
                     images.push(im);
-                    if (maxSize !== size) {
-                        fns.push(() => {
-                            if (re) {
-                                ele.style.width = '';
-                                ele.style.height = '';
-                                return
-                            }
-                            ele.style.width = w + 'px';
-                            ele.style.height = h + 'px';
-                        })
-                    }
                 }
                 await copyImgs(images, true);
                 showToast('copy success!');
