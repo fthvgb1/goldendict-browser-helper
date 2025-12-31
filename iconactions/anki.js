@@ -322,11 +322,11 @@
             const el = ev.target.parentElement.previousElementSibling.querySelector('.spell-content');
             if (el.tagName === 'DIV') {
                 const text = el.innerHTML
-                el.outerHTML = `<textarea class="${el.className}">${text}</textarea>`;
+                el.outerHTML = `<textarea class="${el.className}" spellcheck="true">${text}</textarea>`;
                 ev.target.title = '切换为富文本'
             } else {
                 const text = el.value
-                el.outerHTML = `<div class="${el.className}" contenteditable="true">${text}</div>`;
+                el.outerHTML = `<div class="${el.className}" spellcheck="true" contenteditable="true">${text}</div>`;
                 ev.target.title = '切换为textarea'
             }
         },
@@ -544,7 +544,7 @@
         const richText = spell();
         li.className = 'form-item'
         li.innerHTML = createHtml(`
-            <input name="shadow-form-field[]" placeholder="字段名" value="${field}" class="swal2-input field-name">
+            <input name="shadow-form-field[]" spellcheck="true" placeholder="字段名" value="${field}" class="swal2-input field-name">
             <div class="wait-replace"></div>            
             <div class="field-operate">
                 <button class="minus">➖</button>

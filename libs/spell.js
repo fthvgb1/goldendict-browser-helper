@@ -46,7 +46,7 @@ function spell() {
         ]
     ]
 
-    return $('div', {className: 'spell'}, [
+    return $('div', {className: 'spell', spellcheck: true}, [
         $('div', {className: 'spell-bar'}, actions.map(
             bar => $('div', {className: 'spell-zone'}, bar.map(
                 ([cmd, onclick = _ => exec(cmd), control]) => buttons[cmd] = $('button', {
