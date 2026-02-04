@@ -369,6 +369,9 @@
         if (ev.which !== 1) {
             return;
         }
+        if (ev.target.tagName !== 'IMG') {
+            return;
+        }
         const cw = ev.target.clientWidth;
         const ch = ev.target.clientHeight;
         if (cw < 20 && ch < 20) {
@@ -381,9 +384,7 @@
             imgs.splice(0).forEach(cancelSelecting);
             return
         }
-        if (ev.target.tagName !== 'IMG') {
-            return;
-        }
+
         ev.target.setAttribute('stop', false);
         const w = cw - ev.offsetX;
         const h = ch - ev.offsetY;
