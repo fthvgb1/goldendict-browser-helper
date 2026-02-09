@@ -15,7 +15,11 @@
   },
   "generalResource": [
     "html-to-image.min.js",
+    "copyDKDictsElementsToImages.js",
     "copy.js",
+    "traditionaltoSimplified.js",
     "replace this item with others script or css name, script or css's path is same as article-script( goldendict configuration folder )"
-  ]
+  ],
+  "transitionToSimpleSelectors": "",
+  "simpleToTransitionToSelectors": ""
 }

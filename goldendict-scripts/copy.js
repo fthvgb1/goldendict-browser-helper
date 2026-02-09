@@ -4,83 +4,6 @@
         return
     }
 
-    function getImageBlob(img, width = null, height = null, call = null) {
-        if (img.src.toLocaleString().includes('.svg')) {
-            return getSvg(img)
-        }
-        return new Promise(resolve => buildCanvas(img, width, height, call).toBlob(resolve));
-    }
-
-    function getSvg(img, type = 'blob') {
-        return new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            xhr.open('GET', img.src);
-            xhr.onerror = reject;
-            xhr.onload = response => {
-                const r = response.target.responseText;
-                const im = new Image(img.clientWidth, img.clientHeight);
-                im.onload = async () => {
-                    if (type === 'blob') {
-                        const b = await getImageBlob(im, img.clientWidth, img.clientHeight, (ctx) => {
-                            ctx.fillStyle = "#fff";
-                            ctx.fillRect(0, 0, img.clientWidth, img.clientHeight);
-                        });
-                        resolve(b);
-                        return
-                    }
-                    resolve(await getBase64Image(im, img.clientWidth, img.clientHeight));
-                }
-                im.src = 'data:image/svg+xml;base64,' + btoa(r);
-            }
-            xhr.send();
-        });
-    }
-
-    function buildCanvas(img, width = null, height = null, call = null) {
-        const canvas = document.createElement('canvas');
-        canvas.width = width || img.naturalWidth;
-        canvas.height = height || img.naturalHeight;
-        const ctx = canvas.getContext('2d');
-        call && call(ctx);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        return canvas
-    }
-
-    async function getBase64Image(img, width = null, height = null, call = null) {
-        if (img.src.toLocaleString().includes('.svg')) {
-            return await getSvg(img, 'base64');
-        }
-        return buildCanvas(img, width, height, call).toDataURL()
-    }
-
-    function getBase64(img) {
-        const image = new Image();
-        image.crossOrigin = '';
-        image.src = img;
-        return new Promise((resolve) => {
-            image.onload = function () {
-                const base64Data = getBase64Image(image);
-                resolve(base64Data);
-            }
-        })
-    }
-
-    function isVisible(el) {
-        let loopable = true,
-            visible = getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
-
-        while (loopable && visible) {
-            el = el.parentNode;
-            if (el && el !== document.body) {
-                visible = getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden';
-            } else {
-                loopable = false;
-            }
-        }
-
-        return visible;
-    }
-
     function checkConfAndInsertButton(el, dict, a, dictName) {
         return (...configs) => {
             configs.forEach(config => {
@@ -112,7 +35,9 @@
         }
     }
 
-    function htmlToImages() {
+    const beforeCopyEleToImg = window['beforeCopyEleToImg'] ?? [], hookEleToImg = window['hookEleToImg'] ?? {};
+
+    function htmlToImages(dictName) {
         const reg = /\d+(\.\d*)*/;
         const offsetFn = (x, y) => {
             return [x, y]
@@ -124,64 +49,43 @@
             title: 'copy elements to images',
             innerText: '🧰',
             click: async (elements) => {
-                console.log('copy element', elements);
-                const images = [];
-                const fns = [];
-                const fields = ['maxWidth', 'minWidth', 'maxHeight', 'minHeight'];
+                console.log('will copy elements', elements);
+                if (hookEleToImg?.[dictName]) {
+                    hookEleToImg[dictName](elements);
+                    return
+                }
+                const images = [], afterFns = [];
                 for (const ele of elements) {
-                    let maxSize = ele.clientWidth * ele.clientHeight,
-                        mh = ele.clientHeight, mw = ele.clientWidth, size = maxSize;
-                    const imms = ele.querySelectorAll('img');
-                    for (const imm of imms) {
-                        const size = imm.naturalHeight * imm.naturalWidth;
-                        if (size > maxSize) {
-                            maxSize = size;
-                            mh = imm.naturalHeight;
-                            mw = imm.naturalWidth;
+                    const fn = async (ele) => {
+                        const imms = ele.querySelectorAll('img');
+                        for (const imm of imms) {
+                            imm.src = await getBase64Image(imm);
                         }
-                        imm.src = await getBase64Image(imm);
-                        if (imm.naturalWidth * imm.naturalHeight > imm.clientHeight * imm.clientWidth) {
-                            const ww = imm.style.width, hh = imm.style.height;
-                            imm.style.height = imm.naturalHeight + 'px';
-                            imm.style.width = imm.naturalWidth + 'px';
-                            const m = {};
-                            fields.forEach(f => (m[f] = imm.style[f], imm.style[f] = f.includes('Width') ? (imm.naturalWidth + 'px') : (imm.naturalHeight + 'px')));
-                            fns.push(() => {
-                                fields.forEach(f => imm.style[f] = m[f]);
-                                imm.style.width = ww;
-                                imm.style.height = hh;
-                            });
-                        }
-                    }
-                    if (maxSize !== size) {
-                        const w = ele.style.width, h = ele.style.height;
-                        ele.style.width = mw + 'px';
-                        ele.style.height = mh + 'px';
-                        const m = {};
-                        fields.forEach(f => (m[f] = ele.style[f], ele.style[f] = f.includes('Width') ? (mw + 'px') : (mh + 'px')));
-                        fns.push(() => {
-                            fields.forEach(f => ele.style[f] = m[f]);
-                            ele.style.width = w;
-                            ele.style.height = h;
-                        });
-                    }
-
-                    const s = getComputedStyle(ele);
-                    const ss = {};
+                    };
+                    const s = getComputedStyle(ele), ss = {};
                     Object.keys(s).forEach(k => /\d+/.test(k) ? '' : ss[k] = s[k]);
-                    const dataUrl = await htmlToImage.toPng(ele, {
-                        width: mw + offsetFn(ss.paddingRight, ss.paddingLeft),
-                        height: mh + offsetFn(ss.paddingTop, ss.paddingBottom),
+                    const imgParam = {
+                        width: ele.clientWidth + offsetFn(ss.paddingRight, ss.paddingLeft),
+                        height: ele.clientHeight + offsetFn(ss.paddingTop, ss.paddingBottom),
                         pixelRatio: 1,
                         style: ss
-                    });
+                    };
+
+                    if (beforeCopyEleToImg.length > 0) {
+                        for (const fnx of beforeCopyEleToImg) {
+                            await fnx(dictName, ele, afterFns, fn, imgParam, offsetFn);
+                        }
+                    } else {
+                        await fn(ele);
+                    }
+                    const dataUrl = await htmlToImage.toPng(ele, imgParam);
                     const im = new Image();
                     im.src = dataUrl;
                     images.push(im);
                 }
                 await copyImgs(images, true);
                 showToast('copy success!');
-                fns.map(fn => fn())
+                afterFns.forEach(fn => fn && fn());
             }
         }
 
@@ -334,10 +238,9 @@
         el.insertBefore(a, el.querySelector('.gddictnamebodyseparator').nextElementSibling);
         const dictName = el.querySelector('.gddicttitle').innerText;
         const dict = getDictEle(el);
-        console.log('copy')
         checkConfAndInsertButton(el, dict, a, dictName)(
             copySpecifyElement(),
-            htmlToImages(),
+            htmlToImages(dictName),
             copyImages(),
         )
 
