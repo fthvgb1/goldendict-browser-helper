@@ -15,6 +15,7 @@
   },
   "generalResource": [
     "html-to-image.min.js",
+    "copyFunctions.js",
     "copyDKDictsElementsToImages.js",
     "copy.js",
     "traditionaltoSimplified.js",
