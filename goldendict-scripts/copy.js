@@ -44,6 +44,12 @@
                 .map(v => Math.ceil(parseFloat(reg.exec(v)[0] ?? '0')))
                 .reduce((previousValue, currentValue) => previousValue + currentValue, 0);
         }
+        const imgBase64 = async ele => {
+            const imgs = ele.querySelectorAll('img');
+            for (const img of imgs) {
+                img.src = await getBase64Image(img);
+            }
+        };
         return {
             name: 'dictElementToImageMap',
             title: 'copy elements to images',
@@ -56,36 +62,36 @@
                 }
                 const images = [], afterFns = [];
                 for (const ele of elements) {
-                    const fn = async (ele) => {
-                        const imms = ele.querySelectorAll('img');
-                        for (const imm of imms) {
-                            imm.src = await getBase64Image(imm);
-                        }
-                    };
-                    const s = getComputedStyle(ele), ss = {};
-                    Object.keys(s).forEach(k => /\d+/.test(k) ? '' : ss[k] = s[k]);
+                    const computedStyle = getComputedStyle(ele), style = {};
+                    Object.keys(computedStyle).forEach(k => /\d+/.test(k) ? '' : style[k] = computedStyle[k]);
                     const imgParam = {
-                        width: ele.clientWidth + offsetFn(ss.paddingRight, ss.paddingLeft),
-                        height: ele.clientHeight + offsetFn(ss.paddingTop, ss.paddingBottom),
+                        width: ele.clientWidth + offsetFn(style.paddingRight, style.paddingLeft),
+                        height: ele.clientHeight + offsetFn(style.paddingTop, style.paddingBottom),
                         pixelRatio: 1,
-                        style: ss
+                        style: style
                     };
 
                     if (beforeCopyEleToImg.length > 0) {
                         for (const fnx of beforeCopyEleToImg) {
-                            await fnx(dictName, ele, afterFns, fn, imgParam, offsetFn);
+                            await fnx(dictName, ele, afterFns, imgBase64, imgParam, offsetFn);
                         }
                     } else {
-                        await fn(ele);
+                        await imgBase64(ele);
                     }
                     const dataUrl = await htmlToImage.toPng(ele, imgParam);
                     const im = new Image();
                     im.src = dataUrl;
                     images.push(im);
                 }
-                await copyImgs(images, true);
-                showToast('copy success!');
-                afterFns.forEach(fn => fn && fn());
+                try {
+                    await copyImgs(images, true);
+                    showToast('copy success!');
+                } catch (e) {
+                    showToast('copy failed! check console see the error info.');
+                    console.error(e);
+                } finally {
+                    afterFns.forEach(fn => fn && fn());
+                }
             }
         }
 
