@@ -1,4 +1,5 @@
-// edited from some bbs and https://github.com/nk2028/opencc-js
+// lib from https://github.com/nk2028/opencc-js
+// edited from https://forum.freemdict.com
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
         typeof define === 'function' && define.amd ? define(['exports'], factory) :

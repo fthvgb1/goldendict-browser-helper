@@ -1,4 +1,4 @@
-move current directory's all javascript files into goldendict-ng's configure directory then it would copy contents
+move current directory's all files into goldendict-ng's configure directory then it would copy contents
 and pictures of dictionary.
 
 You can also load other scripts only need change config.json
