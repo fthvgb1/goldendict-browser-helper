@@ -44,7 +44,7 @@
                 .map(v => Math.ceil(parseFloat(reg.exec(v)[0] ?? '0')))
                 .reduce((previousValue, currentValue) => previousValue + currentValue, 0);
         }
-        const imgBase64 = async ele => {
+        const imgBase64Fn = async ele => {
             const imgs = ele.querySelectorAll('img');
             for (const img of imgs) {
                 img.src = await getBase64Image(img);
@@ -65,18 +65,18 @@
                     const computedStyle = getComputedStyle(ele), style = {};
                     Object.keys(computedStyle).forEach(k => /\d+/.test(k) ? '' : style[k] = computedStyle[k]);
                     const imgParam = {
-                        width: ele.clientWidth + offsetFn(style.paddingRight, style.paddingLeft),
-                        height: ele.clientHeight + offsetFn(style.paddingTop, style.paddingBottom),
+                        width: ele.clientWidth,
+                        height: ele.clientHeight,
                         pixelRatio: 1,
                         style: style
                     };
 
                     if (beforeCopyEleToImg.length > 0) {
                         for (const fnx of beforeCopyEleToImg) {
-                            await fnx(dictName, ele, afterFns, imgBase64, imgParam, offsetFn);
+                            await fnx(dictName, ele, afterFns, imgBase64Fn, imgParam, offsetFn);
                         }
                     } else {
-                        await imgBase64(ele);
+                        await imgBase64Fn(ele);
                     }
                     const dataUrl = await htmlToImage.toPng(ele, imgParam);
                     const im = new Image();

@@ -1,8 +1,11 @@
 {
   "dictImageMap": {
+    "DK Chinese-English Bilingual Visual Dictionary": "dict_px .ALL img",
     "replace with dictionary name": "replace with fetch img selector"
   },
   "dictElementToImageMap": {
+    "AHD双解": "yd-blk, a4p_wr, a5p_wr",
+    "DK Chinese-English Bilingual Visual Dictionary": ".mdict",
     "replace with dictionary name": "replace with fetch element selector then convert to image"
   },
   "copyElementMap": {
@@ -16,7 +19,7 @@
   "generalResource": [
     "html-to-image.min.js",
     "copyFunctions.js",
-    "copyDKDictsElementsToImages.js",
+    "copyElementsToImagesExamples.js",
     "copy.js",
     "traditionaltoSimplified.js",
     "replace this item with others script or css name, script or css's path is same as article-script( goldendict configuration folder )"
