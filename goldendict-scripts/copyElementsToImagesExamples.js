@@ -1,17 +1,8 @@
 ;(() => {
     const fields = ['maxWidth', 'minWidth', 'maxHeight', 'minHeight'];
 
-    PushWindowVarArray('beforeCopyEleToImg', hook);
-
-    const adh = 'AHD双解';
-    const m = {
-        'DK Chinese-English Bilingual Visual Dictionary': dkDict,
-        [adh]: ADH
-    }
-
-    async function hook(dictName, ele, afterCopyFns, imgBase64Fn, imgParam, offsetFn) {
-        await m?.[dictName](ele, afterCopyFns, imgBase64Fn, imgParam, offsetFn);
-    }
+    setMapVal('beforeCopyEleToImg.DK Chinese-English Bilingual Visual Dictionary', dkDict, window);
+    setMapVal('beforeCopyEleToImg.AHD双解', ADH, window);
 
     async function ADH(ele, afterCopyFns, imgBase64Fn, imgParam, offsetFn) {
         await imgBase64Fn(ele);
@@ -19,7 +10,6 @@
         imgParam.width = ele.clientWidth + offsetFn(style.paddingRight, style.paddingLeft);
         imgParam.height = ele.clientHeight + offsetFn(style.paddingTop, style.paddingBottom);
     }
-
 
     async function dkDict(ele, afterCopyFns, imgBase64Fn, imgParam, offsetFn) {
         let maxSize = ele.clientWidth * ele.clientHeight, mh = ele.clientHeight, mw = ele.clientWidth, size = maxSize;

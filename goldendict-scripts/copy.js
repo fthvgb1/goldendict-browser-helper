@@ -35,7 +35,7 @@
         }
     }
 
-    const beforeCopyEleToImg = window['beforeCopyEleToImg'] ?? [], hookEleToImg = window['hookEleToImg'] ?? {};
+    const beforeCopyEleToImg = window['beforeCopyEleToImg'] ?? {}, hookEleToImg = window['hookEleToImg'] ?? {};
 
     function htmlToImages(dictName) {
         const reg = /\d+(\.\d*)*/;
@@ -65,16 +65,14 @@
                     const computedStyle = getComputedStyle(ele), style = {};
                     Object.keys(computedStyle).forEach(k => /\d+/.test(k) ? '' : style[k] = computedStyle[k]);
                     const imgParam = {
-                        width: ele.clientWidth,
-                        height: ele.clientHeight,
                         pixelRatio: 1,
-                        style: style
                     };
 
-                    if (beforeCopyEleToImg.length > 0) {
-                        for (const fnx of beforeCopyEleToImg) {
-                            await fnx(dictName, ele, afterFns, imgBase64Fn, imgParam, offsetFn);
-                        }
+                    if (beforeCopyEleToImg?.[dictName]) {
+                        imgParam.width = ele.clientWidth;
+                        imgParam.height = ele.clientHeight;
+                        imgParam.style = style;
+                        await beforeCopyEleToImg[dictName](ele, afterFns, imgBase64Fn, imgParam, offsetFn);
                     } else {
                         await imgBase64Fn(ele);
                     }
