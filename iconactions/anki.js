@@ -22,8 +22,10 @@
         }
     }
     const ankTags = new Set();
-    const spellIconsTtf = GM_getResourceURL('spell-icons-ttf');
-    const spellIconsWoff = GM_getResourceURL('spell-icons-woff');
+    const spellIconsTtf = GM_getResourceURL('spell-icons-ttf')
+        .replace('data:application;base64,', 'data:font/truetype;charset=utf-8;base64,');
+    const spellIconsWoff = GM_getResourceURL('spell-icons-woff')
+        .replace('data:application;base64,', 'data:font/truetype;charset=utf-8;base64,');
     const spellCss = GM_getResourceText("spell-css")
         .replace('chrome-extension://__MSG_@@extension_id__/fg/font/spell-icons.ttf', spellIconsTtf)
         .replace('chrome-extension://__MSG_@@extension_id__/fg/font/spell-icons.woff', spellIconsWoff);
