@@ -1,0 +1,22 @@
+<div class="fetch-item" draggable="true">
+    <div class="fetch-box">
+        <input class="fetch-name" placeholder="{{title.fetch-name}}" title="{{title.fetch-name}}"
+               value="{{fetch-name}}">
+        <select class="operate-type" name="operate-type" title="{{title.operate-type}}">
+            {{operate-type-options}}}
+        </select>
+    </div>
+    <div class="fetch-box fetch-action-container">
+        {{fetch-operator}}
+    </div>
+    <div class="fetch-box">
+        <input class="swal2-checkbox fetch-active" name="fetch-active" placeholder="{{title.fetch-active}}"
+               title="{{title.fetch-active}}" type="checkbox"
+               {{fetch-active-checked}}>
+        <div class="fetch-buttons">
+            <button class="fetch-delete" title="{{title.fetch-delete}}">➖</button>
+            <button class="fetch-copy" title="{{title.fetch-copy}}">🖇</button>
+            <button class="fetch-add" title="{{title.fetch-add}}">➕</button>
+        </div>
+    </div>
+</div>

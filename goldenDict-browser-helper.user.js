@@ -33,6 +33,7 @@
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/libs/text.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/libs/resizeimg.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/libs/spell.js
+// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/libs/superfetch.js
 
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/goldendict.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/tts.js
@@ -42,6 +43,11 @@
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/imagesize.js
 
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/contextmenuactions/menus.js
+
+// @resource fetch-base https://github.com/fthvgb1/goldendict-browser-helper/blob/master/templates/base.html?raw=true
+// @resource fetch-fetch https://github.com/fthvgb1/goldendict-browser-helper/blob/master/templates/fetch.html?raw=true
+// @resource fetch-tag https://github.com/fthvgb1/goldendict-browser-helper/blob/master/templates/tag.html?raw=true
+// @resource fetch-replacement https://github.com/fthvgb1/goldendict-browser-helper/blob/master/templates/replacement.html?raw=true
 
 // @resource icon-anki https://github.com/fthvgb1/goldendict-browser-helper/blob/master/icon/anki.png?raw=true
 // @resource icon-copy https://github.com/fthvgb1/goldendict-browser-helper/blob/master/icon/copy.png?raw=true

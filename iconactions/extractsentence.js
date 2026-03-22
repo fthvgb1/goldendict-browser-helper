@@ -13,7 +13,8 @@
     .fetch-buttons {display: inline-block;}
     .fetch-buttons button {display: block;}
     .fetch-dd { margin-left: 0vw; }
-    .fetch-name {width: 7vw;}
+    .fetch-name {width: 7vw; display:block;}
+    .operate-type {display:block;}
     .fetch-format {width: 20vw}
     .fetch-bold-field,.fetch-html-replacement,.fetch-value-replacement {width: 17vw}
     .fetch-num { width:3vw}
@@ -406,6 +407,7 @@
     }
 
     function saveFetchItems() {
+        return
         const data = getFetchItemEles().map(item => convertFetchParam(item));
         data.length > 0 && GM_setValue('fetch-items', data);
     }
@@ -1004,6 +1006,7 @@
 
     const mapTitle = {
         'fetch-name': '名称，只作为标识',
+        'operate-type': '操作类型',
         'fetch-field': '提取的字段',
         'fetch-to-field': '提取到目标字段',
         'fetch-selector': '提取值的选择器',
@@ -1041,67 +1044,42 @@
         de['fetch-html-replacement-ignore-case'] = false;
     });
 
+    function buildTemplateHTML(template, vars) {
+        const t = GM_getResourceText(template) ?? '';
+        if (!vars) {
+            return t
+        }
+        return Object.keys(vars).reduce((t, k) => t.replaceAll(`{{${k}}}`, vars[k]), t);
+    }
+
+    const op = {'fetch-fetch': '抓取', 'fetch-replacement': '替换', 'fetch-tag': '打标签'};
+    const map = {};
+    Object.keys(mapTitle).forEach(k => map['title.' + k] = mapTitle[k]);
+
     function buildFetchItem(data = null) {
+        data = {...data, ...map};
         specialFields.forEach(v => data[v] = data[v] ? htmlSpecial(data[v]) : '');
         const div = document.createElement('div');
-        div.innerHTML = `
-                <div class="fetch-item" draggable="true">
-                    <span class="fetch-box">
-                           <input class="fetch-name" value="${data['fetch-name']}" title="${mapTitle['fetch-name']}" placeholder="${mapTitle['fetch-name']}">
-                    </span>
-                    <span class="fetch-box">
-                        <dd class="fetch-dd">
-                            <input name="fetch-field" value="${data['fetch-field']}" class="fetch-field" title="${mapTitle['fetch-field']}" placeholder="${mapTitle['fetch-field']}">
-                            <input name="fetch-to-field" value="${data['fetch-to-field']}" class="fetch-to-field" title="${mapTitle['fetch-to-field']}" placeholder="${mapTitle['fetch-to-field']}">
-                        </dd>
-                        <dd class="fetch-dd">
-                            <input name="fetch-selector" value="${data['fetch-selector']}" class="fetch-selector" title="${mapTitle['fetch-selector']}" placeholder="${mapTitle['fetch-selector']}">
-                            <input name="fetch-parent-selector" value="${data['fetch-parent-selector']}" class="fetch-parent-selector" title="${mapTitle['fetch-parent-selector']}" placeholder="${mapTitle['fetch-parent-selector']}">
-                        </dd>
-                        <dd class="fetch-dd">
-                            <input name="fetch-exclude-selector" value="${data['fetch-exclude-selector']}" class="fetch-exclude-selector" title="${mapTitle['fetch-exclude-selector']}" placeholder="${mapTitle['fetch-exclude-selector']}">
-                            <input name="fetch-join-selector" value="${data['fetch-join-selector']}" class="fetch-join-selector" title="${mapTitle['fetch-join-selector']}" placeholder="${mapTitle['fetch-join-selector']}">
-                        </dd>
-                        <dd class="fetch-dd">
-                            <input name="fetch-format" value="${data['fetch-format']}" class="fetch-format" title="${mapTitle['fetch-format']}" placeholder="${mapTitle['fetch-format']}">
-                            <select name="fetch-data-handle" class="fetch-data-handle" title="${mapTitle['fetch-data-handle']}">
-                                ${buildOption([['1', '追加'], ['2', '覆盖'], ['3', '不处理']], data['fetch-data-handle'].toString(), 0, 1)}
-                            </select>                          
-                        </dd>
-                        <dd class="fetch-dd">
-                               <input name="fetch-bold-field" value="${data['fetch-bold-field']}" class="fetch-bold-field" title="${mapTitle['fetch-bold-field']}" placeholder="${mapTitle['fetch-bold-field']}">
-                               <input name="fetch-num" step="1" min="0" value="${data['fetch-num']}" class="fetch-num" type="number" title="${mapTitle['fetch-num']}" placeholder="${mapTitle['fetch-num']}">
-                               <input type="checkbox" ${data['fetch-repeat'] ? 'checked' : ''} name="fetch-repeat" class="fetch-repeat" title="${mapTitle['fetch-repeat']}" placeholder="${mapTitle['fetch-repeat']}">
-                        </dd>
-                        <dd class="fetch-dd">
-                               <input name="fetch-value-replacement" value="${data['fetch-value-replacement']}" class="fetch-value-replacement" title="${mapTitle['fetch-value-replacement']}" placeholder="${mapTitle['fetch-value-replacement']}">
-                               <input type="checkbox" ${data['fetch-value-trim'] ? 'checked' : ''} name="fetch-value-trim" class="fetch-value-trim" title="${mapTitle['fetch-value-trim']}" placeholder="${mapTitle['fetch-value-trim']}">
-                               <input type="checkbox" ${data['fetch-value-replacement-ignore-case'] ? 'checked' : ''} name="fetch-value-replacement-ignore-case" class="fetch-value-replacement-ignore-case" title="${mapTitle['fetch-value-replacement-ignore-case']}" placeholder="${mapTitle['fetch-value-replacement-ignore-case']}">
-                               <select name="fetch-data-type" class="fetch-data-type" title="${mapTitle['fetch-data-type']}">
-                                ${buildOption([['text', '文本'], ['html', 'html']], data['fetch-data-type'], 0, 1)}
-                            </select>   
-                        </dd>
-                        <dd class="fetch-dd">
-                            <input name="fetch-html-replacement" value="${data['fetch-html-replacement']}" class="fetch-html-replacement" title="${mapTitle['fetch-html-replacement']}" placeholder="${mapTitle['fetch-html-replacement']}">
-                            <input type="checkbox" ${data['fetch-html-replacement-ignore-case'] ? 'checked' : ''} name="fetch-html-replacement-ignore-case" class="fetch-html-replacement-ignore-case" title="${mapTitle['fetch-html-replacement-ignore-case']}" placeholder="${mapTitle['fetch-html-replacement-ignore-case']}">
-                        </dd>
-                        <dd class="fetch-dd">
-                            <input name="fetch-selector" value="${data['fetch-tag-selector']}" class="fetch-tag-selector" title="${mapTitle['fetch-tag-selector']}" placeholder="${mapTitle['fetch-tag-selector']}">
-                            <input name="fetch-tag" value="${data['fetch-tag']}" class="fetch-tag" title="${mapTitle['fetch-tag']}" placeholder="${mapTitle['fetch-tag']}">
-                        </dd>
-                    </span>     
-                    <span class="fetch-box">
-                        <input type="checkbox" ${data['fetch-active'] ? 'checked' : ''} name="fetch-active" class="swal2-checkbox fetch-active" title="${mapTitle['fetch-active']}" placeholder="${mapTitle['fetch-active']}">
-                        <div class="fetch-buttons">
-                            <button class="fetch-delete" title="${mapTitle['fetch-delete']}">➖</button>
-                            <button class="fetch-copy" title="${mapTitle['fetch-copy']}">🖇</button>
-                            <button class="fetch-add" title="${mapTitle['fetch-add']}">➕</button>
-                        </div>
-                    </span>                  
-                </div>
-        `;
+        data['operate-type'] = data['operate-type'] ?? 'fetch-fetch';
+        console.log('here');
+        div.innerHTML = buildTemplateHTML('fetch-base', {
+            ...data,
+            'fetch-active-checked': data['fetch-active'] ? 'checked' : '',
+            'operate-type-options': buildOption(Object.keys(op).map(k => [k, op[k]]), data['operate-type'], 0, 1),
+            'fetch-operator': buildTemplateHTML(data['operate-type'], {
+                ...data,
+            }),
+        });
+        div.querySelector('.operate-type').addEventListener('change', switchAction(data));
         div.querySelector('.fetch-active').addEventListener('change', fetchActive);
         return div.children[0];
+    }
+
+    function switchAction(data) {
+        return e => {
+            const v = e.target.value;
+            findParent(e.target, '.fetch-item').querySelector('.fetch-action-container').innerHTML = buildTemplateHTML(v, data);
+        }
     }
 
 
