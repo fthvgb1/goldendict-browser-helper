@@ -1,29 +1,5 @@
 ;const {ankiFetchClickFn, ankiFetchData, setAllBold, getAnkiFetchParams, arrayDiff} = (() => {
-    PushHookAnkiStyle(`
-    .fetch-sentence-container { display:flex; }
-    .fetch-item:nth-child(2) button.fetch-delete,.fetch-hidden,.fetch-dd:has(option[value="html"]:checked) + .fetch-dd{ display: none}
-    .fetch-opera { display: grid; justify-items: center}
-    .fetch-item { margin-top: 1vw; margin-left: 1vw; border: 1px dashed #e9b985; padding:.4vw}
-    .fetch-item-specific { border-color: #13195a}
-    .fetch-box { 
-            display: inline-block;
-            vertical-align: middle;
-            margin-left: 0.2vw;
-        }
-    .fetch-buttons {display: inline-block;}
-    .fetch-buttons button {display: block;}
-    .fetch-dd { margin-left: 0vw; }
-    .fetch-name {width: 7vw; display:block;}
-    .operate-type {display:block;}
-    .fetch-format {width: 20vw}
-    .fetch-bold-field,.fetch-html-replacement,.fetch-value-replacement {width: 17vw}
-    .fetch-num { width:3vw}
-    .moving {
-            background: transparent;
-            color: transparent;
-            border: 1px dashed #ccc;
-        }
-    `);
+    PushHookAnkiStyle(GM_getResourceText('extract-sentence'));
 
     PushHookAnkiDidRender(addOrDelBtn);
 
@@ -1030,6 +1006,12 @@
         'fetch-delete': '删除此项',
         'fetch-copy': '复制此项',
         'fetch-add': '在此项后台添加一个操作项',
+        'replace_target_type': '替换目标类型',
+        'text': '文本',
+        'html': 'html',
+        'replace_target': '替换的目标,文本值或选择器',
+        'replace_value': '替换的值',
+        'replace_regex_pattern': '正则替换模式如果是正则替换的化，为空则为普通替换',
     };
     const de = {};
     Object.keys(mapTitle).forEach(k => {
@@ -1042,7 +1024,10 @@
         de['fetch-value-trim'] = false;
         de['fetch-value-replacement-ignore-case'] = false;
         de['fetch-html-replacement-ignore-case'] = false;
+        de['replace_target_type'] = 'text';
     });
+
+    const replaceRex = /\{\{(.*?)}}/g
 
     function buildTemplateHTML(template, vars) {
         const t = GM_getResourceText(template) ?? '';
@@ -1055,6 +1040,13 @@
     const op = {'fetch-fetch': '抓取', 'fetch-replacement': '替换', 'fetch-tag': '打标签'};
     const map = {};
     Object.keys(mapTitle).forEach(k => map['title.' + k] = mapTitle[k]);
+
+    const clickEvts = {
+        'replacement-add': ev => {
+            ev.target.parentElement.insertAdjacentElement('afterend', ev.target.parentElement.cloneNode(true))
+        },
+        'replacement-remove': ev => ev.target.parentElement.remove(),
+    };
 
     function buildFetchItem(data = null) {
         data = {...data, ...map};
@@ -1072,11 +1064,16 @@
         });
         div.querySelector('.operate-type').addEventListener('change', switchAction(data));
         div.querySelector('.fetch-active').addEventListener('change', fetchActive);
+        div.children[0].addEventListener('click', ev => clickEvts?.[ev.target.className] && clickEvts[ev.target.className](ev));
         return div.children[0];
     }
 
     function switchAction(data) {
         return e => {
+            data['replace_target_type_html'] = buildOption([
+                ['text', mapTitle['text']],
+                ['html', mapTitle['html']]
+            ], data['replace_target_type'], 0, 1);
             const v = e.target.value;
             findParent(e.target, '.fetch-item').querySelector('.fetch-action-container').innerHTML = buildTemplateHTML(v, data);
         }

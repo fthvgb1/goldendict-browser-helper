@@ -1,34 +1,26 @@
 <div class="fetch-dd">
     <input class="fetch-field" name="fetch-field" placeholder="{{title.fetch-field}}"
            title="{{title.fetch-field}}" value="{{fetch-field}}">
-</div>
-<div class="fetch-dd">
     <input class="fetch-selector" name="fetch-selector" placeholder="{{title.fetch-selector}}"
            title="{{title.fetch-selector}}" value="{{fetch-selector}}">
 </div>
 
+
 <div class="fetch-dd">
-    <input class="fetch-value-replacement" name="fetch-value-replacement"
-           placeholder="{{title.fetch-value-replacement}}" title="{{title.fetch-value-replacement}}"
-           value="{{fetch-value-replacement}}">
-    <input class="fetch-value-trim" name="fetch-value-trim" placeholder="{{title.fetch-value-trim}}"
-           title="{{title.fetch-value-trim}}"
-           type="checkbox" {{fetch-value-trim-checked}}>
-    <input class="fetch-value-replacement-ignore-case" name="fetch-value-replacement-ignore-case"
-           placeholder="{{title.fetch-value-replacement-ignore-case}}"
-           title="{{title.fetch-value-replacement-ignore-case}}" type="checkbox"
-           {{fetch-value-replacement-ignore-case-checked}}>
-    <select class="fetch-data-type" name="fetch-data-type"
-            title="{{title.fetch-data-type}}">
-        {{fetch-data-type-options}}
-    </select>
+    <ul class="fetch-replacement-items">
+        <li class="fetch-replacement-item">
+            <select class="replace_target_type" name="replace_target_type">
+                {{replace_target_type_html}}
+            </select>
+            <input class="fetch-replacement-target" name="replace_target" placeholder="{{title.replace_target}}"
+                   title="{{title.replace_target}}" type="text">
+            <input class="fetch-replacement-value" name="replace_value" placeholder="{{title.replace_value}}"
+                   title="{{title.replace_value}}" type="text">
+            <input class="replace_regex_pattern" name="replace_regex_pattern" placeholder="{{title.replace_regex_pattern}}"
+                   title="{{title.replace_regex_pattern}}" type="text">
+            <button class="replacement-add">+︎</button>
+            <button class="replacement-remove">-</button>
+        </li>
+    </ul>
 </div>
-<div class="fetch-dd">
-    <input class="fetch-html-replacement" name="fetch-html-replacement"
-           placeholder="{{title.fetch-html-replacement}}" title="{{title.fetch-html-replacement}}"
-           value="{{fetch-html-replacement}}">
-    <input class="fetch-html-replacement-ignore-case" name="fetch-html-replacement-ignore-case"
-           placeholder="{{title.fetch-html-replacement-ignore-case}}"
-           title="{{title.fetch-html-replacement-ignore-case}}" type="checkbox"
-           {{fetch-html-replacement-ignore-case-checked}}>
-</div>
+
