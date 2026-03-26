@@ -2,7 +2,7 @@
     const userAgent = navigator.userAgent.toLowerCase();
     const goldDictKey = parseKey(GM_getValue('goldDictKey', 'ctrl c,ctrl c'));
     const ocrKey = parseKey(GM_getValue('ocrKey', ['windows', 'win32', 'win64'].filter(v => userAgent.indexOf(v) > -1).length > 0 ? 'cmd alt c' : 'alt c'));
-    const menus = GM_getValue('menus', [
+    const menus = [...GM_getValue('menus', []), ...[
         {
             title: 'ocr translate',
             action: {next: goldDictKey, prev: ocrKey},
@@ -90,6 +90,6 @@
                 console.log(res.response)
             },
         }*/
-    ]);
+    ]];
     PushContextMenu(...menus);
 })();

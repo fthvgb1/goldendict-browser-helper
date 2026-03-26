@@ -58,7 +58,7 @@
                 fn = () => {
                     request('keys=' + parseKey(menu.action), menu.path, menu.hasOwnProperty('call') ? menu.call : null)
                 }
-            } else if (typeof menu.action === 'object') {
+            } else if (!menu?.action || typeof menu.action === 'object') {
                 fn = () => {
                     request(menu.action, menu.path, menu.hasOwnProperty('call') ? menu.call : null)
                 }
@@ -328,12 +328,18 @@
 
     async function request(data, path = '', call = null) {
         data = data ? buildData(data, path) : '';
-        if (path !== '' && path[0] !== '/') {
-            path = '/' + path;
+        let u = '';
+        if (path.startsWith('http:')) {
+            u = path
+        } else {
+            if (path !== '' && path[0] !== '/') {
+                path = '/' + path;
+            }
+            u = helperServerHost + path
         }
         await GM_xmlhttpRequest({
             method: "POST",
-            url: helperServerHost + path,
+            url: u,
             data: data,
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded"
