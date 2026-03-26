@@ -29,11 +29,11 @@
 }
 
 .replace_regex_pattern {
-    width: 2rem;
+    width: 2vw;
 }
 
 .fetch-replacement-target, .fetch-replacement-value {
-    width: 6rem;
+    width: 6vw;
 }
 
 .fetch-replacement-items {
@@ -72,8 +72,9 @@
     display: block;
 }
 
-.operate-type {
+.operate-type, .fetch-box > .fetch-active {
     display: block;
+    margin: auto;
 }
 
 .fetch-format {
@@ -84,8 +85,13 @@
     width: 17vw
 }
 
-.fetch-num {
+.fetch-num, .fetch-variable {
     width: 3vw
+}
+
+.super-fetch-item {
+    border: #135a27 solid 1px;
+    margin-top: 5px;
 }
 
 .moving {

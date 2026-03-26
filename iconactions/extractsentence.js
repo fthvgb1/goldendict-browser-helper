@@ -1042,10 +1042,13 @@
     Object.keys(mapTitle).forEach(k => map['title.' + k] = mapTitle[k]);
 
     const clickEvts = {
-        'replacement-add': ev => {
-            ev.target.parentElement.insertAdjacentElement('afterend', ev.target.parentElement.cloneNode(true))
+        'add': ev => {
+            const el = ev.target.dataset?.target ? findParent(ev.target, ev.target.dataset.target) : ev.target.parentElement;
+            el.insertAdjacentElement('afterend', el.cloneNode(true))
         },
-        'replacement-remove': ev => ev.target.parentElement.remove(),
+        'remove': ev => ev.target.dataset?.target ?
+            findParent(ev.target, ev.target.dataset.target)?.remove()
+            : ev.target.parentElement.remove(),
     };
 
     function buildFetchItem(data = null) {
@@ -1064,7 +1067,7 @@
         });
         div.querySelector('.operate-type').addEventListener('change', switchAction(data));
         div.querySelector('.fetch-active').addEventListener('change', fetchActive);
-        div.children[0].addEventListener('click', ev => clickEvts?.[ev.target.className] && clickEvts[ev.target.className](ev));
+        div.children[0].addEventListener('click', ev => clickEvts?.[ev.target.dataset?.op] && clickEvts[ev.target.dataset.op](ev));
         return div.children[0];
     }
 

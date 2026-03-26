@@ -16,10 +16,11 @@
                    title="{{title.replace_target}}" type="text">
             <input class="fetch-replacement-value" name="replace_value" placeholder="{{title.replace_value}}"
                    title="{{title.replace_value}}" type="text">
-            <input class="replace_regex_pattern" name="replace_regex_pattern" placeholder="{{title.replace_regex_pattern}}"
+            <input class="replace_regex_pattern" name="replace_regex_pattern"
+                   placeholder="{{title.replace_regex_pattern}}"
                    title="{{title.replace_regex_pattern}}" type="text">
-            <button class="replacement-add">+︎</button>
-            <button class="replacement-remove">-</button>
+            <button class="replacement-add" data-op="add">+︎</button>
+            <button class="replacement-remove" data-op="remove">-</button>
         </li>
     </ul>
 </div>
