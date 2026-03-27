@@ -985,6 +985,7 @@
         'operate-type': '操作类型',
         'fetch-field': '提取的字段',
         'fetch-to-field': '提取到目标字段',
+        'fetch-replacement-selector': '替换值的选择器',
         'parent-super-name': '父提取值的标识名',
         'fetch-parent-selector': '父选择器',
         'fetch-exclude-selector': '提取值需要排除的选择器',
