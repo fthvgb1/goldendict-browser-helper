@@ -246,13 +246,13 @@
         PushExpandAnkiInputButton(className, '', saveFetchItems);
     });
 
-    const fetchFields = ['fetch-name', 'fetch-field', 'fetch-to-field', 'fetch-selector', 'fetch-parent-selector', 'fetch-data-type',
+    const fetchFields = ['fetch-name', 'fetch-field', 'fetch-to-field', 'parent-super-name', 'fetch-parent-selector', 'fetch-data-type',
         'fetch-exclude-selector', 'fetch-join-selector', 'fetch-format', 'fetch-data-handle', 'fetch-repeat',
         'fetch-bold-field', 'fetch-num', 'fetch-active', 'fetch-value-replacement', 'fetch-value-trim',
         'fetch-value-replacement-ignore-case', 'fetch-html-replacement', 'fetch-html-replacement-ignore-case',
         'fetch-tag-selector', 'fetch-tag',
     ];
-    const specialFields = ['fetch-selector', 'fetch-parent-selector', 'fetch-bold-field',
+    const specialFields = ['parent-super-name', 'fetch-parent-selector', 'fetch-bold-field',
         'fetch-exclude-selector', 'fetch-join-selector', 'fetch-format', 'fetch-value-replacement', 'fetch-html-replacement',
         'fetch-tag-selector',
     ];
@@ -838,7 +838,7 @@
         from = from.parentElement;
         let joinRep = '', joinSelector = '', joinExclude = '';
         if (!param['fetch-select'] && param['fetch-to-field'] === param['fetch-field'] && '*' === param['fetch-field']) {
-            param['fetch-selector'] = fromOrigin.tagName === 'INPUT' ? 'input.field-value' : '.spell-content';
+            param['parent-super-name'] = fromOrigin.tagName === 'INPUT' ? 'input.field-value' : '.spell-content';
         }
         if (param['fetch-join-selector']) {
             const joinSelX = param['fetch-join-selector'].split('++');
@@ -852,7 +852,7 @@
             }
         }
         if (!param['fetch-parent-selector']) {
-            for (const el of fetchLimit(from.querySelectorAll(param['fetch-selector']), param['fetch-num'])) {
+            for (const el of fetchLimit(from.querySelectorAll(param['parent-super-name']), param['fetch-num'])) {
                 const joinEle = parseJoin(el, joinSelector, joinExclude);
                 let ele = el;
                 if (param['fetch-field'] !== param['fetch-to-field']) {
@@ -864,7 +864,7 @@
             return;
         }
         from.querySelectorAll(param['fetch-parent-selector']).forEach(parent => {
-            for (const el of fetchLimit(parent.querySelectorAll(param['fetch-selector']), param['fetch-num'])) {
+            for (const el of fetchLimit(parent.querySelectorAll(param['parent-super-name']), param['fetch-num'])) {
                 let ele = el;
                 if (param['fetch-field'] !== param['fetch-to-field']) {
                     ele = el.cloneNode(true);
@@ -985,7 +985,7 @@
         'operate-type': '操作类型',
         'fetch-field': '提取的字段',
         'fetch-to-field': '提取到目标字段',
-        'fetch-selector': '提取值的选择器',
+        'parent-super-name': '父提取值的标识名',
         'fetch-parent-selector': '父选择器',
         'fetch-exclude-selector': '提取值需要排除的选择器',
         'fetch-join-selector': '组合选择器',
@@ -1006,6 +1006,8 @@
         'fetch-delete': '删除此项',
         'fetch-copy': '复制此项',
         'fetch-add': '在此项后台添加一个操作项',
+        'super-fetch-name': '提取值的标识名',
+        'fetch-variable': '变量量，可以在格式中使用',
         'replace_target_type': '替换目标类型',
         'text': '文本',
         'html': 'html',
@@ -1027,14 +1029,14 @@
         de['replace_target_type'] = 'text';
     });
 
-    const replaceRex = /\{\{(.*?)}}/g
+    const replaceRex = /\{\{(.*?)}}/g;
 
     function buildTemplateHTML(template, vars) {
         const t = GM_getResourceText(template) ?? '';
         if (!vars) {
             return t
         }
-        return Object.keys(vars).reduce((t, k) => t.replaceAll(`{{${k}}}`, vars[k]), t);
+        return t.replace(replaceRex, (substring, args) => vars?.[args] ?? substring);
     }
 
     const op = {'fetch-fetch': '抓取', 'fetch-replacement': '替换', 'fetch-tag': '打标签'};
@@ -1063,6 +1065,10 @@
             'operate-type-options': buildOption(Object.keys(op).map(k => [k, op[k]]), data['operate-type'], 0, 1),
             'fetch-operator': buildTemplateHTML(data['operate-type'], {
                 ...data,
+                'replace_target_type_html': data['replace_target_type_html'] = buildOption([
+                    ['text', mapTitle['text']],
+                    ['html', mapTitle['html']]
+                ], data['replace_target_type'], 0, 1)
             }),
         });
         div.querySelector('.operate-type').addEventListener('change', switchAction(data));

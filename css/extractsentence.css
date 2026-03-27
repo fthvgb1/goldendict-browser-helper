@@ -51,7 +51,10 @@
     border: 1px dashed #135a27;
 }
 
-.fetch-replacement-item:not(:last-of-type) .replacement-add, .fetch-replacement-item:only-of-type .replacement-remove {
+.fetch-replacement-item:not(:last-of-type) .replacement-add,
+.fetch-replacement-item:only-of-type .replacement-remove,
+.super-fetch-item:not(:last-of-type) .add-super-fetch-item,
+:nth-child(1 of .super-fetch-item) :where(.parent-super-name,.remove-super-fetch-item) {
     display: none;
 }
 
