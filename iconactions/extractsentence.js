@@ -1041,8 +1041,9 @@
     }
 
     const op = {'fetch-fetch': '抓取', 'fetch-replacement': '替换', 'fetch-tag': '打标签'};
-    const map = {};
-    Object.keys(mapTitle).forEach(k => map['title.' + k] = mapTitle[k]);
+    const handleOp = {'append': '追加', 'cover': '覆盖', 'none': '不处理'};
+    const opMap = {};
+    Object.keys(mapTitle).forEach(k => opMap['title.' + k] = mapTitle[k]);
 
     const clickEvts = {
         'add': ev => {
@@ -1055,7 +1056,7 @@
     };
 
     function buildFetchItem(data = null) {
-        data = {...data, ...map};
+        data = {...data, ...opMap};
         specialFields.forEach(v => data[v] = data[v] ? htmlSpecial(data[v]) : '');
         const div = document.createElement('div');
         data['operate-type'] = data['operate-type'] ?? 'fetch-fetch';
@@ -1063,10 +1064,11 @@
         div.innerHTML = buildTemplateHTML('fetch-base', {
             ...data,
             'fetch-active-checked': data['fetch-active'] ? 'checked' : '',
-            'operate-type-options': buildOption(Object.keys(op).map(k => [k, op[k]]), data['operate-type'], 0, 1),
+            'operate-type-options': buildOption(op, data['operate-type']),
             'fetch-operator': buildTemplateHTML(data['operate-type'], {
                 ...data,
-                'replace_target_type_html': data['replace_target_type_html'] = buildOption([
+                'fetch-data-handle-options': buildOption(handleOp, data['fetch-data-handle']),
+                'replace_target_type_html': buildOption([
                     ['text', mapTitle['text']],
                     ['html', mapTitle['html']]
                 ], data['replace_target_type'], 0, 1)
@@ -1084,6 +1086,7 @@
                 ['text', mapTitle['text']],
                 ['html', mapTitle['html']]
             ], data['replace_target_type'], 0, 1);
+            data['fetch-data-handle-options'] = buildOption(handleOp, data['fetch-data-handle']);
             const v = e.target.value;
             findParent(e.target, '.fetch-item').querySelector('.fetch-action-container').innerHTML = buildTemplateHTML(v, data);
         }

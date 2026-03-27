@@ -3,6 +3,11 @@
            title="{{title.fetch-field}}" value="{{fetch-field}}">
     <input class="fetch-to-field" name="fetch-to-field" placeholder="{{title.fetch-to-field}}"
            title="{{title.fetch-to-field}}" value="{{fetch-to-field}}">
+    <input class="fetch-num" min="0" name="fetch-num" placeholder="{{title.fetch-num}}" step="1" title="{{title.fetch-num}}"
+           type="number" value="{{fetch-num}}">
+    <select class="fetch-data-handle" name="fetch-data-handle" title="{{title.fetch-data-handle}}">{{fetch-data-handle-options}}</select>
+    <input class="fetch-repeat" name="fetch-repeat" placeholder="{{title.fetch-repeat}}" title="{{title.fetch-repeat}}"
+           type="checkbox">
 </div>
 
 <div class="super-fetch-item">
@@ -19,7 +24,6 @@
         <input class="fetch-parent-selector" name="fetch-parent-selector"
                placeholder="{{title.fetch-parent-selector}}" title="{{title.fetch-parent-selector}}"
                value="{{fetch-parent-selector}}">
-
     </div>
 
     <div class="fetch-dd">

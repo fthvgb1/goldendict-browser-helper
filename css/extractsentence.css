@@ -28,7 +28,7 @@
     margin-left: 0.2vw;
 }
 
-.replace_regex_pattern {
+.replace_regex_pattern, .fetch-num, .fetch-data-handle {
     width: 2vw;
 }
 
@@ -88,9 +88,11 @@
     width: 17vw
 }
 
-.fetch-num, .fetch-variable {
+.fetch-variable {
     width: 3vw
 }
+
+
 
 .super-fetch-item {
     border: #135a27 solid 1px;

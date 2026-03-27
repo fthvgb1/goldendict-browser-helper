@@ -428,20 +428,27 @@
 
     /**
      *
-     * @param arr ['', {} , [], ...]
-     * @param select selected value or values
+     * @param arr ['', {} , [], ...] | {}
+     * @param selected selected value or values
      * @param key option value field or index
      * @param val option innerText field or index
      * @param attr option other attributes
      * @returns {*} options string
      */
-    function buildOption(arr, select = '', key = 'k', val = 'v', attr = null) {
+    function buildOption(arr, selected = '', key = 'k', val = 'v', attr = null) {
         const sels = new Set();
-        if (Array.isArray(select)) {
-            select.forEach(sels.add);
-        } else if (select) {
-            sels.add(select);
+        if (Array.isArray(selected)) {
+            selected.forEach(sels.add);
+        } else if (selected) {
+            sels.add(selected);
         }
+
+        if (typeof arr === 'object' && !Array.isArray(arr)) {
+            arr = Object.keys(arr).map(k => [k, arr[k]]);
+            key = 0;
+            val = 1;
+        }
+
         return arr.map(v => {
             let att = '', sel = '';
             if (attr !== null && v[attr] && typeof v[attr] === 'object') {
