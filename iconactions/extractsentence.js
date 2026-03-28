@@ -382,8 +382,6 @@
         boldAll = value
     }
 
-    String.prototype.SSSave = saveFetchItems;
-
     function saveFetchItems() {
 
         const data = getFetchItemEles().map(convertFetchParam);
@@ -392,8 +390,8 @@
         data.length > 0 && GM_setValue('fetch-items', data);
     }
 
-    function getFormValue(form, param = {}) {
-        [...form.querySelectorAll('input:not([data-batch] input),select:not([data-batch] select),textarea:not([data-batch] textarea)')].forEach(el => {
+    function getFormValue(form, selector = 'input:not([data-batch] input),select:not([data-batch] select),textarea:not([data-batch] textarea)', param = {}) {
+        [...form.querySelectorAll(selector)].forEach(el => {
             const k = el.name;
             let v = el.value;
             if (el.type === 'number' && !el.dataset?.float) {
@@ -412,33 +410,23 @@
             if (el.querySelector('.super-fetch-item')) {
                 return;
             }
-            const replacements = el.querySelector('.fetch-replacement-items');
-            if (!replacements) {
-                return;
-            }
-            delete replacements.dataset?.batch;
+            const selector = 'input,select';
             el.querySelectorAll('.fetch-replacement-item')
                 .forEach(li => data?.['replacement-items'] ?
-                    data['replacement-items'].push(fn(li)) :
-                    data['replacement-items'] = [fn(li)]
+                    data['replacement-items'].push(fn(li, selector)) :
+                    data['replacement-items'] = [fn(li, selector)]
                 )
-            replacements.dataset.batch = '';
         },
         superFetch(el, data, fn) {
             const items = el.querySelector('.super-fetch-items');
             if (!items) {
                 return;
             }
-            delete items.dataset?.batch;
             el.querySelectorAll('.super-fetch-item')?.forEach(item => {
-                const dat = fn(item);
-                const replacements = item.querySelector('.fetch-replacement-items');
-                delete replacements.dataset?.batch;
+                const dat = fn(item, 'input:not(.fetch-replacement-item input),select:not(.fetch-replacement-item select)');
                 formProcessor.replacement(item, dat, fn);
-                replacements.dataset.batch = '';
                 data?.['super-fetch-items'] ? data['super-fetch-items'].push(dat) : data['super-fetch-items'] = [dat];
             })
-            items.dataset.batch = '';
         },
     };
 
