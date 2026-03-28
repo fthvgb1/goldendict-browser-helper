@@ -382,32 +382,71 @@
         boldAll = value
     }
 
+    String.prototype.SSSave = saveFetchItems;
+
     function saveFetchItems() {
+
+        const data = getFetchItemEles().map(convertFetchParam);
+        console.log(data);
         return
-        const data = getFetchItemEles().map(item => convertFetchParam(item));
         data.length > 0 && GM_setValue('fetch-items', data);
     }
 
-    function convertFetchParam(item) {
-        const param = {};
-        fetchFields.forEach(sel => {
-            if (['fetch-num', 'fetch-data-handle'].includes(sel)) {
-                param[sel] = parseInt(item.querySelector(`.${sel}`).value);
-                return
+    function getFormValue(form, param = {}) {
+        [...form.querySelectorAll('input:not([data-batch] input),select:not([data-batch] select),textarea:not([data-batch] textarea)')].forEach(el => {
+            const k = el.name;
+            let v = el.value;
+            if (el.type === 'number' && !el.dataset?.float) {
+                v = parseInt(v);
             }
-            if (['fetch-repeat', 'fetch-active', 'fetch-value-trim', 'fetch-html-replacement-ignore-case', 'fetch-value-replacement-ignore-case'].includes(sel)) {
-                param[sel] = item.querySelector(`.${sel}`).checked;
-                return
+            if (el.type === 'checkbox') {
+                v = el.checked;
             }
+            param[k] = v;
+        });
+        return param;
+    }
 
-            if (specialFields.includes(sel)) {
-                param[sel] = item.querySelector(`.${sel}`).value;
-                param[sel] = param[sel];
+    const formProcessor = {
+        replacement(el, data, fn) {
+            if (el.querySelector('.super-fetch-item')) {
                 return;
             }
-            param[sel] = item.querySelector(`.${sel}`).value.trim();
-        });
-        return param
+            const replacements = el.querySelector('.fetch-replacement-items');
+            if (!replacements) {
+                return;
+            }
+            delete replacements.dataset?.batch;
+            el.querySelectorAll('.fetch-replacement-item')
+                .forEach(li => data?.['replacement-items'] ?
+                    data['replacement-items'].push(fn(li)) :
+                    data['replacement-items'] = [fn(li)]
+                )
+            replacements.dataset.batch = '';
+        },
+        superFetch(el, data, fn) {
+            const items = el.querySelector('.super-fetch-items');
+            if (!items) {
+                return;
+            }
+            delete items.dataset?.batch;
+            el.querySelectorAll('.super-fetch-item')?.forEach(item => {
+                const dat = fn(item);
+                const replacements = item.querySelector('.fetch-replacement-items');
+                delete replacements.dataset?.batch;
+                formProcessor.replacement(item, dat, fn);
+                replacements.dataset.batch = '';
+                data?.['super-fetch-items'] ? data['super-fetch-items'].push(dat) : data['super-fetch-items'] = [dat];
+            })
+            items.dataset.batch = '';
+        },
+    };
+
+
+    function convertFetchParam(item) {
+        const param = getFormValue(item);
+        Object.values(formProcessor).forEach(fn => fn(item, param, getFormValue));
+        return param;
     }
 
     function replace(value, param) {
@@ -1060,7 +1099,6 @@
         specialFields.forEach(v => data[v] = data[v] ? htmlSpecial(data[v]) : '');
         const div = document.createElement('div');
         data['operate-type'] = data['operate-type'] ?? 'fetch-fetch';
-        console.log('here');
         div.innerHTML = buildTemplateHTML('fetch-base', {
             ...data,
             'fetch-active-checked': data['fetch-active'] ? 'checked' : '',
