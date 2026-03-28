@@ -245,13 +245,6 @@
         'swal2-container swal2-center swal2-backdrop-hide'].forEach(className => {
         PushExpandAnkiInputButton(className, '', saveFetchItems);
     });
-
-    const fetchFields = ['fetch-name', 'fetch-field', 'fetch-to-field', 'parent-super-name', 'fetch-parent-selector', 'fetch-data-type',
-        'fetch-exclude-selector', 'fetch-join-selector', 'fetch-format', 'fetch-data-handle', 'fetch-repeat',
-        'fetch-bold-field', 'fetch-num', 'fetch-active', 'fetch-value-replacement', 'fetch-value-trim',
-        'fetch-value-replacement-ignore-case', 'fetch-html-replacement', 'fetch-html-replacement-ignore-case',
-        'fetch-tag-selector', 'fetch-tag',
-    ];
     const specialFields = ['parent-super-name', 'fetch-parent-selector', 'fetch-bold-field',
         'fetch-exclude-selector', 'fetch-join-selector', 'fetch-format', 'fetch-value-replacement', 'fetch-html-replacement',
         'fetch-tag-selector',
@@ -1052,8 +1045,6 @@
         de['fetch-data-handle'] = 1;
         de['fetch-data-type'] = 'text';
         de['fetch-value-trim'] = false;
-        de['fetch-value-replacement-ignore-case'] = false;
-        de['fetch-html-replacement-ignore-case'] = false;
         de['replace_target_type'] = 'text';
     });
 
@@ -1084,7 +1075,6 @@
 
     function buildFetchItem(data = null) {
         data = {...data, ...opMap};
-        specialFields.forEach(v => data[v] = data[v] ? htmlSpecial(data[v]) : '');
         const div = document.createElement('div');
         data['operate-type'] = data['operate-type'] ?? 'fetch-fetch';
         div.innerHTML = buildTemplateHTML('fetch-base', {
