@@ -3,10 +3,10 @@
         {{replace_target_type_html}}
     </select>
     <input class="fetch-replacement-target" name="replace_target" placeholder="{{title.replace_target}}"
-           title="{{title.replace_target}}" type="text" value="{{replace_target}}">
+           title="{{title.replace_target}}" type="text" value="{{replace_target|htmlSpecial}}">
     <input class="fetch-replacement-value" name="replace_value" placeholder="{{title.replace_value}}"
            title="{{title.replace_value}}"
-           type="text" value="{{replace_value}}">
+           type="text" value="{{replace_value|htmlSpecial}}">
     <input class="replace_regex_pattern" name="replace_regex_pattern" placeholder="{{title.replace_regex_pattern}}"
            title="{{title.replace_regex_pattern}}"
            type="text" value="{{replace_regex_pattern}}">

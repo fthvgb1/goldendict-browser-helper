@@ -8,52 +8,12 @@
            type="number" value="{{fetch-num}}">
     <select class="fetch-data-handle" name="fetch-data-handle" title="{{title.fetch-data-handle}}">{{fetch-data-handle-options}}</select>
     <input class="fetch-repeat" name="fetch-repeat" placeholder="{{title.fetch-repeat}}" title="{{title.fetch-repeat}}"
+           {{fetch-repeat-checked}}
            type="checkbox">
 </div>
 
 
 <div class="super-fetch-items" data-batch>
-    <div class="super-fetch-item">
-        <div class="fetch-dd">
-            <input class="super-fetch-name" name="super-fetch-name" placeholder="{{title.super-fetch-name}}"
-                   title="{{title.super-fetch-name}}"
-                   type="text">
-            <button class="add-super-fetch-item" data-op="add" data-target=".super-fetch-item">+</button>
-            <button class="remove-super-fetch-item" data-op="remove" data-target=".super-fetch-item">-</button>
-        </div>
-        <div class="fetch-dd">
-            <input class="parent-super-name" name="parent-super-name" placeholder="{{title.parent-super-name}}"
-                   title="{{title.parent-super-name}}" value="{{parent-super-name}}">
-            <input class="fetch-parent-selector" name="fetch-parent-selector"
-                   placeholder="{{title.fetch-parent-selector}}" title="{{title.fetch-parent-selector}}"
-                   value="{{fetch-parent-selector}}">
-        </div>
-
-        <div class="fetch-dd">
-            <input class="fetch-variable" name="fetch-variable" placeholder="{{title.fetch-variable}}"
-                   title="title.fetch-variable" type="text">
-            <input class="fetch-format" name="fetch-format" placeholder="{{title.fetch-format}}"
-                   title="{{title.fetch-format}}" value="{{fetch-format}}">
-        </div>
-
-        <div class="fetch-dd">
-            <ul class="fetch-replacement-items" data-batch>
-                <li class="fetch-replacement-item">
-                    <select class="replace_target_type" name="replace_target_type">
-                        {{replace_target_type_html}}
-                    </select>
-                    <input class="fetch-replacement-target" name="replace_target" placeholder="{{title.replace_target}}"
-                           title="{{title.replace_target}}" type="text">
-                    <input class="fetch-replacement-value" name="replace_value" placeholder="{{title.replace_value}}"
-                           title="{{title.replace_value}}" type="text">
-                    <input class="replace_regex_pattern" name="replace_regex_pattern"
-                           placeholder="{{title.replace_regex_pattern}}"
-                           title="{{title.replace_regex_pattern}}" type="text">
-                    <button class="replacement-add" data-op="add">+︎</button>
-                    <button class="replacement-remove" data-op="remove">-</button>
-                </li>
-            </ul>
-        </div>
-    </div>
+    {{super-fetch-item-html}}
 </div>
 

@@ -1049,28 +1049,53 @@
 
     const replaceRex = /\{\{(.*?)}}/g;
 
+    const allowFn = {htmlSpecial};
+
     function buildTemplateHTML(template, vars = null) {
         const t = GM_getResourceText(template) ?? '';
         if (!vars) {
             return t
         }
-        return t.replace(replaceRex, (substring, args) => vars?.[args] ?? '');
+        return t.replace(replaceRex, (substring, name) => {
+            const names = name.split('|');
+            let de = vars?.[names[0]] ?? '';
+            if (names.length < 2) {
+                return de;
+            }
+            for (const fn of names.splice(1)) {
+                if (!allowFn?.[fn]) {
+                    return de;
+                }
+                de = allowFn[fn](de);
+            }
+            return de;
+        });
     }
 
     const op = {'fetch': '抓取', 'replacement': '替换', 'tag': '打标签'};
     const handleOp = {'append': '追加', 'cover': '覆盖', 'none': '不处理'};
-    const htmlType = {'html': mapTitle['html'], 'text': mapTitle['text']}
+    const htmlType = {'html': mapTitle['html'], 'text': mapTitle['text']};
     const buildChildrenHtmlFn = {
         replacement(data) {
             data['replacement-item-html'] = data['replacement-items']
-                .map(item => buildTemplateHTML('replacement-item', {
-                    ...data, ...item,
-                    'replace_target_type_html': buildOption(htmlType, item['replace_target_type']),
-                })).join('\n');
+                .map(item =>
+                    buildTemplateHTML('replacement-item', {
+                        ...opMap, ...item,
+                        'replace_target_type_html': buildOption(htmlType, item['replace_target_type']),
+                    })
+                ).join('\n');
+            return data['replacement-item-html'];
         },
         fetch(data) {
+            data['fetch-repeat-checked'] = data['fetch-repeat'] ? 'checked' : '';
             data['replace_target_type_html'] = buildOption(htmlType, data['replace_target_type']);
             data['fetch-data-handle-options'] = buildOption(handleOp, data['fetch-data-handle']);
+            data['super-fetch-item-html'] = data['super-fetch-items'].map(item =>
+                buildTemplateHTML('fetch-item', {
+                    ...opMap, ...item,
+                    'replacement-item-html': buildChildrenHtmlFn.replacement(item),
+                })
+            )
         }
     };
     const opMap = {};
