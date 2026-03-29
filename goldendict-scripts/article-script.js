@@ -21,6 +21,16 @@
         })
     }
 
+    function fetchGet(url) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', url);
+            xhr.onerror = reject;
+            xhr.onload = () => resolve(xhr.responseText);
+            xhr.send();
+        })
+    }
+
     window['fetchToBase64'] = fetchToBase64;
 
     let customizeResource;
@@ -32,7 +42,7 @@
         }
         const confSrc = article.src.replace('article-script.js', 'config.json');
         let conf;
-        const r = await fetch(confSrc).then(r => r.text());
+        const r = await fetchGet(confSrc);
         conf = JSON.parse(r);
         Object.assign(window, conf);
         customizeResource = conf.hasOwnProperty('customizeResource') ? conf.customizeResource : {};
