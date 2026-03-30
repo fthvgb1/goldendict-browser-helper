@@ -1178,12 +1178,12 @@
     const htmlType = {'innerHTML': mapTitle['innerHTML'], 'text': mapTitle['text'], 'outerHTML': mapTitle['outerHTML']};
     const buildChildrenHtmlFn = {
         replacement(data) {
-            data['replacement-item-html'] = data['replacement-items'] ?? [{
+            data['replacement-item-html'] = (data?.['replacement-items'] ?? [{
                 "replace_target_type": "text",
                 "searchValue": "",
                 "replaceValue": "",
                 "replace_regex_pattern": ""
-            }]
+            }])
                 .map(item =>
                     buildTemplateHTML('replacement-item', {
                         ...item,
@@ -1195,13 +1195,13 @@
         fetch(data) {
             data['htmlType'] = htmlType;
             data['handleOp'] = handleOp;
-            data['super-fetch-item-html'] = data['super-fetch-items'] ?? [{
+            data['super-fetch-item-html'] = (data?.['super-fetch-items'] ?? [{
                 "super-fetch-name": "",
                 "parent-super-name": "",
                 "fetch-parent-selector": "",
                 "fetch-variable": "",
                 "fetch-format": "",
-            }].map(item =>
+            }]).map(item =>
                 buildTemplateHTML('fetch-item', {
                     ...item,
                     'replacement-item-html': buildChildrenHtmlFn.replacement(item),
