@@ -1049,7 +1049,42 @@
 
     const replaceRex = /\{\{(.*?)}}/g;
 
-    const allowFn = {htmlSpecial};
+    const allowFn = {
+        htmlSpecial,
+        isChecked(value) {
+            return value ? ' checked ' : '';
+        }
+    };
+
+    function trimStart(s, symbol) {
+        if (!s || !symbol) {
+            return s;
+        }
+        for (const str of symbol.split('')) {
+            if (s[0] === str) {
+                s = s.split('').splice(1).join('');
+                return s
+            }
+        }
+        return s;
+    }
+
+    function trimEnd(s, symbol) {
+        if (!s || !symbol) {
+            return s;
+        }
+        for (const str of symbol.split('')) {
+            if (s.length >= 1 && str === s[s.length - 1]) {
+                s = s.split('').splice(0, s.length - 1).join('');
+                return s
+            }
+        }
+        return s;
+    }
+
+    function trim(s, symbol = `('")`) {
+        return trimEnd(trimStart(s, symbol), symbol);
+    }
 
     function buildTemplateHTML(template, vars = null) {
         const t = GM_getResourceText(template) ?? '';
@@ -1062,11 +1097,24 @@
             if (names.length < 2) {
                 return de;
             }
-            for (const fn of names.splice(1)) {
+            for (let fn of names.splice(1)) {
+                const fns = fn.split('(');
+                const param = [];
+                if (fns.length > 1) {
+                    fn = fns[0].trim();
+                    trim(fns[1], '()')
+                        .split(',')
+                        .forEach(a => param.push(vars?.[a] ? vars[a] : trim(a)));
+                }
+                if (de?.[fn]) {
+                    de = de[fn](...param);
+                    continue;
+                }
+
                 if (!allowFn?.[fn]) {
                     return de;
                 }
-                de = allowFn[fn](de);
+                de = allowFn[fn](de, ...param);
             }
             return de;
         });
@@ -1087,7 +1135,6 @@
             return data['replacement-item-html'];
         },
         fetch(data) {
-            data['fetch-repeat-checked'] = data['fetch-repeat'] ? 'checked' : '';
             data['replace_target_type_html'] = buildOption(htmlType, data['replace_target_type']);
             data['fetch-data-handle-options'] = buildOption(handleOp, data['fetch-data-handle']);
             data['super-fetch-item-html'] = data['super-fetch-items'].map(item =>
@@ -1135,7 +1182,6 @@
 
     function buildFetchItem(data = null) {
         data = {...data, ...opMap};
-        data['isActivated-checked'] = data['fetch-active'] ? 'checked' : '';
         data['operate-type'] = data['operate-type'] ?? 'fetch';
         data['operate-type-options'] = buildOption(op, data['operate-type']);
         buildChildrenHtmlFn?.[data['operate-type']] && buildChildrenHtmlFn[data['operate-type']](data);
