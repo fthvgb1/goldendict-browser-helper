@@ -1104,7 +1104,7 @@
         }
         for (const str of symbol.split('')) {
             if (s[0] === str) {
-                s = s.split('').splice(1).join('');
+                s = s.substring(1);
                 return s
             }
         }
@@ -1117,7 +1117,7 @@
         }
         for (const str of symbol.split('')) {
             if (s.length >= 1 && str === s[s.length - 1]) {
-                s = s.split('').splice(0, s.length - 1).join('');
+                s = s.substring(0, s.length - 1);
                 return s
             }
         }
@@ -1135,8 +1135,14 @@
         return express.split('.').reduce((prev, cur) => prev?.[cur] ?? defaults, vars);
     }
 
+    const templateCache = {};
+
     function buildTemplateHTML(template, vars = null) {
-        const t = GM_getResourceText(template) ?? '';
+        let t = templateCache?.[template] ?? '';
+        if (!t) {
+            t = GM_getResourceText(template) ?? '';
+            templateCache[template] = t;
+        }
         if (!vars) {
             return t
         }
