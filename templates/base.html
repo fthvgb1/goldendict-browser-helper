@@ -1,8 +1,8 @@
 <div class="fetch-item" draggable="true">
     <div class="fetch-box">
-        <input class="fetch-name" name="fetch-name" placeholder="{{title.fetch-name}}" title="{{title.fetch-name}}"
+        <input class="fetch-name" name="fetch-name" placeholder="{{fetch-name|lang}}" title="{{fetch-name|lang}}"
                value="{{fetch-name}}">
-        <select class="operate-type" name="operate-type" title="{{title.operate-type}}">
+        <select class="operate-type" name="operate-type" title="{{operate-type|lang}}">
             {{operate-type-options}}}
         </select>
     </div>
@@ -10,13 +10,13 @@
         {{fetch-operator}}
     </div>
     <div class="fetch-box">
-        <input class="swal2-checkbox fetch-active" name="fetch-active" placeholder="{{title.fetch-active}}"
-               title="{{title.fetch-active}}" type="checkbox"
+        <input class="swal2-checkbox fetch-active" name="fetch-active" placeholder="{{fetch-active|lang}}"
+               title="{{fetch-active|lang}}" type="checkbox"
                {{fetch-active|isChecked}}>
         <div class="fetch-buttons">
-            <button class="fetch-delete" title="{{title.fetch-delete}}">➖</button>
-            <button class="fetch-copy" title="{{title.fetch-copy}}">🖇</button>
-            <button class="fetch-add" title="{{title.fetch-add}}">➕</button>
+            <button class="fetch-delete" title="{{fetch-delete|lang}}">➖</button>
+            <button class="fetch-copy" title="{{fetch-copy|lang}}">🖇</button>
+            <button class="fetch-add" title="{{fetch-add|lang}}">➕</button>
         </div>
     </div>
 </div>

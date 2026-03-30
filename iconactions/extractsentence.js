@@ -857,8 +857,27 @@
     const actions = {
         fetch(param) {
         },
-        replacement(param, target) {
+        replaceX(item, target, assign) {
+            if (!item['replace_regex_pattern']) {
+                assign(target.replace(item['searchValue'], item['replaceValue']));
+                return;
+            }
+            assign(target.replace(new RegExp(item['searchValue'], item['replace_regex_pattern']), item['replaceValue']));
+        },
 
+        replace(item, target) {
+            if (target.nodeName === 'INPUT' && item['replace_target_type'] === 'text') {
+                actions.replaceX(item, target.value, val => target.value = val);
+                return;
+            }
+            if (item.replace_target_type === 'text') {
+                actions.replaceX(item, target.innerText, v => target.innerText = v);
+                return;
+            }
+            actions.replaceX(item, target[item['replace_target_type']], v => target[item['replace_target_type']] = v);
+        },
+        replacement(param, target) {
+            param['replacement-items'].forEach(item => actions.replace(item, target));
         },
         tag(param, target) {
             setTags(target, param);
@@ -868,7 +887,8 @@
     // execute action
     function fetchData(from, target, param, boldFieldValue) {
         console.log(from, target, param);
-        param.forEach(item => actions?.[item?.['operate-type']] && actions[item['operate-type']](item, target, from))
+
+        actions?.[param?.['operate-type']] && actions[param['operate-type']](param, target, from);
         return
         const fromOrigin = from;
         from = from.parentElement;
@@ -1045,9 +1065,10 @@
         'fetch-variable': '变量量，可以在格式中使用',
         'replace_target_type': '替换目标类型',
         'text': '文本',
-        'html': 'html',
-        'replace_target': '替换的目标,文本值或选择器',
-        'replace_value': '替换的值',
+        'innerHTML': 'innerHTML',
+        'outerHTML': 'outerHTML',
+        'searchValue': '替换的目标,文本值或选择器',
+        'replaceValue': '替换的值',
         'replace_regex_pattern': '正则替换模式如果是正则替换的化，为空则为普通替换',
     };
     const de = {};
@@ -1069,6 +1090,9 @@
         htmlSpecial,
         isChecked(value) {
             return value ? ' checked ' : '';
+        },
+        lang(name) {
+            return htmlSpecial(mapTitle?.[name] ?? name);
         }
     };
 
@@ -1121,6 +1145,9 @@
                 return val;
             }
             for (let fn of names.splice(1)) {
+                if (fn === 'lang') {
+                    return allowFn.lang(names[0]);
+                }
                 const fns = fn.split('(');
                 const param = [];
                 if (fns.length > 1) {
@@ -1147,13 +1174,13 @@
 
     const op = {'fetch': '抓取', 'replacement': '替换', 'tag': '打标签'};
     const handleOp = {'append': '追加', 'cover': '覆盖', 'none': '不处理'};
-    const htmlType = {'html': mapTitle['html'], 'text': mapTitle['text']};
+    const htmlType = {'innerHTML': mapTitle['innerHTML'], 'text': mapTitle['text'], 'outerHTML': mapTitle['outerHTML']};
     const buildChildrenHtmlFn = {
         replacement(data) {
             data['replacement-item-html'] = data['replacement-items']
                 .map(item =>
                     buildTemplateHTML('replacement-item', {
-                        ...opMap, ...item,
+                        ...item,
                         'replace_target_type_html': buildOption(htmlType, item['replace_target_type']),
                     })
                 ).join('\n');
@@ -1164,15 +1191,12 @@
             data['fetch-data-handle-options'] = buildOption(handleOp, data['fetch-data-handle']);
             data['super-fetch-item-html'] = data['super-fetch-items'].map(item =>
                 buildTemplateHTML('fetch-item', {
-                    ...opMap, ...item,
+                    ...item,
                     'replacement-item-html': buildChildrenHtmlFn.replacement(item),
                 })
             )
         }
     };
-    const opMap = {};
-    Object.keys(mapTitle).forEach(k => opMap['title.' + k] = mapTitle[k]);
-
     const addOrRemoveEvts = {
         add(ev) {
             const el = ev.target.dataset?.target ? findParent(ev.target, ev.target.dataset.target) : ev.target.parentElement;
@@ -1206,7 +1230,6 @@
     };
 
     function buildFetchItem(data = null) {
-        data = {...data, ...opMap};
         data['operate-type'] = data['operate-type'] ?? 'fetch';
         data['operate-type-options'] = buildOption(op, data['operate-type']);
         buildChildrenHtmlFn?.[data['operate-type']] && buildChildrenHtmlFn[data['operate-type']](data);
@@ -1221,10 +1244,7 @@
 
     function switchAction(data) {
         return e => {
-            data['replace_target_type_html'] = buildOption([
-                ['text', mapTitle['text']],
-                ['html', mapTitle['html']]
-            ], data['replace_target_type'], 0, 1);
+            data['replace_target_type_html'] = buildOption(htmlType, data?.['replace_target_type'] ?? 'text');
             data['fetch-data-handle-options'] = buildOption(handleOp, data['fetch-data-handle']);
             const v = e.target.value;
             findParent(e.target, '.fetch-item').querySelector('.fetch-action-container').innerHTML = buildTemplateHTML(v, data);

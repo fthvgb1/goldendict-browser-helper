@@ -1,13 +1,13 @@
 <div class="fetch-dd">
-    <input class="fetch-field" name="fetch-field" placeholder="{{title.fetch-field}}"
-           title="{{title.fetch-field}}" value="{{fetch-field}}">
-    <input class="fetch-to-field" name="fetch-to-field" placeholder="{{title.fetch-to-field}}"
-           title="{{title.fetch-to-field}}" value="{{fetch-to-field}}">
-    <input class="fetch-num" min="0" name="fetch-num" placeholder="{{title.fetch-num}}" step="1"
-           title="{{title.fetch-num}}"
+    <input class="fetch-field" name="fetch-field" placeholder="{{fetch-field|lang}}"
+           title="{{fetch-field|lang}}" value="{{fetch-field}}">
+    <input class="fetch-to-field" name="fetch-to-field" placeholder="{{fetch-to-field|lang}}"
+           title="{{fetch-to-field|lang}}" value="{{fetch-to-field}}">
+    <input class="fetch-num" min="0" name="fetch-num" placeholder="{{fetch-num|lang}}" step="1"
+           title="{{fetch-num|lang}}"
            type="number" value="{{fetch-num}}">
-    <select class="fetch-data-handle" name="fetch-data-handle" title="{{title.fetch-data-handle}}">{{fetch-data-handle-options}}</select>
-    <input class="fetch-repeat" name="fetch-repeat" placeholder="{{title.fetch-repeat}}" title="{{title.fetch-repeat}}"
+    <select class="fetch-data-handle" name="fetch-data-handle" title="{{fetch-data-handle|lang}}">{{fetch-data-handle-options}}</select>
+    <input class="fetch-repeat" name="fetch-repeat" placeholder="{{fetch-repeat|lang}}" title="{{fetch-repeat|lang}}"
            {{fetch-repeat|isChecked}}
            type="checkbox">
 </div>
