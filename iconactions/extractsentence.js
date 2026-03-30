@@ -1065,6 +1065,7 @@
         'fetch-variable': '变量量，可以在格式中使用',
         'replace_target_type': '替换目标类型',
         'text': '文本',
+        'add': '左键添加一个空白项，右键复制当前项',
         'innerHTML': 'innerHTML',
         'outerHTML': 'outerHTML',
         'searchValue': '替换的目标,文本值或选择器',
@@ -1188,7 +1189,6 @@
             return data['replacement-item-html'];
         },
         fetch(data) {
-            data['htmlType'] = htmlType;
             data['handleOp'] = handleOp;
             data['super-fetch-item-html'] = (data?.['super-fetch-items'] ?? [{}]).map(item =>
                 buildTemplateHTML('fetch-item', {
