@@ -281,7 +281,6 @@
     }
 
     function addOrDelBtn() {
-        return
         const fetchMap = {}, hadMap = {};
         for (const el of document.querySelectorAll('.fetch-sentence-field')) {
             let input = findParent(el, '.form-item').querySelector('.field-name,.sentence_field');
@@ -292,17 +291,17 @@
 
         const generic = [], allGeneric = [];
         items.forEach(item => {
-            if (item['fetch-to-field'] === '*') {
+            if (item['fetch-field'] === '*') {
                 if (item['fetch-active']) {
                     generic.push(item);
                 }
                 allGeneric.push(item);
                 return
             }
-            if (!fetchMap.hasOwnProperty(item['fetch-to-field'])) {
-                fetchMap[item['fetch-to-field']] = [];
+            if (!fetchMap?.[item['fetch-field']]) {
+                fetchMap[item['fetch-field']] = [];
             }
-            fetchMap[item['fetch-to-field']].push([item['fetch-active'], item]);
+            fetchMap[item['fetch-field']].push([item['fetch-active'], item]);
         });
         if (allGeneric.length > 0) {
             const keys = Object.keys(fetchMap);
@@ -354,7 +353,7 @@
         const box = ev.target;
         const parent = box.parentElement.parentElement;
         const inp = parent.querySelector('.fetch-field');
-        const targetField = parent.querySelector('.fetch-to-field');
+        const targetField = parent.querySelector('.fetch-field');
         addOrDelBtn();
         if (!inp?.value) {
             return;
@@ -670,7 +669,7 @@
                 div.innerHTML = di.innerHTML;
             }
 
-            if (param['fetch-field'] === param['fetch-to-field']) {
+            if (param['fetch-field'] === param?.['fetch-to-field']) {
                 if (param['fetch-data-type'] === 'text') {
                     value.innerText = replace(value.innerText, param);
                 } else {
@@ -854,7 +853,23 @@
         return joinEle;
     }
 
+
+    const actions = {
+        fetch(param) {
+        },
+        replacement(param, target) {
+
+        },
+        tag(param, target) {
+            setTags(target, param);
+        },
+    };
+
+    // execute action
     function fetchData(from, target, param, boldFieldValue) {
+        console.log(from, target, param);
+        param.forEach(item => actions?.[item?.['operate-type']] && actions[item['operate-type']](item, target, from))
+        return
         const fromOrigin = from;
         from = from.parentElement;
         let joinRep = '', joinSelector = '', joinExclude = '';
@@ -898,12 +913,13 @@
     }
 
 
+    // real execute action
     function ankiFetchData(param, target = null, from = null) {
         if (!target) {
-            if ('*' === param['fetch-to-field']) {
+            if ('*' === param['fetch-field']) {
                 return;
             }
-            const f = document.querySelector(`:where(.field-name,.sentence_field)[value='${param['fetch-to-field']}']`);
+            const f = document.querySelector(`:where(.field-name,.sentence_field)[value='${param['fetch-field']}']`);
             if (f) {
                 target = findParent(f, '.form-item,.sentence_setting').querySelector('.spell-content,.field-value');
             }
@@ -942,9 +958,9 @@
         }
         return params.filter(param => {
             if (activeFilter) {
-                return param['fetch-active'] && (param['fetch-to-field'] === '*' || param['fetch-to-field'] === targetField)
+                return param['fetch-active'] && (param['fetch-field'] === '*' || param['fetch-field'] === targetField)
             }
-            return param['fetch-to-field'] === '*' || param['fetch-to-field'] === targetField
+            return param['fetch-field'] === '*' || param['fetch-field'] === targetField
         });
     }
 
@@ -1086,6 +1102,13 @@
         return trimEnd(trimStart(s, symbol), symbol);
     }
 
+    function getVarVal(vars, express, defaults = '') {
+        if (!express.includes('.')) {
+            return vars?.[express] ?? defaults;
+        }
+        return express.split('.').reduce((prev, cur) => prev?.[cur] ?? defaults, vars);
+    }
+
     function buildTemplateHTML(template, vars = null) {
         const t = GM_getResourceText(template) ?? '';
         if (!vars) {
@@ -1093,30 +1116,32 @@
         }
         return t.replace(replaceRex, (substring, name) => {
             const names = name.split('|');
-            let de = vars?.[names[0]] ?? '';
+            let val = getVarVal(vars, names[0]);
             if (names.length < 2) {
-                return de;
+                return val;
             }
             for (let fn of names.splice(1)) {
                 const fns = fn.split('(');
                 const param = [];
                 if (fns.length > 1) {
                     fn = fns[0].trim();
-                    trim(fns[1], '()')
+                    trim(fns[1], ')')
                         .split(',')
-                        .forEach(a => param.push(vars?.[a] ? vars[a] : trim(a)));
+                        .forEach(a =>
+                            (a = a.trim(), param.push(getVarVal(vars, a, trim(a))))
+                        );
                 }
-                if (de?.[fn]) {
-                    de = de[fn](...param);
+                if (val?.[fn]) {
+                    val = val[fn](...param);
                     continue;
                 }
 
                 if (!allowFn?.[fn]) {
-                    return de;
+                    return val;
                 }
-                de = allowFn[fn](de, ...param);
+                val = allowFn[fn](val, ...param);
             }
-            return de;
+            return val;
         });
     }
 
