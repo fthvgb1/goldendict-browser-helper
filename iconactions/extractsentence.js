@@ -1091,6 +1091,7 @@
         isChecked(value) {
             return value ? ' checked ' : '';
         },
+        buildOption,
         lang(name) {
             return htmlSpecial(mapTitle?.[name] ?? name);
         }
@@ -1177,24 +1178,36 @@
     const htmlType = {'innerHTML': mapTitle['innerHTML'], 'text': mapTitle['text'], 'outerHTML': mapTitle['outerHTML']};
     const buildChildrenHtmlFn = {
         replacement(data) {
-            data['replacement-item-html'] = data['replacement-items']
+            data['replacement-item-html'] = data['replacement-items'] ?? [{
+                "replace_target_type": "text",
+                "searchValue": "",
+                "replaceValue": "",
+                "replace_regex_pattern": ""
+            }]
                 .map(item =>
                     buildTemplateHTML('replacement-item', {
                         ...item,
-                        'replace_target_type_html': buildOption(htmlType, item['replace_target_type']),
+                        htmlType,
                     })
                 ).join('\n');
             return data['replacement-item-html'];
         },
         fetch(data) {
-            data['replace_target_type_html'] = buildOption(htmlType, data['replace_target_type']);
-            data['fetch-data-handle-options'] = buildOption(handleOp, data['fetch-data-handle']);
-            data['super-fetch-item-html'] = data['super-fetch-items'].map(item =>
+            data['htmlType'] = htmlType;
+            data['handleOp'] = handleOp;
+            data['super-fetch-item-html'] = data['super-fetch-items'] ?? [{
+                "super-fetch-name": "",
+                "parent-super-name": "",
+                "fetch-parent-selector": "",
+                "fetch-variable": "",
+                "fetch-format": "",
+            }].map(item =>
                 buildTemplateHTML('fetch-item', {
                     ...item,
                     'replacement-item-html': buildChildrenHtmlFn.replacement(item),
                 })
             )
+            return data;
         }
     };
     const addOrRemoveEvts = {
@@ -1231,22 +1244,20 @@
 
     function buildFetchItem(data = null) {
         data['operate-type'] = data['operate-type'] ?? 'fetch';
-        data['operate-type-options'] = buildOption(op, data['operate-type']);
+        data['op'] = op;
         buildChildrenHtmlFn?.[data['operate-type']] && buildChildrenHtmlFn[data['operate-type']](data);
         data['fetch-operator'] = buildTemplateHTML(data['operate-type'], data);
         const div = document.createElement('div');
         div.innerHTML = buildTemplateHTML('fetch-base', data);
         div.querySelector('.operate-type').addEventListener('change', switchAction(data));
         div.querySelector('.fetch-active').addEventListener('change', fetchActive);
-        //div.children[0].addEventListener('click', ev => addOrRemoveEvts?.[ev.target.dataset?.op] && addOrRemoveEvts[ev.target.dataset.op](ev));
         return div.children[0];
     }
 
     function switchAction(data) {
         return e => {
-            data['replace_target_type_html'] = buildOption(htmlType, data?.['replace_target_type'] ?? 'text');
-            data['fetch-data-handle-options'] = buildOption(handleOp, data['fetch-data-handle']);
             const v = e.target.value;
+            buildChildrenHtmlFn?.[v] && buildChildrenHtmlFn[v](data);
             findParent(e.target, '.fetch-item').querySelector('.fetch-action-container').innerHTML = buildTemplateHTML(v, data);
         }
     }

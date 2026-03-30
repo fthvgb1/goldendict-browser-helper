@@ -1,6 +1,6 @@
 <li class="fetch-replacement-item">
     <select class="replace_target_type" name="replace_target_type" title="{{replace_target_type|lang}}">
-        {{replace_target_type_html}}
+        {{htmlType|buildOption(replace_target_type)}}
     </select>
     <input class="fetch-replacement-target" name="searchValue" placeholder="{{searchValue|lang}}"
            title="{{searchValue|lang}}" type="text" value="{{searchValue|htmlSpecial}}">
