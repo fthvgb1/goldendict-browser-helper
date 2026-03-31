@@ -808,55 +808,59 @@
         return ele;
     }
 
-    function parseSelector(expression, joinEle) {
-        let ele = joinEle;
-        for (const exp of expression.split('%')) {
-            const arr = exp.split('@').map(v => v.trim());
-            if (arr.length < 1 || !['s', 'ps', 'p', 'ns'].includes(arr[0])) {
-                continue
-            }
-            ele = isNaN(parseInt(arr[1])) ? findELeBySelector(arr[0], arr.slice(1).join(''), ele) : findEleByNum(arr[0], arr[1], ele)
-        }
+    window['dev'] = true;
 
-        return ele === joinEle ? null : ele;
-
-    }
-
-    function removeEle(ele, selector) {
-        if (!selector) {
+    function log(...args) {
+        if (!window?.['dev']) {
             return
         }
-        ele.querySelectorAll(selector).forEach(el => el.remove());
+        console.log(...args);
     }
-
-    function inputTrim(target, param) {
-        if (!textTags.has(target.tagName)) {
-            return;
-        }
-        if (!param['fetch-value-trim']) {
-            return
-        }
-        target.value = target.value.trim();
-    }
-
-    function parseJoin(valueEle, joinSelector, excludeSelector = '') {
-        if (!joinSelector) {
-            return null
-        }
-        let joinEle = parseSelector(joinSelector, valueEle);
-        if (joinEle) {
-            joinEle = joinEle.cloneNode(true);
-            if (excludeSelector) {
-                removeEle(joinEle, excludeSelector);
-            }
-        }
-        return joinEle;
-    }
-
 
     const actions = {
-        fetch(param) {
+        // execute action
+        dispatchAction(param, from = null, target = null) {
+            actions?.[param?.['operate-type']] && actions[param['operate-type']](param, from, target);
         },
+
+        fetch(param, from, target) {
+            if (param?.['super-fetch-items']?.length < 1) {
+                return;
+            }
+            const rule = this.parseFetchRule(param);
+            log(rule);
+            if (!rule) {
+                log('rule parse fail');
+                return;
+            }
+
+        },
+
+        setValue() {
+
+        },
+
+        parseFetchRule(arr, rule = {}) {
+            arr['super-fetch-items'].forEach((item, index) => {
+                rule[item['super-fetch-name']] = item;
+                if (index === 0) {
+                    return;
+                }
+                if (!item['anchor-selector']) {
+                    log('anchor-selector emptied', item);
+                    return;
+                }
+                rule[item['parent-super-name']]?.['children'] ?
+                    rule[item['parent-super-name']]['children'].push(item)
+                    : rule[item['parent-super-name']]['children'] = [item];
+            });
+            return rule[Object.keys(rule)?.[0]];
+        },
+
+        fetchItem(param, target, vars = {}) {
+
+        },
+
         replaceX(item, target, assign) {
             if (!item['replace_regex_pattern']) {
                 assign(target.replace(item['searchValue'], item['replaceValue']));
@@ -874,6 +878,10 @@
                 actions.replaceX(item, target.innerText, v => target.innerText = v);
                 return;
             }
+            if (item['replace_target_type'] === 'remove element') {
+                target.querySelectorAll(item['searchValue']).forEach(el => el.remove());
+                return;
+            }
             actions.replaceX(item, target[item['replace_target_type']], v => target[item['replace_target_type']] = v);
         },
         replacement(param, target) {
@@ -882,75 +890,33 @@
         tag(param, target) {
             setTags(target, param);
         },
+
+        getTargetElement(name, target = null) {
+            if ('*' === name && target) {
+                return target;
+            }
+            const el = document.querySelector(name);
+            if (el) {
+                return el
+            }
+            let from = document.querySelector(`:where(.field-name,.sentence_field)[value='${name}']`);
+            return findParent(from, '.form-item,.sentence_setting')?.querySelector('.spell-content,.field-value') ?? null;
+        }
     };
 
-    // execute action
-    function fetchData(from, target, param, boldFieldValue) {
-        console.log(from, target, param);
 
-        actions?.[param?.['operate-type']] && actions[param['operate-type']](param, target, from);
-        return
-        const fromOrigin = from;
-        from = from.parentElement;
-        let joinRep = '', joinSelector = '', joinExclude = '';
-        if (!param['fetch-select'] && param['fetch-to-field'] === param['fetch-field'] && '*' === param['fetch-field']) {
-            param['parent-super-name'] = fromOrigin.tagName === 'INPUT' ? 'input.field-value' : '.spell-content';
-        }
-        if (param['fetch-join-selector']) {
-            const joinSelX = param['fetch-join-selector'].split('++');
-            const joinSel = joinSelX[0].split('`');
-            joinSelector = joinSel[0];
-            if (joinSel.length > 1) {
-                joinExclude = joinSel[1];
-            }
-            if (joinSelX.length > 1) {
-                joinRep = joinSelX[1];
-            }
-        }
-        if (!param['fetch-parent-selector']) {
-            for (const el of fetchLimit(from.querySelectorAll(param['parent-super-name']), param['fetch-num'])) {
-                const joinEle = parseJoin(el, joinSelector, joinExclude);
-                let ele = el;
-                if (param['fetch-field'] !== param['fetch-to-field']) {
-                    ele = el.cloneNode(true);
-                }
-                removeEle(ele, param['fetch-exclude-selector']);
-                setValue(target, ele, param, {joinEle, joinRep}, boldFieldValue);
-            }
-            return;
-        }
-        from.querySelectorAll(param['fetch-parent-selector']).forEach(parent => {
-            for (const el of fetchLimit(parent.querySelectorAll(param['parent-super-name']), param['fetch-num'])) {
-                let ele = el;
-                if (param['fetch-field'] !== param['fetch-to-field']) {
-                    ele = el.cloneNode(true);
-                }
-                removeEle(ele, param['fetch-exclude-selector']);
-                const joinEle = parseJoin(el, joinSelector, joinExclude);
-                setValue(target, ele, param, {joinEle, joinRep}, boldFieldValue);
-            }
-        })
-    }
-
-
-    // real execute action
     function ankiFetchData(param, target = null, from = null) {
         if (!target) {
             if ('*' === param['fetch-field']) {
                 return;
             }
-            const f = document.querySelector(`:where(.field-name,.sentence_field)[value='${param['fetch-field']}']`);
-            if (f) {
-                target = findParent(f, '.form-item,.sentence_setting').querySelector('.spell-content,.field-value');
-            }
+            target = actions.getTargetElement(param['fetch-field']);
+
         }
         if (!from) {
-            from = getFromEle(param['fetch-field'], target)
+            from = actions.getTargetElement(param['fetch-field'], target)
         }
-        if (param['tag-selector'] && param['fetch-tag']) {
-            setTags(from, param);
-            return;
-        }
+
         if (!target || !from) {
             return
         }
@@ -959,8 +925,7 @@
         }
 
         const bold = parseBoldFormat(param);
-        fetchData(from, target, param, bold);
-        inputTrim(target, param);
+        actions.dispatchAction(param, target, from)
     }
 
     function getAnkiFetchParams(targetField = '', activeFilter = true) {
@@ -984,29 +949,17 @@
         });
     }
 
-    function getFromEle(name, target = null) {
-        if ('*' === name && target) {
-            return target;
-        }
-        const el = document.querySelector(name);
-        if (el) {
-            return el
-        }
-        let from = document.querySelector(`:where(.field-name,.sentence_field)[value='${name}']`);
-        from = from ? findParent(from, '.form-item,.sentence_setting').querySelector('.spell-content,.field-value') : null;
-        return from
-    }
-
     function ankiFetchClickFn(button) {
-        const targetField = button.parentElement.parentElement.querySelector('.sentence_field,.field-name').value.trim();
-        const targetEle = button.parentElement.parentElement.querySelector('.spell-content,.field-value');
-        const arr = getAnkiFetchParams(targetField, true);
-        if (arr.length < 1) {
-            return;
-        }
-        const fromMap = Object.groupBy(arr, v => v['fetch-field']);
-        Object.keys(fromMap).forEach(k => fromMap[k] = getFromEle(k, targetEle));
-        arr.forEach(v => ankiFetchData(v, targetEle, fromMap[v['fetch-field']]));
+        const triggerField = button.parentElement.parentElement.querySelector('.sentence_field,.field-name').value.trim();
+        const trigger = button.parentElement.parentElement.querySelector('.spell-content,.field-value');
+        const targetCache = {};
+        getAnkiFetchParams(triggerField, true).forEach(item => {
+            let target = targetCache?.[item['fetch-to-field']];
+            if (!target) {
+                target = actions.getTargetElement(item['fetch-to-field'], target);
+            }
+            actions.dispatchAction(item, trigger, target);
+        });
     }
 
 
@@ -1041,14 +994,14 @@
         'fetch-to-field': '提取到目标字段',
         'fetch-replacement-selector': '替换值的选择器',
         'parent-super-name': '父提取值的标识名',
-        'fetch-parent-selector': '父选择器',
+        'anchor-selector': '锚点选择器',
         'fetch-exclude-selector': '提取值需要排除的选择器',
         'fetch-join-selector': '组合选择器',
         'fetch-format': '提取的格式，为空为原值，{$join}为组合选择器的值， {$value}为提取的值',
         'fetch-data-handle': '提取到后的操作',
         'fetch-data-type': '提取类型',
         'fetch-repeat': '是否去重',
-        'fetch-bold-field': htmlSpecial('加粗的字段，如有多个值，可以指定分隔符如 正面@@`,`%%<b>{$bold}</b> %%后为格式'),
+        'fetch-bold-field': `加粗的字段，如有多个值，可以指定分隔符如 正面@@\`,\`%%<b>{$bold}</b> %%后为格式`,
         'fetch-num': '提取的数量,默认0为全部',
         'fetch-value-replacement': '提取的值去除或替换,[=]前后分为表示要替换的值和替换值，多个用@@分隔，支持正则， 如 去掉·和将。替换为. 为 ·@@。[=].',
         'fetch-html-replacement': 'html去除或替换,[=]前后分为表示要替换的值和替换值，多个用@@分隔，支持正则， 如 去掉·和将。替换为. 为 ·@@。[=].，在提取为值之前执行',
@@ -1062,14 +1015,15 @@
         'fetch-copy': '复制此项',
         'fetch-add': '在此项后台添加一个操作项',
         'super-fetch-name': '提取值的标识名',
-        'fetch-variable': '变量量，可以在格式中使用',
+        'default-value': '默认值',
         'replace_target_type': '替换目标类型',
         'text': '文本',
         'add': '左键添加一个空白项，右键复制当前项',
         'innerHTML': 'innerHTML',
         'outerHTML': 'outerHTML',
-        'searchValue': '替换的目标,文本值或选择器',
-        'replaceValue': '替换的值',
+        'searchValue': '替换或删除的目标,文本值或选择器',
+        'replaceValue': '替换的值，当为删除时值为选择器',
+        'remove element': '删除元素',
         'replace_regex_pattern': '正则替换模式如果是正则替换的化，为空则为普通替换',
     };
     const de = {};
@@ -1182,7 +1136,12 @@
 
     const op = {'fetch': '抓取', 'replacement': '替换', 'tag': '打标签'};
     const handleOp = {'append': '追加', 'cover': '覆盖', 'none': '不处理'};
-    const htmlType = {'innerHTML': mapTitle['innerHTML'], 'text': mapTitle['text'], 'outerHTML': mapTitle['outerHTML']};
+    const htmlType = {
+        'text': mapTitle['text'],
+        'remove element': mapTitle['remove element'],
+        'innerHTML': mapTitle['innerHTML'],
+        'outerHTML': mapTitle['outerHTML']
+    };
     const buildChildrenHtmlFn = {
         replacement(data) {
             data['replacement-item-html'] = (data?.['replacement-items'] ?? [{}])
@@ -1198,7 +1157,7 @@
             data['handleOp'] = handleOp;
             data['super-fetch-item-html'] = (data?.['super-fetch-items'] ?? [{}]).map(item =>
                 buildTemplateHTML('fetch-item', {
-                    ...item,
+                    ...item, htmlType,
                     'replacement-item-html': buildChildrenHtmlFn.replacement(item),
                 })
             )

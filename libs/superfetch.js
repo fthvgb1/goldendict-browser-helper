@@ -1,53 +1,38 @@
 ;const fetchText = (function () {
     const rules = deepAssign({
-        'v2ex.com': {
-            list: '#Main > .box:nth-child(2),.box > div[id^=r_]',
-            items: {
-                content: {
-                    selector: '.topic_content:not(:has(.markdown_body)),.markdown_body,.reply_content',
-                    replaces: {
-                        '&nbsp;': ' ',
-                        '@(.+?) ': '对$1说：',
-                        '^(?!对.*?说)(.*)': '说道：$1'
-                    },
-                    attribute: 'textContent', // default innerText
-                    removes: 'a:not([href^="/member"])',
-                    items: {
-                        attachments: {
-                            selector: '.subtle',
-                            multiple: true,
-                            replaces: {
-                                '(\n?.*)[=]': '又在$1中说到'
-                            },
-                            removes: '.fade span[title]'
-                        }
-                    },
-                    //format: '{content} {attachments}'
+        items: {
+            content: {
+                selector: '.topic_content:not(:has(.markdown_body)),.markdown_body,.reply_content',
+                replaces: {
+                    '&nbsp;': ' ',
+                    '@(.+?) ': '对$1说：',
+                    '^(?!对.*?说)(.*)': '说道：$1'
                 },
-                no: {
-                    selector: '.no',
-                    replaces: {
-                        "(\\d+)": '$1楼的'
-                    },
-                    defaultValue: '楼主',
+                attribute: 'textContent', // default innerText
+                removes: 'a:not([href^="/member"])',
+                items: {
+                    attachments: {
+                        selector: '.subtle',
+                        multiple: true,
+                        replaces: {
+                            '(\n?.*)[=]': '又在$1中说到'
+                        },
+                        removes: '.fade span[title]'
+                    }
                 },
-                author: '.gray > a,.dark',
-                //date: '.ago',
+                //format: '{content} {attachments}'
             },
-            stick: '.gray > span,.no',
-            format: '{no} {author} {content} {content.attachments}',
+            no: {
+                selector: '.no',
+                replaces: {
+                    "(\\d+)": '$1楼的'
+                },
+                defaultValue: '楼主',
+            },
+            author: '.gray > a,.dark',
+            //date: '.ago',
         },
-        "tieba.baidu.com": { // todo post in post
-            list: '.p_postlist > .l_post',
-            items: {
-                content: '.p_content',
-                author: '.d_author .d_name',
-                postNumber: '.post-tail-wrap span.tail-info:nth-child(6)',
-            },
-            stick: '.post-tail-wrap > span|beforebegin',
-            format: '{postNumber}的{author}说道：{content}',
-            stickElement: '<span style="cursor: pointer; margin-left: 1rem">📣</span>',
-        }
+        format: '{no} {author} {content} {content.attachments}',
     });
 
     function replaceVars(vars, str) {

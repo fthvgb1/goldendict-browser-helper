@@ -10,15 +10,18 @@
     <div class="fetch-dd">
         <input class="parent-super-name" name="parent-super-name" placeholder="{{parent-super-name|lang}}"
                title="{{parent-super-name|lang}}" value="{{parent-super-name}}">
-        <input class="fetch-parent-selector" name="fetch-parent-selector"
-               placeholder="{{fetch-parent-selector|lang}}" title="{{fetch-parent-selector|lang}}"
-               value="{{fetch-parent-selector}}">
+        <input class="anchor-selector" name="anchor-selector"
+               placeholder="{{anchor-selector|lang}}" title="{{anchor-selector|lang}}"
+               value="{{anchor-selector}}">
     </div>
 
     <div class="fetch-dd">
-        <input class="fetch-variable" name="fetch-variable" placeholder="{{fetch-variable|lang}}"
-               title="{{fetch-variable|lang}}"
-               type="text" value="{{fetch-variable}}">
+        <select class="fetch-data-type" name="fetch-data-type" title="{{fetch-data-type|lang}}">
+            {{htmlType|buildOption(fetch-data-type)}}
+        </select>
+        <input class="default-value" name="default-value" placeholder="{{default-value|lang}}"
+               title="{{default-value|lang}}"
+               type="text" value="{{default-value}}">
         <input class="fetch-format" name="fetch-format" placeholder="{{fetch-format|lang}}"
                title="{{fetch-format|lang}}" value="{{fetch-format}}">
     </div>
