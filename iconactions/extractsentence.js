@@ -739,12 +739,7 @@
         setDiv(target, valElement, way === 1, isRepeat)
     }
 
-    function fetchLimit(eles, num) {
-        if (num <= 0) {
-            return eles;
-        }
-        return [...eles].slice(0, num)
-    }
+
 
     function findELeBySelector(t, sel, el) {
         if (!el) {
@@ -834,7 +829,47 @@
                 return;
             }
 
+            const a = this.getVars(from, rule, true);
+
+            console.log(a);
         },
+
+        // todo parse selector
+        anchor2Ele(sel, ele) {
+
+        },
+        replaceRex: /\{(.*?)}/g,
+
+        replaceVars(vars, str) {
+            return str.replace(this.replaceRex, (substring, name) => vars?.[name] ?? substring);
+        },
+        extractValue(varEle, item) {
+            if (!varEle) {
+                return item['default-value'] ?? '';
+            }
+            if (item['replacement-items'].length > 0) {
+                varEle = varEle.cloneNode(true);
+                item['replacement-items'].forEach(rule => this.replace(rule, varEle));
+            }
+            const t = item['fetch-data-type'] === 'text' ? 'innerText' : item['fetch-data-type'];
+            return varEle?.[t] ?? '';
+        },
+
+        // fetch content
+        getVars(ele, rule, root = false, vars = {}) {
+            rule?.children?.forEach(item => this.getVars(ele, item, vars, false));
+            const el = ele.querySelector(root ? rule['anchor-selector'] : this.anchor2Ele(rule['anchor-selector'], ele));
+            if (!el) {
+                log('query rule\'s anchor-selector fail', rule);
+                return vars;
+            }
+            vars[rule['super-fetch-name']] = this.extractValue(el, rule);
+            if (rule?.['fetch-format']) {
+                vars[`${rule['super-fetch-name']}`] = this.replaceVars(vars, rule['fetch-format']);
+            }
+            return vars;
+        },
+
 
         setValue() {
 
@@ -871,21 +906,21 @@
 
         replace(item, target) {
             if (target.nodeName === 'INPUT' && item['replace_target_type'] === 'text') {
-                actions.replaceX(item, target.value, val => target.value = val);
+                this.replaceX(item, target.value, val => target.value = val);
                 return;
             }
             if (item.replace_target_type === 'text') {
-                actions.replaceX(item, target.innerText, v => target.innerText = v);
+                this.replaceX(item, target.innerText, v => target.innerText = v);
                 return;
             }
             if (item['replace_target_type'] === 'remove element') {
                 target.querySelectorAll(item['searchValue']).forEach(el => el.remove());
                 return;
             }
-            actions.replaceX(item, target[item['replace_target_type']], v => target[item['replace_target_type']] = v);
+            this.replaceX(item, target[item['replace_target_type']], v => target[item['replace_target_type']] = v);
         },
         replacement(param, target) {
-            param['replacement-items'].forEach(item => actions.replace(item, target));
+            param['replacement-items'].forEach(item => this.replace(item, target));
         },
         tag(param, target) {
             setTags(target, param);
