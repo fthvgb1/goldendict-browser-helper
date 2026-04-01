@@ -740,7 +740,6 @@
     }
 
 
-
     function findELeBySelector(t, sel, el) {
         if (!el) {
             return null;
@@ -805,12 +804,9 @@
 
     window['dev'] = true;
 
-    function log(...args) {
-        if (!window?.['dev']) {
-            return
-        }
-        console.log(...args);
-    }
+
+    const log = window['dev'] ? console.log.bind(window.console) : () => {
+    };
 
     const actions = {
         // execute action
@@ -820,23 +816,26 @@
 
         fetch(param, from, target) {
             if (param?.['super-fetch-items']?.length < 1) {
+                log('not have valid fetch rule!')
                 return;
             }
             const rule = this.parseFetchRule(param);
-            log(rule);
+            console.log(rule);
             if (!rule) {
-                log('rule parse fail');
+                log('not have valid fetch rule!')
                 return;
             }
-            if (!rule['value-selector']) {
-                const vars = this.getVars(from, rule, false);
+            const vars = {};
+            if (!param['anchor-selector']) {
+                rule[''].children.forEach(item => this.getVars(from, item, false, vars));
+                const format = param['fetch-format'] ? param['fetch-format'] : Object.keys(vars).map(k => `{${k}}`).join('');
+                const content = this.replaceVars(vars, format);
+                log(content);
                 // todo set value
                 return;
             }
-            document.querySelectorAll(rule['value-selector'])
-            const a = this.getVars(from, rule);
-
-            console.log(a);
+            from.querySelectorAll(rule['anchor-selector'])?.forEach(el => this.getVars(el, rule[param['anchor-name']], true, vars));
+            console.log(vars);
         },
 
         // todo parse selector
@@ -862,9 +861,10 @@
 
         // fetch content
         getVars(ele, rule, needParseAnchor = true, vars = {}) {
-            const el = ele.querySelector(needParseAnchor ? rule['value-selector'] : this.anchor2Ele(rule['value-selector'], ele));
+            const selector = needParseAnchor ? this.anchor2Ele(rule['value-selector'], ele) : rule['value-selector'];
+            const el = ele.querySelector(selector);
             if (!el) {
-                log('query rule\'s value-selector fail', rule);
+                log("query rule's value-selector fail", ele, selector);
                 return vars;
             }
             vars[rule['super-fetch-name']] = this.extractValue(el, rule);
@@ -881,23 +881,21 @@
         },
 
         parseFetchRule(arr, rule = {}) {
-            let root = '';
+            rule[arr['anchor-name']] = {};
+            let valid = false;
             arr['super-fetch-items'].forEach((item, index) => {
                 rule[item['super-fetch-name']] = item;
-                if (index === 0) {
-                    root = item['super-fetch-name'];
-                    return;
-                }
                 if (!item['value-selector']) {
                     log('value-selector emptied', item);
                     return;
                 }
-                item['parent-super-name'] = item['parent-super-name'] ? item['parent-super-name'] : root;
+                valid = true
                 rule[item['parent-super-name']]?.['children'] ?
                     rule[item['parent-super-name']]['children'].push(item)
                     : rule[item['parent-super-name']]['children'] = [item];
             });
-            return rule[root];
+
+            return valid ? rule : null;
         },
 
         fetchItem(param, target, vars = {}) {
