@@ -58,7 +58,7 @@
 .fetch-replacement-item:not(:last-of-type) .replacement-add,
 .fetch-replacement-item:only-of-type .replacement-remove,
 .super-fetch-item:not(:last-of-type) .add-super-fetch-item,
-:nth-child(1 of .super-fetch-item) :where(.remove-super-fetch-item) {
+:nth-child(1 of .super-fetch-item) :where(.parent-super-name,.remove-super-fetch-item) {
     display: none;
 }
 
@@ -92,7 +92,11 @@
     width: 15vw
 }
 
-.default-value, .anchor-name {
+input[name=parent-selector], input[name=child-selector] {
+    width: 9vw;
+}
+
+.default-value {
     width: 5vw;
 }
 

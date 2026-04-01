@@ -815,8 +815,8 @@
         },
 
         fetch(param, from, target) {
-            if (param?.['super-fetch-items']?.length < 1) {
-                log('not have valid fetch rule!')
+            if (!param['child-selector'] || param?.['super-fetch-items']?.length < 1) {
+                log('not have valid fetch rule!', param)
                 return;
             }
             const rule = this.parseFetchRule(param);
@@ -825,22 +825,39 @@
                 log('not have valid fetch rule!')
                 return;
             }
-            const vars = {};
-            if (!param['anchor-selector']) {
-                rule[''].children.forEach(item => this.getVars(from, item, false, vars));
-                const format = param['fetch-format'] ? param['fetch-format'] : Object.keys(vars).map(k => `{${k}}`).join('');
-                const content = this.replaceVars(vars, format);
-                log(content);
-                // todo set value
+
+            if (!param['parent-selector']) {
+                this.fetchItem(from, param['child-selector'], param, rule);
                 return;
             }
-            from.querySelectorAll(rule['anchor-selector'])?.forEach(el => this.getVars(el, rule[param['anchor-name']], true, vars));
-            console.log(vars);
+            from.querySelectorAll(param['parent-selector'])?.forEach(el => this.fetchItem(el, param['child-selector'], param, rule));
         },
 
-        // todo parse selector
-        anchor2Ele(sel, ele) {
+        fetchItem(ele, selector, item, rules) {
+            [...ele.querySelectorAll(selector)].slice(item['fetch-num']).forEach(el => {
+                const val = this.getMultiVars(el, rules);
+                log(val)
+            });
+        },
 
+        getMultiVars(el, rules, vars = {}) {
+            rules.forEach(item => this.getVars(el, item, vars));
+            return vars
+        },
+
+        grammarCharacters: new Set(['s', 'ps', 'p', 'ns']),
+        anchor2Ele(expression, ele) {
+            if (expression === 'self') {
+                return ele;
+            }
+            for (const exp of expression.split('%')) {
+                const arr = exp.split('@').map(v => v.trim());
+                if (arr.length < 1 || !this.grammarCharacters.has(arr[0])) {
+                    continue
+                }
+                ele = isNaN(parseInt(arr[1])) ? findELeBySelector(arr[0], arr.slice(1).join(''), ele) : findEleByNum(arr[0], arr[1], ele)
+            }
+            return ele;
         },
         fetchReplaceVarsRex: /\{(.*?)}/g,
 
@@ -859,16 +876,16 @@
             return varEle?.[t] ?? '';
         },
 
-        // fetch content
-        getVars(ele, rule, needParseAnchor = true, vars = {}) {
-            const selector = needParseAnchor ? this.anchor2Ele(rule['value-selector'], ele) : rule['value-selector'];
-            const el = ele.querySelector(selector);
+        // fetch vars
+        getVars(ele, rule, vars = {}) {
+            const el = this.anchor2Ele(rule['value-selector'], ele);
             if (!el) {
-                log("query rule's value-selector fail", ele, selector);
+                vars[rule['super-fetch-name']] = rule['default-value'];
+                log("query rule's value-selector fail", ele, rule['value-selector'], rule);
                 return vars;
             }
             vars[rule['super-fetch-name']] = this.extractValue(el, rule);
-            rule?.children?.forEach(item => this.getVars(el, item, true, vars));
+            rule?.children?.forEach(item => this.getVars(el, item, vars));
             if (rule?.['fetch-format']) {
                 vars[`${rule['super-fetch-name']}`] = this.replaceVars(vars, rule['fetch-format']);
             }
@@ -881,9 +898,9 @@
         },
 
         parseFetchRule(arr, rule = {}) {
-            rule[arr['anchor-name']] = {};
             let valid = false;
-            arr['super-fetch-items'].forEach((item, index) => {
+            rule[''] = {};
+            arr['super-fetch-items'].forEach(item => {
                 rule[item['super-fetch-name']] = item;
                 if (!item['value-selector']) {
                     log('value-selector emptied', item);
@@ -895,12 +912,9 @@
                     : rule[item['parent-super-name']]['children'] = [item];
             });
 
-            return valid ? rule : null;
+            return rule['']?.children ?? null;
         },
 
-        fetchItem(param, target, vars = {}) {
-
-        },
 
         replaceX(item, target, assign) {
             if (!item['replace_regex_pattern']) {
@@ -1035,8 +1049,8 @@
         'fetch-to-field': '提取到目标字段',
         'fetch-replacement-selector': '替换值的选择器',
         'parent-super-name': '父提取值的标识名',
-        'anchor-name': '锚点名',
-        'anchor-selector': '锚点选择器',
+        'parent-selector': '父选择器',
+        'child-selector': '子选择器',
         'value-selector': '值选择器',
         'fetch-exclude-selector': '提取值需要排除的选择器',
         'fetch-join-selector': '组合选择器',
