@@ -828,8 +828,13 @@
                 log('rule parse fail');
                 return;
             }
-
-            const a = this.getVars(from, rule, true);
+            if (!rule['value-selector']) {
+                const vars = this.getVars(from, rule, false);
+                // todo set value
+                return;
+            }
+            document.querySelectorAll(rule['value-selector'])
+            const a = this.getVars(from, rule);
 
             console.log(a);
         },
@@ -838,10 +843,10 @@
         anchor2Ele(sel, ele) {
 
         },
-        replaceRex: /\{(.*?)}/g,
+        fetchReplaceVarsRex: /\{(.*?)}/g,
 
         replaceVars(vars, str) {
-            return str.replace(this.replaceRex, (substring, name) => vars?.[name] ?? substring);
+            return str.replace(this.fetchReplaceVarsRex, (substring, name) => vars?.[name] ?? substring);
         },
         extractValue(varEle, item) {
             if (!varEle) {
@@ -856,14 +861,14 @@
         },
 
         // fetch content
-        getVars(ele, rule, root = false, vars = {}) {
-            rule?.children?.forEach(item => this.getVars(ele, item, vars, false));
-            const el = ele.querySelector(root ? rule['anchor-selector'] : this.anchor2Ele(rule['anchor-selector'], ele));
+        getVars(ele, rule, needParseAnchor = true, vars = {}) {
+            const el = ele.querySelector(needParseAnchor ? rule['value-selector'] : this.anchor2Ele(rule['value-selector'], ele));
             if (!el) {
-                log('query rule\'s anchor-selector fail', rule);
+                log('query rule\'s value-selector fail', rule);
                 return vars;
             }
             vars[rule['super-fetch-name']] = this.extractValue(el, rule);
+            rule?.children?.forEach(item => this.getVars(el, item, true, vars));
             if (rule?.['fetch-format']) {
                 vars[`${rule['super-fetch-name']}`] = this.replaceVars(vars, rule['fetch-format']);
             }
@@ -876,20 +881,23 @@
         },
 
         parseFetchRule(arr, rule = {}) {
+            let root = '';
             arr['super-fetch-items'].forEach((item, index) => {
                 rule[item['super-fetch-name']] = item;
                 if (index === 0) {
+                    root = item['super-fetch-name'];
                     return;
                 }
-                if (!item['anchor-selector']) {
-                    log('anchor-selector emptied', item);
+                if (!item['value-selector']) {
+                    log('value-selector emptied', item);
                     return;
                 }
+                item['parent-super-name'] = item['parent-super-name'] ? item['parent-super-name'] : root;
                 rule[item['parent-super-name']]?.['children'] ?
                     rule[item['parent-super-name']]['children'].push(item)
                     : rule[item['parent-super-name']]['children'] = [item];
             });
-            return rule[Object.keys(rule)?.[0]];
+            return rule[root];
         },
 
         fetchItem(param, target, vars = {}) {
@@ -1029,10 +1037,12 @@
         'fetch-to-field': '提取到目标字段',
         'fetch-replacement-selector': '替换值的选择器',
         'parent-super-name': '父提取值的标识名',
+        'anchor-name': '锚点名',
         'anchor-selector': '锚点选择器',
+        'value-selector': '值选择器',
         'fetch-exclude-selector': '提取值需要排除的选择器',
         'fetch-join-selector': '组合选择器',
-        'fetch-format': '提取的格式，为空为原值，{$join}为组合选择器的值， {$value}为提取的值',
+        'fetch-format': '提取的格式，可以使用{自身标识(即提取的值)或子项标识}，为空为时默认为 {自身标识}, ',
         'fetch-data-handle': '提取到后的操作',
         'fetch-data-type': '提取类型',
         'fetch-repeat': '是否去重',
@@ -1077,7 +1087,7 @@
     const replaceRex = /\{\{(.*?)}}/g;
 
     const allowFn = {
-        htmlSpecial,
+        htmlSpecial, leftTrim, rightTrim, trims,
         isChecked(value) {
             return value ? ' checked ' : '';
         },
@@ -1087,7 +1097,7 @@
         }
     };
 
-    function trimStart(s, symbol) {
+    function leftTrim(s, symbol) {
         if (!s || !symbol) {
             return s;
         }
@@ -1100,7 +1110,7 @@
         return s;
     }
 
-    function trimEnd(s, symbol) {
+    function rightTrim(s, symbol) {
         if (!s || !symbol) {
             return s;
         }
@@ -1113,8 +1123,8 @@
         return s;
     }
 
-    function trim(s, symbol = `('")`) {
-        return trimEnd(trimStart(s, symbol), symbol);
+    function trims(s, symbol = `('")`) {
+        return rightTrim(leftTrim(s, symbol), symbol);
     }
 
     function getVarVal(vars, express, defaults = '') {
@@ -1149,10 +1159,10 @@
                 const param = [];
                 if (fns.length > 1) {
                     fn = fns[0].trim();
-                    trim(fns[1], ')')
+                    trims(fns[1], ')')
                         .split(',')
                         .forEach(a =>
-                            (a = a.trim(), param.push(getVarVal(vars, a, trim(a))))
+                            (a = a.trim(), param.push(getVarVal(vars, a, trims(a))))
                         );
                 }
                 if (val?.[fn]) {
@@ -1195,7 +1205,7 @@
                     ...item, htmlType,
                     'replacement-item-html': buildChildrenHtmlFn.replacement(item),
                 })
-            )
+            ).join('\n')
             return data;
         }
     };

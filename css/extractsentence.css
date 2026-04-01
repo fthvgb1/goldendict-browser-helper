@@ -28,7 +28,11 @@
     margin-left: 0.2vw;
 }
 
-.replace_regex_pattern, .fetch-num, .fetch-data-handle {
+.fetch-data-handle {
+    width: 5vw;
+}
+
+.replace_regex_pattern, .fetch-num {
     width: 2vw;
 }
 
@@ -54,7 +58,7 @@
 .fetch-replacement-item:not(:last-of-type) .replacement-add,
 .fetch-replacement-item:only-of-type .replacement-remove,
 .super-fetch-item:not(:last-of-type) .add-super-fetch-item,
-:nth-child(1 of .super-fetch-item) :where(.parent-super-name,.remove-super-fetch-item) {
+:nth-child(1 of .super-fetch-item) :where(.remove-super-fetch-item) {
     display: none;
 }
 
@@ -67,7 +71,7 @@
 }
 
 .fetch-dd {
-    margin-left: 0vw;
+    margin-left: 0;
 }
 
 .fetch-name {
@@ -80,8 +84,16 @@
     margin: auto;
 }
 
+.fetch-action-container > .fetch-dd > .fetch-format {
+    width: 22vw;
+}
+
 .fetch-format {
-    width: 17vw
+    width: 15vw
+}
+
+.default-value, .anchor-name {
+    width: 5vw;
 }
 
 .fetch-bold-field, .fetch-html-replacement, .fetch-value-replacement {

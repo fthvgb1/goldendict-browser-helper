@@ -3,15 +3,26 @@
            title="{{fetch-field|lang}}" value="{{fetch-field}}">
     <input class="fetch-to-field" name="fetch-to-field" placeholder="{{fetch-to-field|lang}}"
            title="{{fetch-to-field|lang}}" value="{{fetch-to-field}}">
+</div>
+
+<div class="fetch-dd">
+    <input name="anchor-selector" placeholder="{{anchor-selector|lang}}" title="{{anchor-selector|lang}}"
+           type="text" value="{{anchor-selector|htmlSpecial}}">
     <input class="fetch-num" min="0" name="fetch-num" placeholder="{{fetch-num|lang}}" step="1"
            title="{{fetch-num|lang}}"
            type="number" value="{{fetch-num}}">
     <select class="fetch-data-handle" name="fetch-data-handle" title="{{fetch-data-handle|lang}}">
         {{handleOp|buildOption(fetch-data-handle)}}
     </select>
-    <input class="fetch-repeat" name="fetch-repeat" placeholder="{{fetch-repeat|lang}}" title="{{fetch-repeat|lang}}"
-           {{fetch-repeat|isChecked}}
-           type="checkbox">
+    <input class="fetch-repeat" name="fetch-repeat" placeholder="{{fetch-repeat|lang}}"
+           title="{{fetch-repeat|lang}}" type="checkbox" {{fetch-repeat|isChecked}}>
+</div>
+
+<div class="fetch-dd">
+    <input class="anchor-name" name="anchor-name" placeholder="{{anchor-name|lang}}" title="{{anchor-name|lang}}"
+           type="text" value="{{anchor-name}}">
+    <input class="fetch-format" name="fetch-format" placeholder="{{fetch-format|lang}}" title="{{fetch-format|lang}}"
+           type="text" value="{{fetch-format|htmlSpecial}}">
 </div>
 
 
