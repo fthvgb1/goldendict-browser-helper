@@ -20,7 +20,7 @@
         findParent(e.target, '.fetch-item').remove();
     });
     PushExpandAnkiInputButton('fetch-add', '', (e) => {
-        findParent(e.target, '.fetch-item').insertAdjacentElement('afterend', buildFetchItem({...de}));
+        findParent(e.target, '.fetch-item').insertAdjacentElement('afterend', buildFetchItem({}));
     });
     PushExpandAnkiInputButton('fetch-export', '', () => {
         const data = JSON.stringify(getAnkiFetchParams('', false));
@@ -223,8 +223,7 @@
             ev.target.parentElement.querySelectorAll('.fetch-import,.fetch-export').forEach(btn => btn.classList.add('fetch-hidden'))
             return
         }
-        let fetchItems = GM_getValue('fetch-items', [{...de}]);
-        fetchItems = fetchItems.length > 0 ? fetchItems : [{...de}];
+        let fetchItems = GM_getValue('fetch-items', [{}]);
         fetchItems.forEach(item => setting.appendChild(buildFetchItem(item)));
         if (GM_getValue('fetch-display-type', 1) === 2) {
             const arr = Object.groupBy(fetchItems, item => op[item['operate-type']]) ?? [];
@@ -557,15 +556,16 @@
 
         fetchItem(ele, target, item, rules) {
             ele.forEach(
-                ell => ell.slice(item['fetch-num']).forEach(el => {
-                    if (!el) {
-                        return;
-                    }
-                    const vars = this.getMultiVars(el, rules);
-                    const format = item['fetch-format'] ? item['fetch-format'] : Object.keys(vars).map(k => `{${k}}`).join('');
-                    const value = this.replaceVars2Format(vars, format);
-                    this.setValue(target, value, item);
-                }));
+                ell => ell.splice(0, item['fetch-num'] < 1 ? ell.length : item['fetch-num'])
+                    .forEach(el => {
+                        if (!el) {
+                            return;
+                        }
+                        const vars = this.getMultiVars(el, rules);
+                        const format = item['fetch-format'] ? item['fetch-format'] : Object.keys(vars).map(k => `{${k}}`).join('');
+                        const value = this.replaceVars2Format(vars, format);
+                        this.setValue(target, value, item);
+                    }));
         },
 
         getMultiVars(el, rules, vars = {}) {
@@ -901,18 +901,6 @@
         'append': '追加',
         'none': '啥都不干',
     };
-    const de = {};
-    Object.keys(mapTitle).forEach(k => {
-        de[k] = '';
-        de['fetch-num'] = 0;
-        de['operate-type'] = 'fetch';
-        de['fetch-repeat'] = true;
-        de['fetch-active'] = false;
-        de['fetch-data-handle'] = 1;
-        de['fetch-data-type'] = 'text';
-        de['fetch-value-trim'] = false;
-        de['replace_target_type'] = 'text';
-    });
 
     const replaceRex = /\{\{(.*?)}}/g;
 
