@@ -434,38 +434,6 @@
         return Object.values(formProcessor).reduce((data, fn) => fn(item, data), {});
     }
 
-    function replace(value, param) {
-        if (!param['fetch-value-replacement'] || !value) {
-            return value;
-        }
-        const arr = param['fetch-value-replacement'].split('@@');
-        if (arr.length < 1) {
-            return value
-        }
-        return arr.reduce((value, express) => {
-            const exp = express.split('[=]');
-            if (exp.length < 1) {
-                return value;
-            }
-            const v = exp.length > 1 ? exp[1] : '';
-            let flag = 'g';
-            if (param['fetch-value-replacement-ignore-case']) {
-                flag += 'i';
-            }
-            if (exp[0].includes('\\p{Script=')) {
-                flag += 'u';
-            }
-            try {
-                exp[0] = exp[0].replaceAll(`\\\\`, `\\`);
-                value = value.replaceAll(new RegExp(exp[0], flag), v);
-            } catch (e) {
-                console.log(e);
-                value = value.split(exp[0]).join(v);
-            }
-
-            return value
-        }, value);
-    }
 
     function buildRegular(words, flag, find = false) {
         let suffix = '';
@@ -599,151 +567,6 @@
         }
     }
 
-    const textTags = new Set(['INPUT', 'TEXTAREA']);
-
-
-    function setValue(target, valElement, param, join = null, boldFieldValue = '') {
-        let joinEle, joinRep;
-        if (join) {
-            joinEle = join.joinEle
-            joinRep = join.joinRep
-        }
-        if (!valElement && !joinEle) {
-            return
-        }
-        const joinParam = {
-            'fetch-value-replacement-ignore-case': true,
-            'fetch-value-replacement': joinRep
-        }
-
-        const format = param['fetch-format'], way = param['fetch-data-handle'], isRepeat = !param['fetch-repeat'];
-        let onlyJoin = false;
-        if (!valElement && joinEle) {
-            valElement = joinEle;
-            joinEle = null;
-            onlyJoin = true;
-        }
-
-        const setInput = (input, value, isAppend, isRepeat) => {
-            if (textTags.has(value.tagName)) {
-                value = replace(value.value, param);
-            } else {
-                value = replace(value.innerText, param);
-            }
-            if (param['fetch-value-trim']) {
-                value = value.trim();
-            }
-            if (format) {
-                let join = '';
-                if (joinEle) {
-                    join = joinEle.innerText.trim();
-                    join = replace(join, joinParam);
-                }
-                value = onlyJoin ? format.replaceAll('{$join}', value).replaceAll('{$value}', '') :
-                    format.replaceAll('{$value}', value).replaceAll('{$join}', join);
-            }
-            if (param['fetch-value-trim'] && !isRepeat && input.value.includes(value.trim())) {
-                return;
-            }
-            if (!isRepeat && input.value.includes(value)) {
-                return;
-            }
-            input.value = isAppend ? (input.value + value) : value;
-        }
-
-        const setDiv = (div, value, isAppend, isRepeat) => {
-            let v = value.innerText.trim();
-            if (param['fetch-data-type'] === 'text' && v && !isRepeat && div.innerText.includes(v)) {
-                return
-            }
-
-            if (param['fetch-data-type'] === 'html' && v && !isRepeat && div.innerHTML.includes(value.outerHTML)) {
-                return
-            }
-
-            const set = (di) => {
-                if (di.children.length > 0) {
-                    isAppend ? [...di.children].forEach(v => div.appendChild(v)) : (div.innerHTML = di.innerHTML);
-                    return;
-                }
-                if (isAppend) {
-                    div.insertAdjacentHTML('afterend', di.innerHTML);
-                    return;
-                }
-                div.innerHTML = di.innerHTML;
-            }
-
-            if (param['fetch-field'] === param?.['fetch-to-field']) {
-                if (param['fetch-data-type'] === 'text') {
-                    value.innerText = replace(value.innerText, param);
-                } else {
-                    value.innerHTML = replace(value.innerHTML, param);
-                }
-                value.innerHTML = bold(value, boldFieldValue);
-                return;
-            }
-
-            const d = document.createElement('div');
-            if (param['fetch-data-type'] === 'text') {
-                d.innerHTML = replace(value.outerHTML, {
-                    'fetch-value-replacement': param['fetch-html-replacement'],
-                    'fetch-value-replacement-ignore-case': param['fetch-html-replacement-ignore-case'],
-                })
-                d.innerHTML = replace(d.innerText, param);
-                d.innerHTML = bold(d, boldFieldValue);
-            } else if (param['fetch-data-type'] === 'html') {
-                d.innerHTML = replace(value.outerHTML, param);
-                d.innerHTML = bold(d, boldFieldValue);
-            }
-
-            value = d.children.length > 0 ? d.children[0] : d;
-
-            if (format) {
-                let join = '';
-                if (joinEle) {
-                    join = joinEle.innerText.trim();
-                    join = replace(join, joinParam);
-                }
-                let v;
-                if (onlyJoin) {
-                    v = format.replaceAll('{$join}', d.innerText.trim()).replaceAll('{$value}', '');
-                } else {
-                    v = format.replaceAll('{$value}', d.innerHTML).replaceAll('{$join}', join);
-                }
-
-                const di = document.createElement('div');
-                di.innerHTML = v;
-                if (!isRepeat && div.innerText.includes(di.innerText)) {
-                    return
-                }
-                set(di);
-                return;
-            }
-            if (joinEle) {
-                const d = document.createElement('div');
-                d.innerHTML = replace(joinEle.outerHTML, joinParam);
-                isAppend ? (div.appendChild(d.children[0]) , div.appendChild(value)) : (div.innerHTML = d.innerHTML + value.outerHTML);
-                return;
-            }
-            let html = value.outerHTML;
-            if (value.className === 'spell-content') {
-                html = value.innerHTML;
-            }
-            isAppend ? div.appendChild(value) : (div.innerHTML = html);
-        }
-
-        if (textTags.has(target.tagName)) {
-            const value = target.value;
-            if (way === 3 && value) {
-                return;
-            }
-            setInput(target, valElement, way === 1, isRepeat);
-            return;
-        }
-        setDiv(target, valElement, way === 1, isRepeat)
-    }
-
-
     function findELeBySelector(t, sel, el) {
         if (!el) {
             return null;
@@ -824,7 +647,6 @@
                 return;
             }
             const rule = this.parseFetchRule(param);
-            console.log(rule);
             if (!rule) {
                 log('not have valid fetch rule!')
                 return;
@@ -888,8 +710,10 @@
                     if (!el) {
                         return;
                     }
-                    const val = this.getMultiVars(el, rules);
-                    log(val);
+                    const vars = this.getMultiVars(el, rules);
+                    const format = item['fetch-format'] ? item['fetch-format'] : Object.keys(vars).map(k => `{${k}}`).join('');
+                    const value = this.replaceVars2Format(vars, format);
+                    this.setValue(target, value, item);
                 }));
         },
 
@@ -900,7 +724,7 @@
 
         grammarCharacters: new Set(['s', 'ps', 'p', 'ns']),
         anchor2Ele(expression, ele) {
-            if (expression === 'self') {
+            if (expression === 'anchor') {
                 return ele;
             }
             if (!expression.includes('@')) {
@@ -917,7 +741,7 @@
         },
         fetchReplaceVarsRex: /\{(.*?)}/g,
 
-        replaceVars(vars, str) {
+        replaceVars2Format(vars, str) {
             return str.replace(this.fetchReplaceVarsRex, (substring, name) => vars?.[name] ?? substring);
         },
         extractValue(varEle, item) {
@@ -926,7 +750,13 @@
             }
             if (item['replacement-items'].length > 0) {
                 varEle = varEle.cloneNode(true);
-                item['replacement-items'].forEach(rule => this.replace(rule, varEle));
+                item['replacement-items'].forEach(rule => {
+                    const r = this.replace(rule, varEle, true);
+                    if (!r) {
+                        return
+                    }
+                    varEle = r;
+                });
             }
             const t = item['fetch-data-type'] === 'text' ? 'innerText' : item['fetch-data-type'];
             return varEle?.[t] ?? '';
@@ -943,14 +773,48 @@
             vars[rule['super-fetch-name']] = this.extractValue(el, rule);
             rule?.children?.forEach(item => this.getVars(el, item, vars));
             if (rule?.['fetch-format']) {
-                vars[`${rule['super-fetch-name']}`] = this.replaceVars(vars, rule['fetch-format']);
+                vars[`${rule['super-fetch-name']}`] = this.replaceVars2Format(vars, rule['fetch-format']);
             }
             return vars;
         },
 
 
-        setValue() {
+        setValue(target, value, item) {
+            this.textNode.has(target.nodeName) ? this.setInput(target, value, item) : this.setEle(target, value, item);
+        },
 
+        setEle(target, value, item) {
+            const t = item['fetch-data-handle'];
+            if (t === 'none') {
+                return;
+            }
+            if (t === 'cover') {
+                target.innerHTML = value;
+                return
+            }
+            if (item['fetch-repeat']) {
+                const el = document.createElement('div');
+                el.innerHTML = value;
+                if (target.innerHTML.includes(el.innerHTML)) {
+                    return;
+                }
+            }
+            target.insertAdjacentHTML('beforeend', value);
+        },
+
+        setInput(input, value, item) {
+            const t = item['fetch-data-handle'];
+            if (t === 'none') {
+                return;
+            }
+            if (t === 'cover') {
+                input.value = value;
+                return
+            }
+            if (item['fetch-repeat'] && input.value.includes(value)) {
+                return;
+            }
+            input.value += ' ' + value;
         },
 
         parseFetchRule(arr, rule = {}) {
@@ -979,9 +843,9 @@
             }
             assign(target.replace(new RegExp(item['searchValue'], item['replace_regex_pattern']), item['replaceValue']));
         },
-
-        replace(item, target) {
-            if (target.nodeName === 'INPUT' && item['replace_target_type'] === 'text') {
+        textNode: new Set(['INPUT', 'TEXTAREA']),
+        replace(item, target, clone = false) {
+            if (this.textNode.has(target.nodeName) && item['replace_target_type'] === 'text') {
                 this.replaceX(item, target.value, val => target.value = val);
                 return;
             }
@@ -992,6 +856,14 @@
             if (item['replace_target_type'] === 'remove element') {
                 target.querySelectorAll(item['searchValue']).forEach(el => el.remove());
                 return;
+            }
+            if (clone && item['replace_target_type'] === 'outerHTML') {
+                const el = document.createElement('div');
+                el.insertAdjacentElement('beforeend', target);
+                this.replaceX(item, el.innerHTML, v => {
+                    el.innerHTML = v;
+                });
+                return el.children[0];
             }
             this.replaceX(item, target[item['replace_target_type']], v => target[item['replace_target_type']] = v);
         },

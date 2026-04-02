@@ -47,6 +47,10 @@
     border: #0f1ff0 solid 1px;
 }
 
+input:required {
+    border: #31e963 double 1px;
+}
+
 .fetch-replacement-item {
     border: 1px dashed #3c135a;
     margin-top: 5px;
