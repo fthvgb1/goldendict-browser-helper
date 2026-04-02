@@ -412,6 +412,10 @@
             return data;
         },
         superFetch(el, data) {
+            el.querySelectorAll('.selector-chain .selector-item').forEach(li => {
+                const item = formProcessor.getFormValue(li, {}, 'input');
+                data?.['selector-items'] ? data['selector-items'].push(item) : data['selector-items'] = [item];
+            })
             const items = el.querySelector('.super-fetch-items');
             if (!items) {
                 return data;
@@ -1049,8 +1053,8 @@
         'fetch-to-field': '提取到目标字段',
         'fetch-replacement-selector': '替换值的选择器',
         'parent-super-name': '父提取值的标识名',
-        'parent-selector': '父选择器',
-        'child-selector': '子选择器',
+        'fetch-selector': '选择器，多个时，前一个为后一个的父选择器，最后一个为锚选择器',
+        'is_multiple': '是否有多个',
         'value-selector': '值选择器',
         'fetch-exclude-selector': '提取值需要排除的选择器',
         'fetch-join-selector': '组合选择器',
@@ -1100,7 +1104,7 @@
 
     const allowFn = {
         htmlSpecial, leftTrim, rightTrim, trims,
-        isChecked(value) {
+        checked(value) {
             return value ? ' checked ' : '';
         },
         buildOption,
@@ -1211,6 +1215,10 @@
             return data['replacement-item-html'];
         },
         fetch(data) {
+            data['fetch-chain-html'] = (data?.['selector-items'] ?? [{}])
+                .map(item => buildTemplateHTML('selector-chain', item))
+                .join('\n');
+
             data['handleOp'] = handleOp;
             data['super-fetch-item-html'] = (data?.['super-fetch-items'] ?? [{}]).map(item =>
                 buildTemplateHTML('fetch-item', {
@@ -1228,7 +1236,10 @@
             em.querySelectorAll('input,select').forEach(ele => {
                 const fn = {
                     INPUT(ele) {
-                        ele.value = ''
+                        ele.value = '';
+                        if (ele.type === 'checkbox') {
+                            ele.checked = false;
+                        }
                     },
                     SELECT(ele) {
                         ele.value = ele.children[0].value

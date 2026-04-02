@@ -44,6 +44,7 @@
     list-style-type: none;
     padding-inline-start: 0;
     margin-block: 0;
+    border: #0f1ff0 solid 1px;
 }
 
 .fetch-replacement-item {
@@ -52,11 +53,13 @@
 }
 
 .fetch-replacement-item:nth-child(odd) {
-    border: 1px dashed #135a27;
+    border: 1px dashed #e3300d;
 }
 
 .fetch-replacement-item:not(:last-of-type) .replacement-add,
 .fetch-replacement-item:only-of-type .replacement-remove,
+.selector-item:not(:last-of-type) .add-selector-item,
+.selector-item:only-of-type .remove-selector-item,
 .super-fetch-item:not(:last-of-type) .add-super-fetch-item,
 :nth-child(1 of .super-fetch-item) :where(.parent-super-name,.remove-super-fetch-item) {
     display: none;
@@ -85,7 +88,7 @@
 }
 
 .fetch-action-container > .fetch-dd > .fetch-format {
-    width: 22vw;
+    width: 19vw;
 }
 
 .fetch-format {
