@@ -819,7 +819,7 @@
         },
 
         fetch(param, from, target) {
-            if (!param['child-selector'] || param?.['super-fetch-items']?.length < 1) {
+            if (param['selector-items'].length < 1 || param?.['super-fetch-items']?.length < 1) {
                 log('not have valid fetch rule!', param)
                 return;
             }
@@ -829,19 +829,68 @@
                 log('not have valid fetch rule!')
                 return;
             }
-
-            if (!param['parent-selector']) {
-                this.fetchItem(from, param['child-selector'], param, rule);
-                return;
+            let ele = from;
+            while (true) {
+                const selectorItem = param['selector-items'].splice(0, 1)?.[0];
+                if (!selectorItem?.['fetch-selector']) {
+                    return;
+                }
+                const last = param['selector-items'].length < 1;
+                ele = this.query(ele, selectorItem['fetch-selector'], selectorItem.is_multiple, last);
+                if (ele.length < 1) {
+                    return;
+                }
+                if (last) {
+                    break
+                }
             }
-            from.querySelectorAll(param['parent-selector'])?.forEach(el => this.fetchItem(el, param['child-selector'], param, rule));
+            this.fetchItem(ele, target, param, rule);
         },
 
-        fetchItem(ele, selector, item, rules) {
-            [...ele.querySelectorAll(selector)].slice(item['fetch-num']).forEach(el => {
-                const val = this.getMultiVars(el, rules);
-                log(val)
-            });
+        query(ele, selector, multiple, last) {
+            if (ele instanceof NodeList || Array.isArray(ele)) {
+                const eles = [];
+                if (!last) {
+                    ele.forEach(el => {
+                        if (!el) {
+                            return;
+                        }
+                        if (multiple) {
+                            el.querySelectorAll(selector).forEach(ell => eles.push(ell));
+                            return
+                        }
+                        eles.push(el.querySelector(selector))
+                    });
+                    return eles;
+                }
+
+                ele.forEach(el => {
+                    const item = [];
+                    if (multiple) {
+                        el.querySelectorAll(selector).forEach(e => item.push(e));
+                        eles.push(item);
+                        return
+                    }
+                    const e = el.querySelector(selector);
+                    e && eles.push();
+                })
+                return eles;
+            }
+            if (last) {
+                return multiple ? [[...ele.querySelectorAll(selector)]] : [ele.querySelector(selector)];
+            }
+            return multiple ? ele.querySelectorAll(selector) : ele.querySelector(selector);
+        },
+
+        fetchItem(ele, target, item, rules) {
+            ele.forEach(
+                ell => ell.slice(item['fetch-num']).forEach(el => {
+                    if (!el) {
+                        return;
+                    }
+                    const val = this.getMultiVars(el, rules);
+                    log(val);
+                }));
         },
 
         getMultiVars(el, rules, vars = {}) {
