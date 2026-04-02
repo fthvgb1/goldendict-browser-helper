@@ -903,6 +903,9 @@
             if (expression === 'self') {
                 return ele;
             }
+            if (!expression.includes('@')) {
+                return ele.querySelector(expression);
+            }
             for (const exp of expression.split('%')) {
                 const arr = exp.split('@').map(v => v.trim());
                 if (arr.length < 1 || !this.grammarCharacters.has(arr[0])) {
