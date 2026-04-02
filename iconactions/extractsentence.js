@@ -1,4 +1,4 @@
-;const {ankiFetchClickFn, ankiFetchData, setAllBold, getAnkiFetchParams, arrayDiff} = (() => {
+;const {ankiFetchClickFn, ankiFetchData, setAllBold, getAnkiFetchParams, arrayDiff, superFetchHook} = (() => {
     PushHookAnkiStyle(GM_getResourceText('extract-sentence'));
 
     PushHookAnkiDidRender(addOrDelBtn);
@@ -435,123 +435,6 @@
     }
 
 
-    function buildRegular(words, flag, find = false) {
-        let suffix = '';
-        const w = [];
-        const ends = find ? '.+?' : '.*?';
-        const begin = find ? '\\w+?' : '\\w*?';
-        words.forEach(word => {
-            if (!word) {
-                return
-            }
-            word = escapeRegExp(word);
-            if (word.length <= 2) { //  || (word.length === 3 && !find)
-                w.push(word);
-                return;
-            }
-            if (word[word.length - 1] === '-') {
-                const prefix = word.slice(0, -1);
-                w.push(word + '.+?');
-                if (!words.includes(prefix)) {
-                    w.push(prefix + ends);
-                }
-                return
-            }
-            if (word === suffix) {
-                suffix = '';
-                w.push(word + ends);
-                w.push(begin + word);
-                return
-            }
-            if (word[0] === '-') {
-                suffix = word.slice(1);
-                if (!words.includes(suffix)) {
-                    w.push(begin + suffix);
-                }
-                w.push(begin + word);
-                return
-            }
-            w.push(word + ends);
-        });
-        return new RegExp(`\\b(${w.join('|')})\\b`, flag);
-    }
-
-    function eleBold(el, words, formats, boldAll) {
-        if (el.childNodes.length < 1) {
-            return 0;
-        }
-        const flag = 'ig';
-        const wordReg = buildRegular(words, flag);
-        const d = document.createElement('div');
-        let replacedNum = 0;
-        // wtf! loop nodes with for ...of none other than dynamic
-        for (const node of [...el.childNodes]) {
-            if (node.nodeType === node.TEXT_NODE) {
-                const o = node.nodeValue;
-                let n = node.nodeValue.replace(wordReg, formats);
-                if (o !== n) {
-                    d.innerHTML = n;
-                    node.replaceWith(...d.childNodes)
-                    replacedNum++;
-                    if (!boldAll) {
-                        break;
-                    }
-                    continue;
-                }
-                let wordsEx = [...words];
-                while (true) {
-                    wordsEx = wordsEx.filterAndMapX(v => v.length > 3 ? v.slice(0, -1) : false);
-                    if (wordsEx.length < 1) {
-                        break
-                    }
-                    const wordReg = buildRegular(wordsEx, flag, true);
-                    n = node.nodeValue.replace(wordReg, formats);
-                    if (o !== n) {
-                        d.innerHTML = n;
-                        node.replaceWith(...d.childNodes)
-                        replacedNum++;
-                        if (!boldAll) {
-                            return replacedNum;
-                        }
-                        break;
-                    }
-                }
-            }
-            if (node.nodeType === node.ELEMENT_NODE) {
-                replacedNum += eleBold(node, words, formats);
-            }
-        }
-        return replacedNum;
-    }
-
-    function bold(sentence, boldFieldValue) {
-        if (!boldFieldValue) {
-            return sentence.innerHTML;
-        }
-        let words, format;
-        if (Array.isArray(boldFieldValue)) {
-            words = boldFieldValue[0].split(' ');
-            format = boldFieldValue[1];
-        } else {
-            words = boldFieldValue.split(' ');
-        }
-        if (words.length < 1) {
-            return sentence.innerHTML;
-        }
-        [...words].forEach(word => {
-            const irs = lemmatizer.irregularConjugationOrPluralities(word);
-            if (irs.length < 1) {
-                return
-            }
-            irs.forEach(v => v[0].forEach(vv => words.push(vv)));
-        })
-        words = words.sort((a, b) => a.length <= b.length ? 1 : -1);
-        const formats = format ? format.split('{$bold}').join('\$&') : '<b>\$&</b>';
-        eleBold(sentence, words, formats, boldAll)
-
-        return sentence.innerHTML;
-    }
-
     function setTags(from, param) {
         if (!from instanceof Element) {
             return
@@ -635,39 +518,7 @@
     const log = window['dev'] ? console.log.bind(window.console) : () => {
     };
 
-    const actions = {
-        // execute action
-        dispatchAction(param, from = null, target = null) {
-            actions?.[param?.['operate-type']] && actions[param['operate-type']](param, from, target);
-        },
-
-        fetch(param, from, target) {
-            if (param['selector-items'].length < 1 || param?.['super-fetch-items']?.length < 1) {
-                log('not have valid fetch rule!', param)
-                return;
-            }
-            const rule = this.parseFetchRule(param);
-            if (!rule) {
-                log('not have valid fetch rule!')
-                return;
-            }
-            let ele = from;
-            while (true) {
-                const selectorItem = param['selector-items'].splice(0, 1)?.[0];
-                if (!selectorItem?.['fetch-selector']) {
-                    return;
-                }
-                const last = param['selector-items'].length < 1;
-                ele = this.query(ele, selectorItem['fetch-selector'], selectorItem.is_multiple, last);
-                if (ele.length < 1) {
-                    return;
-                }
-                if (last) {
-                    break
-                }
-            }
-            this.fetchItem(ele, target, param, rule);
-        },
+    const actionHelper = {
 
         query(ele, selector, multiple, last) {
             if (ele instanceof NodeList || Array.isArray(ele)) {
@@ -835,7 +686,6 @@
             return rule['']?.children ?? null;
         },
 
-
         replaceX(item, target, assign) {
             if (!item['replace_regex_pattern']) {
                 assign(target.replace(item['searchValue'], item['replaceValue']));
@@ -867,12 +717,7 @@
             }
             this.replaceX(item, target[item['replace_target_type']], v => target[item['replace_target_type']] = v);
         },
-        replacement(param, target) {
-            param['replacement-items'].forEach(item => this.replace(item, target));
-        },
-        tag(param, target) {
-            setTags(target, param);
-        },
+
 
         getTargetElement(name, target = null) {
             if ('*' === name && target) {
@@ -888,16 +733,56 @@
     };
 
 
+    const actions = {
+        // execute action
+        dispatchAction(param, from = null, target = null) {
+            this?.[param?.['operate-type']] && this[param['operate-type']](param, from, target);
+        },
+        fetch(param, from, target) {
+            if (param['selector-items'].length < 1 || param?.['super-fetch-items']?.length < 1) {
+                log('not have valid fetch rule!', param)
+                return;
+            }
+            const rule = actionHelper.parseFetchRule(param);
+            if (!rule) {
+                log('not have valid fetch rule!')
+                return;
+            }
+            let ele = from;
+            while (true) {
+                const selectorItem = param['selector-items'].splice(0, 1)?.[0];
+                if (!selectorItem?.['fetch-selector']) {
+                    return;
+                }
+                const last = param['selector-items'].length < 1;
+                ele = actionHelper.query(ele, selectorItem['fetch-selector'], selectorItem.is_multiple, last);
+                if (ele.length < 1) {
+                    return;
+                }
+                if (last) {
+                    break
+                }
+            }
+            actionHelper.fetchItem(ele, target, param, rule);
+        },
+        replacement(param, target) {
+            param['replacement-items'].forEach(item => actionHelper.replace(item, target));
+        },
+        tag(param, target) {
+            setTags(target, param);
+        },
+    };
+
     function ankiFetchData(param, target = null, from = null) {
         if (!target) {
             if ('*' === param['fetch-field']) {
                 return;
             }
-            target = actions.getTargetElement(param['fetch-field']);
+            target = actionHelper.getTargetElement(param['fetch-field']);
 
         }
         if (!from) {
-            from = actions.getTargetElement(param['fetch-field'], target)
+            from = actionHelper.getTargetElement(param['fetch-field'], target)
         }
 
         if (!target || !from) {
@@ -939,7 +824,7 @@
         getAnkiFetchParams(triggerField, true).forEach(item => {
             let target = targetCache?.[item['fetch-to-field']];
             if (!target) {
-                target = actions.getTargetElement(item['fetch-to-field'], target);
+                target = actionHelper.getTargetElement(item['fetch-to-field'], target);
             }
             actions.dispatchAction(item, trigger, target);
         });
@@ -971,6 +856,9 @@
     }
 
     const mapTitle = {
+        'fetch': '抓取',
+        'replacement': '替换',
+        'tag': '打标签',
         'fetch-name': '名称，只作为标识',
         'operate-type': '操作类型',
         'fetch-field': '提取的字段',
@@ -986,7 +874,6 @@
         'fetch-data-handle': '提取到后的操作',
         'fetch-data-type': '提取类型',
         'fetch-repeat': '是否去重',
-        'fetch-bold-field': `加粗的字段，如有多个值，可以指定分隔符如 正面@@\`,\`%%<b>{$bold}</b> %%后为格式`,
         'fetch-num': '提取的数量,默认0为全部',
         'fetch-value-replacement': '提取的值去除或替换,[=]前后分为表示要替换的值和替换值，多个用@@分隔，支持正则， 如 去掉·和将。替换为. 为 ·@@。[=].',
         'fetch-html-replacement': 'html去除或替换,[=]前后分为表示要替换的值和替换值，多个用@@分隔，支持正则， 如 去掉·和将。替换为. 为 ·@@。[=].，在提取为值之前执行',
@@ -1010,6 +897,9 @@
         'replaceValue': '替换的值，当为删除时值为选择器',
         'remove element': '删除元素',
         'replace_regex_pattern': '正则替换模式如果是正则替换的化，为空则为普通替换',
+        'cover': '覆盖',
+        'append': '追加',
+        'none': '啥都不干',
     };
     const de = {};
     Object.keys(mapTitle).forEach(k => {
@@ -1119,8 +1009,8 @@
         });
     }
 
-    const op = {'fetch': '抓取', 'replacement': '替换', 'tag': '打标签'};
-    const handleOp = {'append': '追加', 'cover': '覆盖', 'none': '不处理'};
+    const op = {'fetch': mapTitle['fetch'], 'replacement': mapTitle['replacement'], 'tag': mapTitle['tag']};
+    const handleOp = {'append': mapTitle['append'], 'cover': mapTitle['cover'], 'none': mapTitle['none']};
     const htmlType = {
         'text': mapTitle['text'],
         'remove element': mapTitle['remove element'],
@@ -1281,7 +1171,16 @@
         setAllBold,
         getAnkiFetchParams,
         arrayDiff: diff,
-        clickEvts: addOrRemoveEvts,
-        formProcessor
+        superFetchHook: {
+            clickEvts: addOrRemoveEvts,
+            formProcessor,
+            mapTitle, fetchActions: actions,
+            fetchActionHelper: actionHelper,
+            mergeMap: (obj, kv) => Object.keys(kv).forEach(k => obj[k] = kv[k]),
+            hookLang: lang => Object.keys(lang).forEach(k => mapTitle[k] = lang[k]),
+            lang: name => allowFn.lang(name),
+            allowFn, op, htmlType, handleOp,
+            buildChildrenHtmlFn,
+        }
     }
 })();

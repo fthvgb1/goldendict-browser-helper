@@ -40,6 +40,7 @@
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/forcecopy.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/anki.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/extractsentence.js
+// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/embolden.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/imagesize.js
 
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/contextmenuactions/menus.js

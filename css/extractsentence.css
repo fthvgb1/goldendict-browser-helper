@@ -32,7 +32,11 @@
     width: 5vw;
 }
 
-.replace_regex_pattern, .fetch-num {
+.replace_regex_pattern {
+    width: 7vw;
+}
+
+.fetch-num {
     width: 2vw;
 }
 
@@ -93,6 +97,10 @@ input:required {
 
 .fetch-action-container > .fetch-dd > .fetch-format {
     width: 19vw;
+}
+
+.replace_target_type {
+    width: 4vw;
 }
 
 .fetch-format {

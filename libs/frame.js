@@ -16,6 +16,7 @@
     htmlSpecial,
     decodeHtmlSpecial,
     base64ToUint8Array,
+    setMapVal,
 } = (() => {
     if (!Array.prototype.filterAndMapX) {
         Object.defineProperty(Array.prototype, 'filterAndMapX', {
@@ -508,6 +509,24 @@
         return outputArray;
     }
 
+    function setMapVal(k, v, object = {}) {
+        const names = k.split('.');
+        while (true) {
+            const name = names.splice(0, 1)[0] ?? '';
+            if (!name) {
+                return
+            }
+            if (names.length === 0) {
+                object[name] = v;
+                return;
+            }
+            if (!object?.[name]) {
+                object[name] = {}
+            }
+            object = object[name]
+        }
+    }
+
     return {
         PushContextMenu,
         PushIconAction,
@@ -524,6 +543,7 @@
         htmlSpecial,
         decodeHtmlSpecial,
         base64ToUint8Array,
+        setMapVal,
     }
 })();
 
