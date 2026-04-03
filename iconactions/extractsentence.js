@@ -10,7 +10,6 @@
 
     PushHookAnkiChange('#model', changeAddDelBtn);
     PushHookAnkiChange('.field-name', changeAddDelBtn);
-
     PushExpandAnkiInputButton('hammer', '', changeAddDelBtn);
 
     PushExpandAnkiInputButton('fetch-all', '', () => {
@@ -22,14 +21,13 @@
     PushExpandAnkiInputButton('fetch-add', '', (e) => {
         findParent(e.target, '.fetch-item').insertAdjacentElement('afterend', actionHelper.buildFetchItem({}));
     });
-    PushExpandAnkiInputButton('fetch-export', '', () => {
-        const data = JSON.stringify(getAnkiFetchParams('', false));
-        download('fetch-rule.json', data);
-    });
-    PushExpandAnkiInputButton('fetch-import', '', (ev) => {
-        ev.target.parentElement.querySelector('.fetch-file').click();
-    }, '', ev => {
+    PushExpandAnkiInputButton('fetch-export', '', () => eventFn.export);
+    const importFn = ev => ev.target.parentElement.querySelector('.fetch-file').click();
+    PushExpandAnkiInputButton('fetch-import', '', importFn, '', ev => {
+        ev.preventDefault();
         ev.target.dataset['new'] = 'true';
+        importFn(ev);
+        delete ev.target.dataset['new'];
     });
 
     function diff(a, b, fn) {
@@ -64,43 +62,108 @@
             && Object.keys(o1).every(p => o1[p] === o2[p])
     }
 
-    PushHookAnkiChange('.fetch-file', async (ev) => {
-        const file = ev.target.files[0];
-        if (!file) {
-            Swal.showValidationMessage('没有文件！');
-            return
-        }
-        const items = await file.text().then(JSON.parse);
-        if (!items || items.length < 1 || !items[0]?.['fetch-name'] || !items[0]?.['fetch-to-field']) {
-            Swal.showValidationMessage('不是正确的规则文件！');
-            return
-        }
-        let newRule = [];
-        if (ev.target.dataset?.['new']) {
-            delete ev.target.dataset['new'];
-            newRule = items;
-        } else {
-            const hadRule = getAnkiFetchParams('', false);
-            newRule = diff(items, hadRule, objectsEqual);
-        }
+    const eventFn = {
 
-        if (newRule.length < 1) {
-            Swal.showValidationMessage('无需导入！');
-            return
+        export() {
+            const data = JSON.stringify(getAnkiFetchParams('', false));
+            download('fetch-rule.json', data);
+        },
+        showProcessor(ev) {
+            if (!ev.target.checked) {
+                saveFetchItems();
+                //addOrDelBtn();
+                setting.children[0].classList.add('fetch-hidden');
+                getFetchItemEles().map(e => e.remove());
+                ev.target.parentElement.querySelectorAll('.fetch-import,.fetch-export').forEach(btn => btn.classList.add('fetch-hidden'))
+                return
+            }
+            let fetchItems = GM_getValue('fetch-items', [{}]);
+            fetchItems.forEach(item => setting.appendChild(actionHelper.buildFetchItem(item)));
+            if (GM_getValue('fetch-display-type', 1) === 2) {
+                const arr = Object.groupBy(fetchItems, item => op[item['operate-type']]) ?? [];
+                const options = [];
+                const nb = '&ensp;'.repeat(6);
+                Object.keys(arr).forEach(k => {
+                    options.push([k, k, {'data-names': arr[k].map(m => m['fetch-name']).join(',')}]);
+                    arr[k].forEach(m => options.push([m['fetch-name'], nb + m['fetch-name']]));
+                });
+                setting.children[0].innerHTML = buildOption(options, options[1][0], 0, 1, 2);
+                setting.children[0].classList.remove('fetch-hidden');
+                setting.children.length > 2 && [...setting.children].slice(2).forEach(e => e.classList.add('fetch-hidden'));
+            }
+            ev.target.parentElement.querySelectorAll('.fetch-import,.fetch-export').forEach(btn => btn.classList.remove('fetch-hidden'))
+        },
+        async importFn(ev) {
+            const file = ev.target.files[0];
+            if (!file) {
+                Swal.showValidationMessage('没有文件！');
+                return
+            }
+            const items = await file.text().then(JSON.parse);
+            if (!items || items.length < 1 || !items[0]?.['fetch-name'] || !items[0]?.['fetch-to-field']) {
+                Swal.showValidationMessage('不是正确的规则文件！');
+                return
+            }
+            let newRule = [];
+            if (ev.target.dataset?.['new']) {
+                newRule = items;
+            } else {
+                const hadRule = getAnkiFetchParams('', false);
+                newRule = diff(items, hadRule, objectsEqual);
+            }
+
+            if (newRule.length < 1) {
+                Swal.showValidationMessage('无需导入！');
+                return
+            }
+            const names = [];
+            newRule.forEach(item => {
+                const t = actionHelper.buildFetchItem(item);
+                t.classList.add('fetch-item-specific');
+                setting.appendChild(t);
+                names.push([item['fetch-name'], item['fetch-name']]);
+            });
+            Swal.showValidationMessage(`已导入${newRule.length}条记录！`);
+            if (GM_getValue('fetch-display-type', 1) === 2) {
+                const options = buildOption(names, '', 0, 1);
+                setting.children[0].insertAdjacentHTML('beforeend', options);
+            }
+        },
+        add(ev) {
+            const el = ev.target.dataset?.target ? findParent(ev.target, ev.target.dataset.target) : ev.target.parentElement;
+            const em = el.cloneNode(true);
+            em.querySelectorAll('input,select').forEach(ele => {
+                const fn = {
+                    INPUT(ele) {
+                        ele.value = '';
+                        if (ele.type === 'checkbox') {
+                            ele.checked = false;
+                        }
+                    },
+                    SELECT(ele) {
+                        ele.value = ele.children[0].value
+                    },
+                    TEXTAREA(ele) {
+                        ele.value = ''
+                    }
+                };
+                fn?.[ele.nodeName] && fn[ele.nodeName](ele);
+            });
+            el.insertAdjacentElement('afterend', em);
+        },
+        copy(ev) {
+            ev.preventDefault();
+            const el = ev.target.dataset?.target ? findParent(ev.target, ev.target.dataset.target) : ev.target.parentElement;
+            el.insertAdjacentElement('afterend', el.cloneNode(true));
+        },
+        remove(ev) {
+            ev.target.dataset?.target ?
+                findParent(ev.target, ev.target.dataset.target)?.remove()
+                : ev.target.parentElement.remove();
         }
-        const names = [];
-        newRule.forEach(item => {
-            const t = actionHelper.buildFetchItem(item);
-            t.classList.add('fetch-item-specific');
-            setting.appendChild(t);
-            names.push([item['fetch-name'], item['fetch-name']]);
-        });
-        Swal.showValidationMessage(`已导入${newRule.length}条记录！`);
-        if (GM_getValue('fetch-display-type', 1) === 2) {
-            const options = buildOption(names, '', 0, 1);
-            setting.children[0].insertAdjacentHTML('beforeend', options);
-        }
-    });
+    };
+
+    PushHookAnkiChange('.fetch-file', eventFn.importFn);
     PushExpandAnkiInputButton('fetch-copy', '', (e) => {
         const item = findParent(e.target, '.fetch-item');
         const copyItem = item.cloneNode(true);
@@ -218,32 +281,7 @@
 
 
     // show extract processor
-    PushHookAnkiChange('#fetch.swal2-checkbox', (ev) => {
-        if (!ev.target.checked) {
-            saveFetchItems();
-
-            //addOrDelBtn();
-            setting.children[0].classList.add('fetch-hidden');
-            getFetchItemEles().map(e => e.remove());
-            ev.target.parentElement.querySelectorAll('.fetch-import,.fetch-export').forEach(btn => btn.classList.add('fetch-hidden'))
-            return
-        }
-        let fetchItems = GM_getValue('fetch-items', [{}]);
-        fetchItems.forEach(item => setting.appendChild(actionHelper.buildFetchItem(item)));
-        if (GM_getValue('fetch-display-type', 1) === 2) {
-            const arr = Object.groupBy(fetchItems, item => op[item['operate-type']]) ?? [];
-            const options = [];
-            const nb = '&ensp;'.repeat(6);
-            Object.keys(arr).forEach(k => {
-                options.push([k, k, {'data-names': arr[k].map(m => m['fetch-name']).join(',')}]);
-                arr[k].forEach(m => options.push([m['fetch-name'], nb + m['fetch-name']]));
-            });
-            setting.children[0].innerHTML = buildOption(options, options[1][0], 0, 1, 2);
-            setting.children[0].classList.remove('fetch-hidden');
-            setting.children.length > 2 && [...setting.children].slice(2).forEach(e => e.classList.add('fetch-hidden'));
-        }
-        ev.target.parentElement.querySelectorAll('.fetch-import,.fetch-export').forEach(btn => btn.classList.remove('fetch-hidden'))
-    });
+    PushHookAnkiChange('#fetch.swal2-checkbox', eventFn.showProcessor);
 
     PushHookAnkiChange('.fetch-active', fetchActive);
 
@@ -494,19 +532,29 @@
 
     const actionHelper = {
 
-        query(ele, selector, multiple, last) {
+        query(ele, selectorItem, last, keepItems = []) {
+            const selector = selectorItem['fetch-selector'];
+            const multiple = selectorItem['is_multiple'];
+            const keep = selectorItem['keep-parent'];
             if (ele instanceof NodeList || Array.isArray(ele)) {
                 const eles = [];
                 if (!last) {
                     ele.forEach(el => {
-                        if (!el) {
-                            return;
-                        }
                         if (multiple) {
-                            el.querySelectorAll(selector).forEach(ell => eles.push(ell));
+                            const ell = el.querySelectorAll(selector);
+                            if (ell.length < 1) {
+                                keep && keepItems.push(el);
+                                return;
+                            }
+                            ell.forEach(ell => eles.push(ell));
                             return
                         }
-                        eles.push(el.querySelector(selector))
+                        const e = el.querySelector(selector);
+                        if (!e) {
+                            keep && keepItems.push(el);
+                            return;
+                        }
+                        eles.push(el);
                     });
                     return eles;
                 }
@@ -514,19 +562,30 @@
                 ele.forEach(el => {
                     const item = [];
                     if (multiple) {
-                        el.querySelectorAll(selector).forEach(e => item.push(e));
+                        const ell = el.querySelectorAll(selector);
+                        if (ell.length < 1) {
+                            keep && keepItems.push(el);
+                            return;
+                        }
+                        ell.forEach(e => item.push(e));
                         eles.push(item);
                         return
                     }
                     const e = el.querySelector(selector);
+                    !e && keep && keepItems.push(el);
                     e && eles.push([e]);
-                })
-                return eles;
+                });
+                return [...eles, ...keepItems.map(this.flagParent)];
             }
             if (last) {
-                return multiple ? [[...ele.querySelectorAll(selector)]] : [ele.querySelector(selector)];
+                return multiple ? [[...ele.querySelectorAll(selector), ...keepItems.map(this.flagParent)]] : [ele.querySelector(selector)];
             }
             return multiple ? ele.querySelectorAll(selector) : ele.querySelector(selector);
+        },
+
+        flagParent(el) {
+            el.eleType = 'parent';
+            return [el];
         },
 
         fetchItem(ele, target, item, rules) {
@@ -536,32 +595,41 @@
                         if (!el) {
                             return;
                         }
-                        const vars = this.getMultiVars(el, rules);
+                        const vars = this.getMultiVars(el, rules, item);
                         const format = item['fetch-format'] ? item['fetch-format'] : Object.keys(vars).map(k => `{${k}}`).join('');
                         const value = this.replaceVars2Format(vars, format);
                         this.setValue(target, value, item);
                     }));
         },
 
-        getMultiVars(el, rules, vars = {}) {
-            rules.forEach(item => this.getVars(el, item, vars));
+        getMultiVars(el, rules, fetchConf, vars = {}) {
+            rules.forEach(item => this.getVars(el, item, fetchConf, vars));
             return vars
         },
 
         grammarCharacters: new Set(['s', 'ps', 'p', 'ns']),
-        anchor2Ele(expression, ele) {
-            if (expression === 'anchor') {
-                return ele;
-            }
+        anchor2Ele(rule, ele, item) {
+            const expression = rule['value-selector'];
             if (!expression.includes('@')) {
                 return ele.querySelector(expression);
             }
             for (const exp of expression.split('%')) {
+                if (exp.startsWith('parent')) {
+                    const parentSelector = item['selector-items']?.[item['selector-items'].length - 2]?.['fetch-selector'];
+                    ele = ele?.eleType === 'parent' ? ele : findELeBySelector('p', parentSelector, ele);
+                    continue;
+                }
+                if (exp.startsWith('child')) {
+                    continue;
+                }
                 const arr = exp.split('@').map(v => v.trim());
                 if (arr.length < 1 || !this.grammarCharacters.has(arr[0])) {
                     continue
                 }
-                ele = isNaN(parseInt(arr[1])) ? findELeBySelector(arr[0], arr.slice(1).join(''), ele) : findEleByNum(arr[0], arr[1], ele)
+                ele = isNaN(parseInt(arr[1])) ? findELeBySelector(arr[0], arr.slice(1).join(''), ele) : findEleByNum(arr[0], arr[1], ele);
+                if (!ele) {
+                    return null;
+                }
             }
             return ele;
         },
@@ -589,15 +657,15 @@
         },
 
         // fetch vars
-        getVars(ele, rule, vars = {}) {
-            const el = this.anchor2Ele(rule['value-selector'], ele);
+        getVars(ele, rule, fetchConf, vars = {}) {
+            const el = this.anchor2Ele(rule, ele, fetchConf);
             if (!el) {
                 vars[rule['super-fetch-name']] = rule['default-value'];
                 log("query rule's value-selector fail", ele, rule['value-selector'], rule);
                 return vars;
             }
             vars[rule['super-fetch-name']] = this.extractValue(el, rule);
-            rule?.children?.forEach(item => this.getVars(el, item, vars));
+            rule?.children?.forEach(item => this.getVars(el, item, fetchConf, vars));
             if (rule?.['fetch-format']) {
                 vars[`${rule['super-fetch-name']}`] = this.replaceVars2Format(vars, rule['fetch-format']);
             }
@@ -743,14 +811,15 @@
                 log('not have valid fetch rule!')
                 return;
             }
-            let ele = from;
+            const selectorItems = [...param['selector-items']];
+            let ele = from, keep = [];
             while (true) {
                 const selectorItem = param['selector-items'].splice(0, 1)?.[0];
                 if (!selectorItem?.['fetch-selector']) {
                     return;
                 }
                 const last = param['selector-items'].length < 1;
-                ele = actionHelper.query(ele, selectorItem['fetch-selector'], selectorItem.is_multiple, last);
+                ele = actionHelper.query(ele, selectorItem, last, keep);
                 if (ele.length < 1) {
                     return;
                 }
@@ -758,6 +827,7 @@
                     break
                 }
             }
+            param['selector-items'] = selectorItems;
             actionHelper.fetchItem(ele, target, param, rule);
         },
         replacement(param, target) {
@@ -825,7 +895,12 @@
     }
 
     const mapTitle = {
+        'super html extract and process processor': '超级html提取加工处理器',
+        'import': '导入',
+        'export': '导出',
         'fetch': '抓取',
+        'keep-parent': '当子项不存在时取父项',
+        'do-all': '一键执行全部操作',
         'replacement': '替换',
         'tag': '打标签',
         'fetch-name': '名称，只作为标识',
@@ -1000,40 +1075,6 @@
             return data;
         }
     };
-    const addOrRemoveEvts = {
-        add(ev) {
-            const el = ev.target.dataset?.target ? findParent(ev.target, ev.target.dataset.target) : ev.target.parentElement;
-            const em = el.cloneNode(true);
-            em.querySelectorAll('input,select').forEach(ele => {
-                const fn = {
-                    INPUT(ele) {
-                        ele.value = '';
-                        if (ele.type === 'checkbox') {
-                            ele.checked = false;
-                        }
-                    },
-                    SELECT(ele) {
-                        ele.value = ele.children[0].value
-                    },
-                    TEXTAREA(ele) {
-                        ele.value = ''
-                    }
-                };
-                fn?.[ele.nodeName] && fn[ele.nodeName](ele);
-            });
-            el.insertAdjacentElement('afterend', em);
-        },
-        copy(ev) {
-            ev.preventDefault();
-            const el = ev.target.dataset?.target ? findParent(ev.target, ev.target.dataset.target) : ev.target.parentElement;
-            el.insertAdjacentElement('afterend', el.cloneNode(true));
-        },
-        remove(ev) {
-            ev.target.dataset?.target ?
-                findParent(ev.target, ev.target.dataset.target)?.remove()
-                : ev.target.parentElement.remove();
-        }
-    };
 
 
     PushHookAnkiHtml((ankiContainer) => {
@@ -1093,23 +1134,22 @@
                 return
             }
             if (evt.target.dataset.op === 'remove') {
-                addOrRemoveEvts.remove(evt);
+                eventFn.remove(evt);
                 return;
             }
-            addOrRemoveEvts.add(evt);
+            eventFn.add(evt);
         });
-        setting.addEventListener('contextmenu', evt => evt.target.dataset.op === 'add' && addOrRemoveEvts.copy(evt));
+        setting.addEventListener('contextmenu', evt => evt.target.dataset.op === 'add' && eventFn.copy(evt));
 
         ankiContainer.querySelector('#auto-sentence').parentElement.insertAdjacentElement('afterend', div);
     });
     return {
         ankiFetchClickFn,
         ankiFetchData,
-
         getAnkiFetchParams,
         arrayDiff: diff,
         superFetchHook: {
-            clickEvts: addOrRemoveEvts,
+            eventHook: eventFn,
             formProcessor,
             mapTitle, fetchActions: actions,
             fetchActionHelper: actionHelper,

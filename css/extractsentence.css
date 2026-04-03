@@ -69,6 +69,7 @@ input:required {
 .selector-item:not(:last-of-type) .add-selector-item,
 .selector-item:only-of-type .remove-selector-item,
 .super-fetch-item:not(:last-of-type) .add-super-fetch-item,
+:nth-child(1 of .selector-item) > .keep-parent,
 :nth-child(1 of .super-fetch-item) :where(.parent-super-name,.remove-super-fetch-item) {
     display: none;
 }
