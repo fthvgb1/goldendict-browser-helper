@@ -1,4 +1,4 @@
-;const {ankiFetchClickFn, ankiFetchData, setAllBold, getAnkiFetchParams, arrayDiff, superFetchHook} = (() => {
+;const {ankiFetchClickFn, ankiFetchData, getAnkiFetchParams, arrayDiff, superFetchHook} = (() => {
     PushHookAnkiStyle(GM_getResourceText('extract-sentence'));
 
     PushHookAnkiDidRender(addOrDelBtn);
@@ -20,14 +20,16 @@
         findParent(e.target, '.fetch-item').remove();
     });
     PushExpandAnkiInputButton('fetch-add', '', (e) => {
-        findParent(e.target, '.fetch-item').insertAdjacentElement('afterend', buildFetchItem({}));
+        findParent(e.target, '.fetch-item').insertAdjacentElement('afterend', actionHelper.buildFetchItem({}));
     });
     PushExpandAnkiInputButton('fetch-export', '', () => {
         const data = JSON.stringify(getAnkiFetchParams('', false));
         download('fetch-rule.json', data);
     });
     PushExpandAnkiInputButton('fetch-import', '', (ev) => {
-        ev.target.parentElement.lastElementChild.click();
+        ev.target.parentElement.querySelector('.fetch-file').click();
+    }, '', ev => {
+        ev.target.dataset['new'] = 'true';
     });
 
     function diff(a, b, fn) {
@@ -69,19 +71,26 @@
             return
         }
         const items = await file.text().then(JSON.parse);
-        if (!items || items.length < 1 || !items[0].hasOwnProperty('fetch-name') || !items[0].hasOwnProperty('fetch-to-field')) {
+        if (!items || items.length < 1 || !items[0]?.['fetch-name'] || !items[0]?.['fetch-to-field']) {
             Swal.showValidationMessage('不是正确的规则文件！');
             return
         }
-        const hadRule = getAnkiFetchParams('', false);
-        const newRule = diff(items, hadRule, objectsEqual);
+        let newRule = [];
+        if (ev.target.dataset?.['new']) {
+            delete ev.target.dataset['new'];
+            newRule = items;
+        } else {
+            const hadRule = getAnkiFetchParams('', false);
+            newRule = diff(items, hadRule, objectsEqual);
+        }
+
         if (newRule.length < 1) {
             Swal.showValidationMessage('无需导入！');
             return
         }
         const names = [];
         newRule.forEach(item => {
-            const t = buildFetchItem(item);
+            const t = actionHelper.buildFetchItem(item);
             t.classList.add('fetch-item-specific');
             setting.appendChild(t);
             names.push([item['fetch-name'], item['fetch-name']]);
@@ -131,10 +140,6 @@
         button.replaceWith(sel);
     });
 
-    PushHookAnkiDidRender(() => document.addEventListener('mousedown', fullBold));
-    PushHookAnkiDidRender(() => document.addEventListener('mouseup', fullBold));
-    PushHookAnkiClose(() => document.removeEventListener('mousedown', fullBold));
-    PushHookAnkiClose(() => document.removeEventListener('mouseup', fullBold));
 
     PushHookAnkiDidRender(() => setting.addEventListener('dblclick', settingItemSwitchDisplay));
     PushHookAnkiClose(() => setting.removeEventListener('dblclick', settingItemSwitchDisplay));
@@ -224,7 +229,7 @@
             return
         }
         let fetchItems = GM_getValue('fetch-items', [{}]);
-        fetchItems.forEach(item => setting.appendChild(buildFetchItem(item)));
+        fetchItems.forEach(item => setting.appendChild(actionHelper.buildFetchItem(item)));
         if (GM_getValue('fetch-display-type', 1) === 2) {
             const arr = Object.groupBy(fetchItems, item => op[item['operate-type']]) ?? [];
             const options = [];
@@ -248,32 +253,6 @@
         PushExpandAnkiInputButton(className, '', saveFetchItems);
     });
 
-
-    let time = 0, t = null;
-
-    function fullBold(ev) {
-        if (!ev.target.matches('.fetch-sentence-field')) {
-            return
-        }
-        if (ev.type === 'mousedown') {
-            time = 0;
-            t = setInterval(() => {
-                time += 1;
-                clearInterval(t);
-            }, 1000);
-            return;
-        }
-        if (ev.type === 'mouseup') {
-            if (time >= 1) {
-                boldAll = true
-                ev.preventDefault();
-                ankiFetchClickFn(ev.target);
-                boldAll = false;
-            }
-        }
-        time = 0;
-        clearInterval(t);
-    }
 
     function getFetchItemEles() {
         return [...setting.children].slice(1);
@@ -370,11 +349,7 @@
         saveFetchItems();
     }
 
-    let setting, boldAll = false;
-
-    function setAllBold(value) {
-        boldAll = value
-    }
+    let setting;
 
     function saveFetchItems() {
 
@@ -544,7 +519,7 @@
                         return
                     }
                     const e = el.querySelector(selector);
-                    e && eles.push();
+                    e && eles.push([e]);
                 })
                 return eles;
             }
@@ -631,7 +606,7 @@
 
 
         setValue(target, value, item) {
-            this.textNode.has(target.nodeName) ? this.setInput(target, value, item) : this.setEle(target, value, item);
+            this.textNode.has(target.nodeName) ? this.setInputOrTextarea(target, value, item) : this.setEle(target, value, item);
         },
 
         setEle(target, value, item) {
@@ -653,7 +628,7 @@
             target.insertAdjacentHTML('beforeend', value);
         },
 
-        setInput(input, value, item) {
+        setInputOrTextarea(input, value, item) {
             const t = item['fetch-data-handle'];
             if (t === 'none') {
                 return;
@@ -665,7 +640,7 @@
             if (item['fetch-repeat'] && input.value.includes(value)) {
                 return;
             }
-            input.value += ' ' + value;
+            input.value += value;
         },
 
         parseFetchRule(arr, rule = {}) {
@@ -686,7 +661,7 @@
             return rule['']?.children ?? null;
         },
 
-        replaceX(item, target, assign) {
+        replaceItem(item, target, assign) {
             if (!item['replace_regex_pattern']) {
                 assign(target.replace(item['searchValue'], item['replaceValue']));
                 return;
@@ -696,11 +671,11 @@
         textNode: new Set(['INPUT', 'TEXTAREA']),
         replace(item, target, clone = false) {
             if (this.textNode.has(target.nodeName) && item['replace_target_type'] === 'text') {
-                this.replaceX(item, target.value, val => target.value = val);
+                this.replaceItem(item, target.value, val => target.value = val);
                 return;
             }
             if (item.replace_target_type === 'text') {
-                this.replaceX(item, target.innerText, v => target.innerText = v);
+                this.replaceItem(item, target.innerText, v => target.innerText = v);
                 return;
             }
             if (item['replace_target_type'] === 'remove element') {
@@ -710,12 +685,12 @@
             if (clone && item['replace_target_type'] === 'outerHTML') {
                 const el = document.createElement('div');
                 el.insertAdjacentElement('beforeend', target);
-                this.replaceX(item, el.innerHTML, v => {
+                this.replaceItem(item, el.innerHTML, v => {
                     el.innerHTML = v;
                 });
                 return el.children[0];
             }
-            this.replaceX(item, target[item['replace_target_type']], v => target[item['replace_target_type']] = v);
+            this.replaceItem(item, target[item['replace_target_type']], v => target[item['replace_target_type']] = v);
         },
 
 
@@ -729,6 +704,26 @@
             }
             let from = document.querySelector(`:where(.field-name,.sentence_field)[value='${name}']`);
             return findParent(from, '.form-item,.sentence_setting')?.querySelector('.spell-content,.field-value') ?? null;
+        },
+
+
+        buildFetchItem(data = null) {
+            data['operate-type'] = data['operate-type'] ?? 'fetch';
+            data['op'] = op;
+            templateHelper?.[data['operate-type']] && templateHelper[data['operate-type']](data);
+            data['fetch-operator'] = templateHelper.buildTemplateHTML(data['operate-type'], data);
+            const div = document.createElement('div');
+            div.innerHTML = templateHelper.buildTemplateHTML('fetch-base', data);
+            div.querySelector('.operate-type').addEventListener('change', actionHelper.switchAction(data));
+            div.querySelector('.fetch-active').addEventListener('change', fetchActive);
+            return div.children[0];
+        },
+        switchAction(data) {
+            return e => {
+                const v = e.target.value;
+                templateHelper?.[v] && templateHelper[v](data);
+                findParent(e.target, '.fetch-item').querySelector('.fetch-action-container').innerHTML = templateHelper.buildTemplateHTML(v, data);
+            }
         }
     };
 
@@ -792,7 +787,6 @@
             from = target;
         }
 
-        const bold = parseBoldFormat(param);
         actions.dispatchAction(param, target, from)
     }
 
@@ -828,31 +822,6 @@
             }
             actions.dispatchAction(item, trigger, target);
         });
-    }
-
-
-    function parseBoldFormat(param) {
-        if (!param['fetch-bold-field']) {
-            return ''
-        }
-        let boldFieldValue = '';
-        const fields = param['fetch-bold-field'].split('@@');
-        const input = document.querySelector(`input.field-name[value='${fields[0]}']`);
-        if (!input) {
-            return boldFieldValue;
-        }
-        const ip = input.nextElementSibling;
-        if (ip && ip.matches('input.field-value')) {
-            boldFieldValue = ip.value;
-            if (fields.length > 1) {
-                const f = fields[1].split('%%');
-                if (f.length === 1 && f[0].includes('{$bold}')) {
-                    return [boldFieldValue, f[0]];
-                }
-                return [boldFieldValue.split(f[0].replaceAll('`', '')).join(' '), f[1]];
-            }
-        }
-        return boldFieldValue;
     }
 
     const mapTitle = {
@@ -901,9 +870,6 @@
         'append': '追加',
         'none': '啥都不干',
     };
-
-    const replaceRex = /\{\{(.*?)}}/g;
-
     const allowFn = {
         htmlSpecial, leftTrim, rightTrim, trims,
         checked(value) {
@@ -952,51 +918,6 @@
         return express.split('.').reduce((prev, cur) => prev?.[cur] ?? defaults, vars);
     }
 
-    const templateCache = {};
-
-    function buildTemplateHTML(template, vars = null) {
-        let t = templateCache?.[template] ?? '';
-        if (!t) {
-            t = GM_getResourceText(template) ?? '';
-            templateCache[template] = t;
-        }
-        if (!vars) {
-            return t
-        }
-        return t.replace(replaceRex, (substring, name) => {
-            const names = name.split('|');
-            let val = getVarVal(vars, names[0]);
-            if (names.length < 2) {
-                return val;
-            }
-            for (let fn of names.splice(1)) {
-                if (fn === 'lang') {
-                    return allowFn.lang(names[0]);
-                }
-                const fns = fn.split('(');
-                const param = [];
-                if (fns.length > 1) {
-                    fn = fns[0].trim();
-                    trims(fns[1], ')')
-                        .split(',')
-                        .forEach(a =>
-                            (a = a.trim(), param.push(getVarVal(vars, a, trims(a))))
-                        );
-                }
-                if (val?.[fn]) {
-                    val = val[fn](...param);
-                    continue;
-                }
-
-                if (!allowFn?.[fn]) {
-                    return val;
-                }
-                val = allowFn[fn](val, ...param);
-            }
-            return val;
-        });
-    }
-
     const op = {'fetch': mapTitle['fetch'], 'replacement': mapTitle['replacement'], 'tag': mapTitle['tag']};
     const handleOp = {'append': mapTitle['append'], 'cover': mapTitle['cover'], 'none': mapTitle['none']};
     const htmlType = {
@@ -1005,11 +926,59 @@
         'innerHTML': mapTitle['innerHTML'],
         'outerHTML': mapTitle['outerHTML']
     };
-    const buildChildrenHtmlFn = {
+    const templateHelper = {
+        templateFnHook: {},
+        templateCache: {},
+        replaceRex: /\{\{(.*?)}}/g,
+        buildTemplateHTML(template, vars = null) {
+            let t = this.templateCache?.[template] ?? '';
+            if (!t) {
+                t = GM_getResourceText(template) ?? '';
+                this.templateCache[template] = t;
+            }
+            if (!t) {
+                return t
+            }
+            if (this.templateFnHook?.[template]) {
+                t = this.templateFnHook[template](t, vars);
+            }
+            return t.replace(this.replaceRex, (substring, name) => {
+                const names = name.split('|');
+                let val = getVarVal(vars, names[0]);
+                if (names.length < 2) {
+                    return val;
+                }
+                for (let fn of names.splice(1)) {
+                    if (fn === 'lang') {
+                        return allowFn.lang(names[0]);
+                    }
+                    const fns = fn.split('(');
+                    const param = [];
+                    if (fns.length > 1) {
+                        fn = fns[0].trim();
+                        trims(fns[1], ')')
+                            .split(',')
+                            .forEach(a =>
+                                (a = a.trim(), param.push(getVarVal(vars, a, trims(a))))
+                            );
+                    }
+                    if (val?.[fn]) {
+                        val = val[fn](...param);
+                        continue;
+                    }
+
+                    if (!allowFn?.[fn]) {
+                        return val;
+                    }
+                    val = allowFn[fn](val, ...param);
+                }
+                return val;
+            });
+        },
         replacement(data) {
             data['replacement-item-html'] = (data?.['replacement-items'] ?? [{}])
                 .map(item =>
-                    buildTemplateHTML('replacement-item', {
+                    templateHelper.buildTemplateHTML('replacement-item', {
                         ...item,
                         htmlType,
                     })
@@ -1018,14 +987,14 @@
         },
         fetch(data) {
             data['fetch-chain-html'] = (data?.['selector-items'] ?? [{}])
-                .map(item => buildTemplateHTML('selector-chain', item))
+                .map(item => templateHelper.buildTemplateHTML('selector-chain', item))
                 .join('\n');
 
             data['handleOp'] = handleOp;
             data['super-fetch-item-html'] = (data?.['super-fetch-items'] ?? [{}]).map(item =>
-                buildTemplateHTML('fetch-item', {
+                templateHelper.buildTemplateHTML('fetch-item', {
                     ...item, htmlType,
-                    'replacement-item-html': buildChildrenHtmlFn.replacement(item),
+                    'replacement-item-html': templateHelper.replacement(item),
                 })
             ).join('\n')
             return data;
@@ -1066,31 +1035,11 @@
         }
     };
 
-    function buildFetchItem(data = null) {
-        data['operate-type'] = data['operate-type'] ?? 'fetch';
-        data['op'] = op;
-        buildChildrenHtmlFn?.[data['operate-type']] && buildChildrenHtmlFn[data['operate-type']](data);
-        data['fetch-operator'] = buildTemplateHTML(data['operate-type'], data);
-        const div = document.createElement('div');
-        div.innerHTML = buildTemplateHTML('fetch-base', data);
-        div.querySelector('.operate-type').addEventListener('change', switchAction(data));
-        div.querySelector('.fetch-active').addEventListener('change', fetchActive);
-        return div.children[0];
-    }
-
-    function switchAction(data) {
-        return e => {
-            const v = e.target.value;
-            buildChildrenHtmlFn?.[v] && buildChildrenHtmlFn[v](data);
-            findParent(e.target, '.fetch-item').querySelector('.fetch-action-container').innerHTML = buildTemplateHTML(v, data);
-        }
-    }
-
 
     PushHookAnkiHtml((ankiContainer) => {
         const div = document.createElement('div');
         div.className = 'form-item fetch-sentence-container';
-        div.innerHTML = buildTemplateHTML('fetch-form');
+        div.innerHTML = templateHelper.buildTemplateHTML('fetch-form');
         setting = div.querySelector('.select-setting');
         let currentItem;
 
@@ -1156,7 +1105,7 @@
     return {
         ankiFetchClickFn,
         ankiFetchData,
-        setAllBold,
+
         getAnkiFetchParams,
         arrayDiff: diff,
         superFetchHook: {
@@ -1168,7 +1117,7 @@
             hookLang: lang => Object.keys(lang).forEach(k => mapTitle[k] = lang[k]),
             lang: name => allowFn.lang(name),
             allowFn, op, htmlType, handleOp,
-            buildChildrenHtmlFn,
+            buildChildrenHtmlFn: templateHelper,
         }
     }
 })();

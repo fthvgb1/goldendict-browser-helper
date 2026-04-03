@@ -33,7 +33,6 @@
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/libs/text.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/libs/resizeimg.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/libs/spell.js
-// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/libs/superfetch.js
 
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/goldendict.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/tts.js
