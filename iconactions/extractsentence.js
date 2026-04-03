@@ -639,9 +639,6 @@
             return str.replace(this.fetchReplaceVarsRex, (substring, name) => vars?.[name] ?? substring);
         },
         extractValue(varEle, item) {
-            if (!varEle) {
-                return item['default-value'] ?? '';
-            }
             if (item['replacement-items'].length > 0) {
                 varEle = varEle.cloneNode(true);
                 item['replacement-items'].forEach(rule => {
@@ -660,12 +657,14 @@
         getVars(ele, rule, fetchConf, vars = {}) {
             const el = this.anchor2Ele(rule, ele, fetchConf);
             if (!el) {
-                vars[rule['super-fetch-name']] = rule['default-value'];
+                vars[rule['super-fetch-name']] = vars?.[trims(rule['default-value'], '{}')] ?? rule['default-value'];
                 log("query rule's value-selector fail", ele, rule['value-selector'], rule);
                 return vars;
             }
             vars[rule['super-fetch-name']] = this.extractValue(el, rule);
-            rule?.children?.forEach(item => this.getVars(el, item, fetchConf, vars));
+            const childVars = {};
+            rule?.children?.forEach(item => this.getVars(el, item, fetchConf, childVars));
+            Object.keys(childVars).forEach(k => vars[k] = childVars[k]);
             if (rule?.['fetch-format']) {
                 vars[`${rule['super-fetch-name']}`] = this.replaceVars2Format(vars, rule['fetch-format']);
             }
