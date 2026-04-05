@@ -539,10 +539,18 @@
                 });
                 return [...eles, ...keepItems.map(this.flagParent)];
             }
-            if (last) {
-                return multiple ? [[...ele.querySelectorAll(selector), ...keepItems.map(this.flagParent)]] : [ele.querySelector(selector)];
+            const r = this.queryResults(ele, selector, multiple);
+            if (r && last) {
+                return multiple ? [[...r, ...keepItems.map(this.flagParent)]] : [[r]];
             }
-            return multiple ? ele.querySelectorAll(selector) : ele.querySelector(selector);
+            return r;
+        },
+        queryResults(ele, selector, multiple) {
+            if (multiple) {
+                const r = ele.querySelectorAll(selector);
+                return r.length < 1 ? null : r;
+            }
+            return ele.querySelector(selector);
         },
 
         flagParent(el) {
@@ -573,6 +581,9 @@
         anchor2Ele(rule, ele, item) {
             const expression = rule['value-selector'];
             if (!expression.includes('@')) {
+                if (expression === 'child') {
+                    return ele;
+                }
                 return ele.querySelector(expression);
             }
             for (const exp of expression.split('%')) {
@@ -698,7 +709,10 @@
                 assign(target.replace(item['searchValue'], item['replaceValue']));
                 return;
             }
-            assign(target.replace(new RegExp(item['searchValue'], item['replace_regex_pattern']), item['replaceValue']));
+
+            assign(target.replace(new RegExp(item['searchValue'],
+                    item['replace_regex_pattern'] === 'none' ? '' : item['replace_regex_pattern']),
+                item['replaceValue']));
         },
         textNode: new Set(['INPUT', 'TEXTAREA']),
         replace(item, target, clone = false) {
@@ -784,7 +798,7 @@
                 }
                 const last = param['selector-items'].length < 1;
                 ele = actionHelper.query(ele, selectorItem, last, keep);
-                if (ele.length < 1) {
+                if (!ele) {
                     return;
                 }
                 if (last) {
