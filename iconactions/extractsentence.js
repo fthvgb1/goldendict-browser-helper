@@ -744,7 +744,7 @@
         },
 
 
-        getTargetElement(name, target = null) {
+        getFieldElement(name, target = null) {
             if ('*' === name && target) {
                 return target;
             }
@@ -821,25 +821,19 @@
     };
 
     function ankiFetchData(param, target = null, from = null) {
+        const targetField = buttonField(param);
         if (!target) {
-            if ('*' === param['fetch-field']) {
-                return;
-            }
-            target = actionHelper.getTargetElement(param['fetch-field']);
-
+            target = actionHelper.getFieldElement(targetField);
         }
         if (!from) {
-            from = actionHelper.getTargetElement(param['fetch-field'], target)
+            from = actionHelper.getFieldElement(param['fetch-field'], target)
         }
 
-        if (!target || !from) {
+        if (target && from) {
+            actions.dispatchAction(param, target, from);
             return
         }
-        if (param['fetch-field'] === '*' && target !== from) {
-            from = target;
-        }
-
-        actions.dispatchAction(param, target, from)
+        log(param);
     }
 
     function getAnkiFetchParams(targetField = '', activeFilter = true) {
@@ -856,23 +850,29 @@
             return params;
         }
         return params.filter(param => {
+            const field = buttonField(param);
             if (activeFilter) {
-                return param['fetch-active'] && (param['fetch-field'] === '*' || param['fetch-field'] === targetField)
+                return param['fetch-active'] && (field === '*' || field === targetField);
             }
-            return param['fetch-field'] === '*' || param['fetch-field'] === targetField
+            return field === '*' || field === targetField;
         });
     }
 
     function ankiFetchClickFn(button) {
         const triggerField = button.parentElement.parentElement.querySelector('.sentence_field,.field-name').value.trim();
-        const trigger = button.parentElement.parentElement.querySelector('.spell-content,.field-value');
-        const targetCache = {};
+        const eleCache = {};
         getAnkiFetchParams(triggerField, true).forEach(item => {
-            let target = targetCache?.[item['fetch-to-field']];
+            const field = buttonField(item);
+            let target = eleCache?.[field], from = eleCache?.[item['fetch-field']];
             if (!target) {
-                target = actionHelper.getTargetElement(item['fetch-to-field'], target);
+                target = actionHelper.getFieldElement(field);
+                eleCache[field] = target;
             }
-            actions.dispatchAction(item, trigger, target);
+            if (!from) {
+                from = actionHelper.getFieldElement(item['fetch-field']);
+                eleCache[item['fetch-field']] = from;
+            }
+            actions.dispatchAction(item, from, target);
         });
     }
 
