@@ -1,11 +1,11 @@
 ;const {ankiFetchClickFn, ankiFetchData, getAnkiFetchParams, arrayDiff, superFetchHook} = (() => {
     PushHookAnkiStyle(GM_getResourceText('extract-sentence'));
 
-    PushHookAnkiDidRender(addOrDelBtn);
+    PushHookAnkiDidRender(freshBtns);
 
     function changeAddDelBtn(ev, fn) {
         fn(ev);
-        addOrDelBtn();
+        freshBtns();
     }
 
     PushHookAnkiChange('#model', changeAddDelBtn);
@@ -71,7 +71,7 @@
         showProcessor(ev) {
             if (!ev.target.checked) {
                 saveFetchItems();
-                addOrDelBtn();
+                freshBtns();
                 setting.children[0].classList.add('fetch-hidden');
                 getFetchItemEles().map(e => e.remove());
                 ev.target.parentElement.querySelectorAll('.fetch-import,.fetch-export').forEach(btn => btn.classList.add('fetch-hidden'))
@@ -312,7 +312,7 @@
             .insertAdjacentElement('beforeend', btn);
     }
 
-    function addOrDelBtn() {
+    function freshBtns() {
         const items = getAnkiFetchParams() ?? [];
         if (items.length < 1) {
             return
@@ -346,31 +346,13 @@
     }
 
     function fetchActive(ev) {
-        const box = ev.target;
-        const parent = box.parentElement.parentElement;
-        const inp = parent.querySelector('.fetch-field');
-        const targetField = parent.querySelector('.fetch-field');
-        addOrDelBtn();
-        if (!inp?.value) {
-            return;
-            Swal.showValidationMessage('提取的字段不能为空！');
-            inp?.focus();
-            box.checked = false;
-            return
-        }
-        if (!targetField?.value) {
-            return;
-            Swal.showValidationMessage('提取到目标的字段不能为空！');
-            targetField?.focus();
-            box.checked = false;
-        }
+        freshBtns();
         saveFetchItems();
     }
 
     let setting;
 
     function saveFetchItems() {
-
         const data = getFetchItemEles().map(convertFetchParam);
         data.length > 0 && GM_setValue('fetch-items', data);
     }
@@ -890,7 +872,7 @@
         'operate-type': '操作类型',
         'fetch-field': '提取的字段',
         'fetch-to-field': '提取到目标字段',
-        'fetch-replacement-selector': '替换值的选择器',
+        //'fetch-replacement-selector': '替换值的选择器',
         'parent-super-name': '父提取值的标识名',
         'fetch-selector': '选择器，多个时，前一个为后一个的父选择器，最后一个为锚选择器',
         'is_multiple': '是否有多个',
