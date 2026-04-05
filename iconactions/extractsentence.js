@@ -71,7 +71,7 @@
         showProcessor(ev) {
             if (!ev.target.checked) {
                 saveFetchItems();
-                //addOrDelBtn();
+                addOrDelBtn();
                 setting.children[0].classList.add('fetch-hidden');
                 getFetchItemEles().map(e => e.remove());
                 ev.target.parentElement.querySelectorAll('.fetch-import,.fetch-export').forEach(btn => btn.classList.add('fetch-hidden'))
@@ -296,73 +296,53 @@
         return [...setting.children].slice(1);
     }
 
-    function addOrDelBtn() {
-        const fetchMap = {}, hadMap = {};
-        for (const el of document.querySelectorAll('.fetch-sentence-field')) {
-            let input = findParent(el, '.form-item').querySelector('.field-name,.sentence_field');
-            hadMap[input.value] = el;
-        }
-        const allField = [...document.querySelectorAll('.field-name,.sentence_field')].map(input => input.value);
-        const items = getAnkiFetchParams() ?? [];
 
-        const generic = [], allGeneric = [];
+    function buttonField(item) {
+        return item?.['fetch-to-field'] ? item['fetch-to-field'] : item['fetch-field'];
+    }
+
+    function addBtn(input, items) {
+        const title = items.filterAndMapX(item => item['fetch-active'] ? item['fetch-name'] : false).join(',');
+        const btn = document.createElement('button');
+        btn.classList.add('fetch-sentence-field');
+        btn.title = title ? title + ' ' + mapTitle['right-operate'] : mapTitle['right-operate'];
+        btn.innerHTML = '⚓';
+        findParent(input, '.form-item')
+            .querySelector('.field-operate')
+            .insertAdjacentElement('beforeend', btn);
+    }
+
+    function addOrDelBtn() {
+        const items = getAnkiFetchParams() ?? [];
+        if (items.length < 1) {
+            return
+        }
+        const fetchMap = {};
+        document.querySelectorAll('.fetch-sentence-field').forEach(el => el.remove());
+        const generic = [];
         items.forEach(item => {
             if (item['fetch-field'] === '*') {
-                if (item['fetch-active']) {
-                    generic.push(item);
-                }
-                allGeneric.push(item);
+                generic.push(item);
                 return
             }
-            if (!fetchMap?.[item['fetch-field']]) {
-                fetchMap[item['fetch-field']] = [];
+            const field = buttonField(item);
+            if (!fetchMap?.[field]) {
+                fetchMap[field] = [];
             }
-            fetchMap[item['fetch-field']].push([item['fetch-active'], item]);
+            fetchMap[field].push(item);
         });
-        if (allGeneric.length > 0) {
-            const keys = Object.keys(fetchMap);
-            const notAdd = diff(allField, keys, (a, b) => a === b);
-            if (notAdd.length > 0) {
-                notAdd.forEach(v => fetchMap[v] = []);
-            }
-        }
 
-        Object.keys(fetchMap).map(k => {
-            generic.forEach(item => fetchMap[k].push([true, item]));
-            let active = false;
-            if (fetchMap[k].length < 1) {
-                fetchMap[k].push([true, {'fetch-name': ''}]);
+        document.querySelectorAll('.field-name,.sentence_field').forEach(input => {
+            const field = input.value;
+            if (!fetchMap?.[field] && generic.length < 1) {
+                return
             }
-            const title = fetchMap[k].filter(v => v[0]).map(v => {
-                active = true;
-                return v[1]['fetch-name']
-            });
-            const input = document.querySelector(`:where(input.field-name,input.sentence_field)[value='${k}']`);
-            if (hadMap.hasOwnProperty(k)) {
-                delete hadMap[k];
-            }
-            if (!input) {
+            if (!fetchMap?.[field]) {
+                addBtn(input, generic);
                 return;
             }
-            const btn = input.parentElement.querySelector(`.fetch-sentence-field`);
-            const titles = title.join(',');
-            const r = titles === '' || title.length > 1 ? ' 右键选择:单个执行操作' : ''
-            if (active && btn) {
-                btn.title = `${titles}${r}`;
-                return;
-            }
-            if (active && !btn) {
-                const btn = document.createElement('button');
-                btn.innerHTML = `⚓`;
-                btn.className = 'fetch-sentence-field';
-                btn.title = `${titles}${r}`;
-                const op = findParent(input, '.form-item').querySelector('.field-operate');
-                op && op.appendChild(btn);
-                return;
-            }
-            btn && btn.remove();
-        })
-        Object.keys(hadMap).forEach(k => hadMap[k].remove());
+            addBtn(input, [...fetchMap[field], ...generic]);
+        });
     }
 
     function fetchActive(ev) {
@@ -620,6 +600,9 @@
                     continue;
                 }
                 if (exp.startsWith('child')) {
+                    if (ele?.eleType === 'parent') {
+                        return null
+                    }
                     continue;
                 }
                 const arr = exp.split('@').map(v => v.trim());
@@ -728,7 +711,7 @@
             return rule['']?.children ?? null;
         },
 
-        replaceItem(item, target, assign) {
+        replaceString(item, target, assign) {
             if (!item['replace_regex_pattern']) {
                 assign(target.replace(item['searchValue'], item['replaceValue']));
                 return;
@@ -738,11 +721,11 @@
         textNode: new Set(['INPUT', 'TEXTAREA']),
         replace(item, target, clone = false) {
             if (this.textNode.has(target.nodeName) && item['replace_target_type'] === 'text') {
-                this.replaceItem(item, target.value, val => target.value = val);
+                this.replaceString(item, target.value, val => target.value = val);
                 return;
             }
             if (item.replace_target_type === 'text') {
-                this.replaceItem(item, target.innerText, v => target.innerText = v);
+                this.replaceString(item, target.innerText, v => target.innerText = v);
                 return;
             }
             if (item['replace_target_type'] === 'remove element') {
@@ -752,12 +735,12 @@
             if (clone && item['replace_target_type'] === 'outerHTML') {
                 const el = document.createElement('div');
                 el.insertAdjacentElement('beforeend', target);
-                this.replaceItem(item, el.innerHTML, v => {
+                this.replaceString(item, el.innerHTML, v => {
                     el.innerHTML = v;
                 });
                 return el.children[0];
             }
-            this.replaceItem(item, target[item['replace_target_type']], v => target[item['replace_target_type']] = v);
+            this.replaceString(item, target[item['replace_target_type']], v => target[item['replace_target_type']] = v);
         },
 
 
@@ -898,6 +881,7 @@
         'import': '导入',
         'export': '导出',
         'fetch': '抓取',
+        'right-operate': '右键选择执行一个操作',
         'keep-parent': '当子项不存在时取父项',
         'do-all': '一键执行全部操作',
         'replacement': '替换',
