@@ -1,4 +1,4 @@
-;const {ankiFetchClickFn, ankiFetchData, getAnkiFetchParams, arrayDiff, superFetchHook} = (() => {
+;const {ankiFetchClickFn, ankiFetchData, getAnkiFetchParams, arrayDiff, superFetchHook, setEleDrag} = (() => {
     PushHookAnkiStyle(GM_getResourceText('extract-sentence'));
 
     PushHookAnkiDidRender(freshBtns);
@@ -63,7 +63,7 @@
     }
 
     const eventFn = {
-
+        dragEle: {},
         export() {
             const data = JSON.stringify(getAnkiFetchParams('', false));
             download('fetch-rule.json', data);
@@ -91,6 +91,11 @@
                 setting.children[0].classList.remove('fetch-hidden');
                 setting.children.length > 2 && [...setting.children].slice(2).forEach(e => e.classList.add('fetch-hidden'));
             }
+            const fns = [...setting.querySelectorAll('.fetch-replacement-items')].map(el => setEleDrag(el, 'li'));
+            eventFn.dragEle['replaceItem'] = onOff => fns.forEach(fn => fn(onOff));
+            eventFn.dragEle.replaceItem(true);
+            eventFn.dragEle['fetch-item'] = setEleDrag(setting, '.fetch-item');
+            eventFn.dragEle['fetch-item'](true);
             ev.target.parentElement.querySelectorAll('.fetch-import,.fetch-export').forEach(btn => btn.classList.remove('fetch-hidden'))
         },
         async importFn(ev) {
@@ -709,7 +714,7 @@
                 assign(target.replace(item['searchValue'], item['replaceValue']));
                 return;
             }
-
+            //log(`'${target}'`,`'${target.replace(new RegExp(item['searchValue'],  item['replace_regex_pattern']), item['replaceValue'])}'`);
             assign(target.replace(new RegExp(item['searchValue'],
                     item['replace_regex_pattern'] === 'none' ? '' : item['replace_regex_pattern']),
                 item['replaceValue']));
@@ -1055,58 +1060,63 @@
         }
     };
 
+    function setEleDrag(ele, selector) {
+        let currentItem;
+        const turnDrag = onoff => ele.querySelectorAll(selector).forEach(item => item.draggable = onoff)
+        const evenFn = {
+            dragstart(e) {
+                e.dataTransfer.effectAllowed = 'move';
+                currentItem = e.target;
+                currentItem.classList.add('moving');
+            },
+            dragenter(e) {
+                e.preventDefault();
+                const children = [...ele.querySelectorAll(selector)];
+                if (e.target === currentItem || children.length <= 1 || e.target === ele || !children.includes(e.target)) {
+                    return
+                }
+                e.target.insertAdjacentElement('afterend', currentItem);
+            },
+            dragend(e) {
+                currentItem.classList.remove('moving');
+                saveFetchItems();
+            },
+            dragover(e) {
+                e.preventDefault();
+            },
+
+        }
+        const mouse = {
+            mousedown(ev) {
+                if (ev.target.tagName === 'INPUT') {
+                    turnDrag(false);
+                }
+            },
+            mouseup(ev) {
+                if (ev.target.tagName === 'INPUT') {
+                    turnDrag(true);
+                }
+            }
+        }
+        return on => {
+            if (on) {
+                turnDrag(true);
+                Object.keys(mouse).forEach(name => ele.addEventListener(name, mouse[name]));
+                Object.keys(evenFn).forEach(name => ele.addEventListener(name, evenFn[name]));
+                return
+            }
+            Object.keys(evenFn).forEach(v => ele.removeEventListener(v, evenFn[v]));
+            Object.keys(mouse).forEach(v => ele.removeEventListener(v, mouse[v]));
+            turnDrag(false);
+        }
+    }
+
 
     PushHookAnkiHtml((ankiContainer) => {
         const div = document.createElement('div');
         div.className = 'form-item fetch-sentence-container';
         div.innerHTML = templateHelper.buildTemplateHTML('fetch-form');
         setting = div.querySelector('.select-setting');
-        let currentItem;
-
-        const startDrag = (e) => {
-            e.dataTransfer.effectAllowed = 'move';
-            currentItem = e.target;
-            currentItem.classList.add('moving');
-        };
-        const enterDrag = (e) => {
-            e.preventDefault();
-            const children = getFetchItemEles();
-            if (e.target === currentItem || children.length <= 1 || e.target === setting || !children.includes(e.target)) {
-                return
-            }
-            let liArray = Array.from(setting.childNodes);
-            let currentIndex = liArray.indexOf(currentItem);
-            let targetindex = liArray.indexOf(e.target);
-            if (currentIndex < targetindex) {
-                setting.insertBefore(currentItem, e.target.nextElementSibling);
-            } else {
-                setting.insertBefore(currentItem, e.target);
-            }
-        };
-        const endDrag = (e) => {
-            currentItem.classList.remove('moving');
-            saveFetchItems();
-        };
-        const overDrag = (e) => {
-            e.preventDefault();
-        };
-        const turnDrag = (onoff) => {
-            setting.querySelectorAll('.fetch-item').forEach(item => item.draggable = onoff);
-        };
-        setting.addEventListener('mousedown', (ev) => {
-            if (ev.target.tagName === 'INPUT') {
-                turnDrag(false);
-            }
-        });
-        setting.addEventListener('mouseup', (ev) => {
-            if (ev.target.tagName === 'INPUT') {
-                turnDrag(true);
-            }
-        });
-        setting.addEventListener('dragstart', startDrag);
-        setting.addEventListener('dragenter', enterDrag);
-        setting.addEventListener('dragend', endDrag);
-        setting.addEventListener('dragover', overDrag);
         const ty = new Set(['add', 'remove']);
         setting.addEventListener('click', evt => {
             if (!evt.target.dataset?.['op'] || !ty.has(evt.target.dataset.op)) {
@@ -1127,6 +1137,7 @@
         ankiFetchData,
         getAnkiFetchParams,
         arrayDiff: diff,
+        setEleDrag,
         superFetchHook: {
             eventHook: eventFn,
             formProcessor,
