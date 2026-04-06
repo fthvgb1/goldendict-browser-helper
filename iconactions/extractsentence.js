@@ -705,6 +705,9 @@
                     rule[item['parent-super-name']]['children'].push(item)
                     : rule[item['parent-super-name']]['children'] = [item];
             });
+            if (!valid) {
+                return null;
+            }
 
             return rule['']?.children ?? null;
         },
@@ -901,7 +904,7 @@
         'fetch-format': '提取的格式，可以使用{自身标识(即提取的值)或子项标识}，为空为时默认为 {自身标识}, ',
         'fetch-data-handle': '提取到后的操作',
         'fetch-data-type': '提取类型',
-        'fetch-repeat': '是否去重',
+        'fetch-repeat': '不重复',
         'fetch-num': '提取的数量,默认0为全部',
         'fetch-value-replacement': '提取的值去除或替换,[=]前后分为表示要替换的值和替换值，多个用@@分隔，支持正则， 如 去掉·和将。替换为. 为 ·@@。[=].',
         'fetch-html-replacement': 'html去除或替换,[=]前后分为表示要替换的值和替换值，多个用@@分隔，支持正则， 如 去掉·和将。替换为. 为 ·@@。[=].，在提取为值之前执行',
@@ -1060,7 +1063,7 @@
         }
     };
 
-    function setEleDrag(ele, selector) {
+    function setEleDrag(ele, selector, config = {}) {
         let currentItem;
         const turnDrag = onoff => ele.querySelectorAll(selector).forEach(item => item.draggable = onoff)
         const evenFn = {
@@ -1084,9 +1087,6 @@
             dragover(e) {
                 e.preventDefault();
             },
-
-        }
-        const mouse = {
             mousedown(ev) {
                 if (ev.target.tagName === 'INPUT') {
                     turnDrag(false);
@@ -1096,17 +1096,16 @@
                 if (ev.target.tagName === 'INPUT') {
                     turnDrag(true);
                 }
-            }
+            },
+            ...config
         }
         return on => {
             if (on) {
                 turnDrag(true);
-                Object.keys(mouse).forEach(name => ele.addEventListener(name, mouse[name]));
                 Object.keys(evenFn).forEach(name => ele.addEventListener(name, evenFn[name]));
                 return
             }
             Object.keys(evenFn).forEach(v => ele.removeEventListener(v, evenFn[v]));
-            Object.keys(mouse).forEach(v => ele.removeEventListener(v, mouse[v]));
             turnDrag(false);
         }
     }
