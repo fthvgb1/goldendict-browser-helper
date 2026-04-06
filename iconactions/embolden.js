@@ -1,11 +1,52 @@
 ;(() => {
-    console.log('bold');
     superFetchHook.hookLang({
         'embolden': `加粗`,
         'bold': `加粗的字段，如有多个值，可以指定分隔符如 正面@@\`,\`%%<b>{$bold}</b> %%后为格式`,
     });
 
     superFetchHook.htmlType['embolden'] = superFetchHook.lang('embolden');
+
+    superFetchHook.fetchActionHelper.replaceFn.embolden = (item, target, clone = false, param = {}) => {
+        if (!item['searchValue'] || superFetchHook.fetchActionHelper.textNode.has(target.nodeName)) {
+            return
+        }
+        const words = parseWords(item, param);
+        if (!words) {
+            return;
+        }
+        const format = item?.replaceValue ? item.replaceValue : '<b>{word}</b>';
+        embolden(target, words, format);
+    }
+
+    const modeFn = {
+        field(field) {
+            return document.querySelector(`.field-name[value=${field}]+input`)?.value;
+        },
+        selector(field, selector) {
+            return document.querySelector(`.field-name[value=${field}]+.spell .spell-content ${selector}`)?.innerText;
+        },
+        anchor(f, s, item, param) {
+            const rule = {...param.rule, 'value-selector': item['searchValue']}
+            const ele = superFetchHook.fetchActionHelper.anchor2Ele(rule, param.beforeQueryEle, param.fetchParam);
+            if (!ele) {
+                return '';
+            }
+            return superFetchHook.fetchActionHelper.textNode.has(ele.nodeName) ? ele.value : ele.innerText;
+        },
+        variable(f, s, item, param) {
+            return param.vars[item.searchValue] ?? '';
+        }
+    };
+
+    function parseWords(item, param) {
+        const arr = item['searchValue'].split('@');
+        const field = arr[0], selector = arr?.[1] ?? '';
+        const mode = item['replace_regex_pattern'] ? item['replace_regex_pattern'] : 'field';
+        if (!modeFn?.[mode]) {
+            return '';
+        }
+        return modeFn[mode](field, selector, item, param);
+    }
 
 
     function buildRegular(words, flag, find = false) {
@@ -97,20 +138,14 @@
         return replacedNum;
     }
 
-    function bold(sentence, boldFieldValue) {
-        if (!boldFieldValue) {
-            return sentence.innerHTML;
+    function embolden(sentenceEle, words, formats = '<b>{word}</b>', separator = ' ', boldAll = true) {
+        if (!sentenceEle || !words) {
+            return sentenceEle;
         }
-        let words, format;
-        if (Array.isArray(boldFieldValue)) {
-            words = boldFieldValue[0].split(' ');
-            format = boldFieldValue[1];
-        } else {
-            words = boldFieldValue.split(' ');
+        if (typeof sentenceEle === 'string') {
+            sentenceEle = document.createElement('div');
         }
-        if (words.length < 1) {
-            return sentence.innerHTML;
-        }
+        words = words.split(separator);
         [...words].forEach(word => {
             const irs = lemmatizer.irregularConjugationOrPluralities(word);
             if (irs.length < 1) {
@@ -119,10 +154,9 @@
             irs.forEach(v => v[0].forEach(vv => words.push(vv)));
         })
         words = words.sort((a, b) => a.length <= b.length ? 1 : -1);
-        const formats = format ? format.split('{$bold}').join('\$&') : '<b>\$&</b>';
-        eleBold(sentence, words, formats, boldAll)
-
-        return sentence.innerHTML;
+        formats = formats.split('{word}').join('\$&');
+        eleBold(sentenceEle, words, formats, boldAll)
+        return sentenceEle.innerHTML;
     }
 
 })();

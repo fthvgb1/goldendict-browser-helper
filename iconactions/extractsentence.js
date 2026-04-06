@@ -4,7 +4,7 @@
     PushHookAnkiDidRender(freshBtns);
 
     function changeAddDelBtn(ev, fn) {
-        fn(ev);
+        fn && fn(ev);
         freshBtns();
     }
 
@@ -96,6 +96,8 @@
             eventFn.dragEle.replaceItem(true);
             eventFn.dragEle['fetch-item'] = setEleDrag(setting, '.fetch-item');
             eventFn.dragEle['fetch-item'](true);
+            eventFn.dragEle['super-fetch-item'] = setEleDrag(setting, '.super-fetch-item');
+            eventFn.dragEle['super-fetch-item'](true);
             ev.target.parentElement.querySelectorAll('.fetch-import,.fetch-export').forEach(btn => btn.classList.remove('fetch-hidden'))
         },
         async importFn(ev) {
@@ -619,19 +621,26 @@
         replaceVars2Format(vars, str) {
             return str.replace(this.fetchReplaceVarsRex, (substring, name) => vars?.[name] ?? substring);
         },
-        extractValue(varEle, item) {
+        extractValue(varEle, item, param = {}) {
+            let returnFn = () => {
+                const t = item['fetch-data-type'] === 'text' ? 'innerText' : item['fetch-data-type'];
+                return varEle?.[t] ?? '';
+            }
             if (item['replacement-items'].length > 0) {
                 varEle = varEle.cloneNode(true);
+                if (item['fetch-data-type'] === 'text') {
+                    varEle.innerHTML = varEle.innerText;
+                    returnFn = () => varEle.innerHTML;
+                }
                 item['replacement-items'].forEach(rule => {
-                    const r = this.replace(rule, varEle, true);
+                    const r = this.replace(rule, varEle, true, param);
                     if (!r) {
                         return
                     }
                     varEle = r;
                 });
             }
-            const t = item['fetch-data-type'] === 'text' ? 'innerText' : item['fetch-data-type'];
-            return varEle?.[t] ?? '';
+            return returnFn();
         },
 
         // fetch vars
@@ -642,7 +651,13 @@
                 log("query rule's value-selector fail", ele, rule['value-selector'], rule);
                 return vars;
             }
-            vars[rule['super-fetch-name']] = this.extractValue(el, rule);
+            vars[rule['super-fetch-name']] = this.extractValue(el, rule, {
+                rule,
+                beforeQueryEle: ele,
+                afterQueryEle: el,
+                fetchParam: fetchConf,
+                vars
+            });
             const childVars = {};
             rule?.children?.forEach(item => this.getVars(el, item, fetchConf, childVars));
             Object.keys(childVars).forEach(k => vars[k] = childVars[k]);
@@ -723,7 +738,12 @@
                 item['replaceValue']));
         },
         textNode: new Set(['INPUT', 'TEXTAREA']),
-        replace(item, target, clone = false) {
+        replaceFn: {},
+        replace(item, target, clone = false, eleParam = {}) {
+            if (this.replaceFn?.[item['replace_target_type']]) {
+                this.replaceFn[item['replace_target_type']](item, target, clone, eleParam);
+                return
+            }
             if (this.textNode.has(target.nodeName) && item['replace_target_type'] === 'text') {
                 this.replaceString(item, target.value, val => target.value = val);
                 return;
