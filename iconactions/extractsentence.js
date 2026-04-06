@@ -18,10 +18,12 @@
     PushExpandAnkiInputButton('fetch-delete', '', (e) => {
         findParent(e.target, '.fetch-item').remove();
     });
+
+    PushExpandAnkiInputButton('sequentially-fetch', '', ev => GM_setValue('sequentially-fetch', ev.target.checked));
     PushExpandAnkiInputButton('fetch-add', '', (e) => {
         findParent(e.target, '.fetch-item').insertAdjacentElement('afterend', actionHelper.buildFetchItem({}));
     });
-    PushExpandAnkiInputButton('fetch-export', '', () => eventFn.export);
+    PushExpandAnkiInputButton('fetch-export', '', () => eventFn.export());
     const importFn = ev => ev.target.parentElement.querySelector('.fetch-file').click();
     PushExpandAnkiInputButton('fetch-import', '', importFn, '', ev => {
         ev.preventDefault();
@@ -66,15 +68,18 @@
         dragEle: {},
         export() {
             const data = JSON.stringify(getAnkiFetchParams('', false));
-            download('fetch-rule.json', data);
+            const current = new Date();
+            // wtf time format
+            download(`fetch-rule.${current.getFullYear()}-${current.getMonth()}-${current.getDate()}.${current.getHours()}.${current.getMinutes()}.${current.getSeconds()}.json`, data);
         },
         showProcessor(ev) {
+            const selector = '.fetch-import,.fetch-export,.sequentially-fetch';
             if (!ev.target.checked) {
                 saveFetchItems();
                 freshBtns();
                 setting.children[0].classList.add('fetch-hidden');
                 getFetchItemEles().map(e => e.remove());
-                ev.target.parentElement.querySelectorAll('.fetch-import,.fetch-export').forEach(btn => btn.classList.add('fetch-hidden'))
+                ev.target.parentElement.querySelectorAll(selector).forEach(btn => btn.classList.add('fetch-hidden'))
                 return
             }
             let fetchItems = GM_getValue('fetch-items', [{}]);
@@ -98,7 +103,7 @@
             eventFn.dragEle['fetch-item'](true);
             eventFn.dragEle['super-fetch-item'] = setEleDrag(setting, '.super-fetch-item');
             eventFn.dragEle['super-fetch-item'](true);
-            ev.target.parentElement.querySelectorAll('.fetch-import,.fetch-export').forEach(btn => btn.classList.remove('fetch-hidden'))
+            ev.target.parentElement.querySelectorAll(selector).forEach(btn => btn.classList.remove('fetch-hidden'))
         },
         async importFn(ev) {
             const file = ev.target.files[0];
@@ -820,11 +825,11 @@
             const selectorItems = [...param['selector-items']];
             let ele = from, keep = [];
             while (true) {
-                const selectorItem = param['selector-items'].splice(0, 1)?.[0];
+                const selectorItem = selectorItems.splice(0, 1)?.[0];
                 if (!selectorItem?.['fetch-selector']) {
                     return;
                 }
-                const last = param['selector-items'].length < 1;
+                const last = selectorItems.length < 1;
                 ele = actionHelper.query(ele, selectorItem, last, keep);
                 if (!ele) {
                     return;
@@ -833,7 +838,6 @@
                     break
                 }
             }
-            param['selector-items'] = selectorItems;
             actionHelper.fetchItem(ele, target, param, rule);
         },
         replacement(param, target) {
@@ -854,7 +858,7 @@
         }
 
         if (target && from) {
-            actions.dispatchAction(param, target, from);
+            actions.dispatchAction(param, from, target);
             return
         }
         log(param);
@@ -884,20 +888,32 @@
 
     function ankiFetchClickFn(button) {
         const triggerField = button.parentElement.parentElement.querySelector('.sentence_field,.field-name').value.trim();
-        const eleCache = {};
-        getAnkiFetchParams(triggerField, true).forEach(item => {
-            const field = buttonField(item);
-            let target = eleCache?.[field], from = eleCache?.[item['fetch-field']];
-            if (!target) {
-                target = actionHelper.getFieldElement(field);
-                eleCache[field] = target;
-            }
-            if (!from) {
-                from = actionHelper.getFieldElement(item['fetch-field']);
-                eleCache[item['fetch-field']] = from;
-            }
-            actions.dispatchAction(item, from, target);
-        });
+        const param = getAnkiFetchParams(triggerField, true);
+        if (!param) {
+            return;
+        }
+        const eleCache = {}, sequence = GM_getValue('sequentially-fetch', false);
+        const from = actionHelper.getFieldElement(param[0]['fetch-field']);
+        if (!sequence) {
+            param.forEach(item => executeAction(item, from, eleCache));
+            return;
+        }
+        const fetchItem = [];
+        param.forEach(item => item['operate-type'] !== 'fetch' ? executeAction(item, from, eleCache) : fetchItem.push(item));
+        if (!fetchItem) {
+            return;
+        }
+        [...from.children].forEach(el => fetchItem.forEach(item => executeAction(item, el, eleCache)));
+    }
+
+    function executeAction(item, from, eleCache = {}) {
+        const field = buttonField(item);
+        let target = eleCache?.[field];
+        if (!target) {
+            target = actionHelper.getFieldElement(field);
+            eleCache[field] = target;
+        }
+        actions.dispatchAction(item, from, target);
     }
 
     const mapTitle = {
@@ -914,7 +930,7 @@
         'operate-type': '操作类型',
         'fetch-field': '提取的字段',
         'fetch-to-field': '提取到目标字段',
-        //'fetch-replacement-selector': '替换值的选择器',
+        'sequentially-fetch': '顺序执行',
         'parent-super-name': '父提取值的标识名',
         'fetch-selector': '选择器，多个时，前一个为后一个的父选择器，最后一个为锚选择器',
         'is_multiple': '是否有多个',
@@ -1134,7 +1150,9 @@
     PushHookAnkiHtml((ankiContainer) => {
         const div = document.createElement('div');
         div.className = 'form-item fetch-sentence-container';
-        div.innerHTML = templateHelper.buildTemplateHTML('fetch-form');
+        div.innerHTML = templateHelper.buildTemplateHTML('fetch-form', {
+            'sequentially-fetch': GM_getValue('sequentially-fetch', false),
+        });
         setting = div.querySelector('.select-setting');
         const ty = new Set(['add', 'remove']);
         setting.addEventListener('click', evt => {
