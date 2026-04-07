@@ -439,6 +439,12 @@
         }
     }
 
+    const anchorFn = {
+        p: el => el.parentElement,
+        ns: el => el.nextElementSibling,
+        ps: el => el.previousElementSibling,
+    };
+
     function findELeBySelector(t, sel, el) {
         if (!el) {
             return null;
@@ -447,56 +453,25 @@
             return el.querySelector(sel);
         }
         let ele = el;
-        do {
-            if (!ele) {
-                return null;
-            }
-            switch (t) {
-                case 'p':
-                    ele = ele.parentElement;
-                    break;
-                case 'ns':
-                    ele = ele.nextElementSibling;
-                    break
-                case 'ps':
-                    ele = ele.previousSibling;
-                    break;
-                default:
-                    return null
-            }
+        while (ele) {
+            ele = anchorFn?.[t] ? anchorFn[t](ele) : null;
             if (ele && ele.matches(sel)) {
-                return ele;
+                break
             }
-        } while (ele)
+        }
         return ele;
     }
 
     function findEleByNum(t, num, el) {
-        if (!el) {
+        if (!el || num < 1) {
             return null;
-        }
-        if (num < 1) {
-            return null
         }
         let ele = el;
         do {
             if (!ele) {
-                return null;
+                break;
             }
-            switch (t) {
-                case 'p':
-                    ele = ele.parentElement;
-                    break;
-                case 'ns':
-                    ele = ele.nextElementSibling;
-                    break
-                case 'ps':
-                    ele = ele.previousSibling;
-                    break;
-                default:
-                    return null
-            }
-
+            ele = anchorFn?.[t] ? anchorFn[t](ele) : null;
         } while (--num)
         return ele;
     }
@@ -896,21 +871,29 @@
             return;
         }
         const eleCache = {}, sequence = GM_getValue('sequentially-fetch', false);
-        const from = actionHelper.getFieldElement(param[0]['fetch-field']);
         if (!sequence) {
-            param.forEach(item => executeAction(item, from, eleCache));
+            param.forEach(item => executeAction(item, eleCache));
             return;
         }
-
-        [...from.children].forEach(el => param.forEach(item => executeAction(item, el, eleCache)));
+        const fetchItems = param.filterAndMapX(item => item['operate-type'] === 'fetch' ? item : false);
+        if (!fetchItems) {
+            return;
+        }
+        const from = actionHelper.getFieldElement(fetchItems[0]['fetch-field']);
+        [...from.children].forEach(el => fetchItems.forEach(item => executeAction(item, eleCache, el)));
     }
 
-    function executeAction(item, from, eleCache = {}) {
+    function executeAction(item, eleCache = {}, from = null) {
         const field = buttonField(item);
         let target = eleCache?.[field];
+        from = from ? from : eleCache?.[item['fetch-field']];
         if (!target) {
             target = actionHelper.getFieldElement(field);
             eleCache[field] = target;
+        }
+        if (!from) {
+            from = actionHelper.getFieldElement(item['fetch-field']);
+            eleCache[item['fetch-field']] = from;
         }
         actions.dispatchAction(item, from, target);
     }
@@ -929,7 +912,7 @@
         'operate-type': '操作类型',
         'fetch-field': '提取的字段',
         'fetch-to-field': '提取到目标字段',
-        'sequentially-fetch': '顺序执行',
+        'sequentially-fetch': '只对抓取操作项有效，尝试按内容顺序抓取，可能有性能及其它不未知问题',
         'parent-super-name': '父提取值的标识名',
         'fetch-selector': '选择器，多个时，前一个为后一个的父选择器，最后一个为锚选择器',
         'is_multiple': '是否有多个',
