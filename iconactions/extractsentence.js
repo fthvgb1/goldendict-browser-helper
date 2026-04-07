@@ -84,7 +84,7 @@
             let fetchItems = GM_getValue('fetch-items', [{}]);
             fetchItems.forEach(item => setting.appendChild(actionHelper.buildFetchItem(item)));
             if (GM_getValue('fetch-display-type', 1) === 2) {
-                const arr = Object.groupBy(fetchItems, item => op[item['operate-type']]) ?? [];
+                const arr = Object.groupBy(fetchItems, item => buttonField(item)) ?? [];
                 const options = [];
                 const nb = '&ensp;'.repeat(6);
                 Object.keys(arr).forEach(k => {
