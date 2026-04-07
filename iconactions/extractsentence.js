@@ -31,6 +31,13 @@
         importFn(ev);
     });
 
+    /**
+     *
+     * @param a arr
+     * @param b arr
+     * @param fn
+     * @returns {*} a's item not in b
+     */
     function diff(a, b, fn) {
         if (b.length <= 2 || (a.length <= b.length)) {
             return a.filter(aa => {
@@ -110,12 +117,12 @@
             const refresh = btn.dataset?.['new'];
             delete btn.dataset?.['new'];
             if (!file) {
-                Swal.showValidationMessage('没有文件！');
+                Swal.showValidationMessage(mapTitle['no file']);
                 return
             }
             const items = await file.text().then(JSON.parse);
-            if (!items || items.length < 1 || !items[0]?.['fetch-name'] || !items[0]?.['fetch-to-field']) {
-                Swal.showValidationMessage('不是正确的规则文件！');
+            if (!items || items.length < 1 || !items[0]?.['fetch-name']) {
+                Swal.showValidationMessage(`can't parse rule file`);
                 return
             }
             let newRule = [];
@@ -124,11 +131,11 @@
                 getFetchItemEles().forEach(el => el.remove());
             } else {
                 const hadRule = getAnkiFetchParams('', false);
-                newRule = diff(items, hadRule, objectsEqual);
+                newRule = diff(items, hadRule, (a, b) => JSON.stringify(a) === JSON.stringify(b));
             }
 
             if (newRule.length < 1) {
-                Swal.showValidationMessage('无需导入！');
+                Swal.showValidationMessage(mapTitle['redundantly import!']);
                 return
             }
             const names = [];
@@ -737,6 +744,9 @@
         textNode: new Set(['INPUT', 'TEXTAREA']),
         replaceFn: {},
         replace(item, target, clone = false, eleParam = {}) {
+            if (!item['searchValue']) {
+                return
+            }
             if (this.replaceFn?.[item['replace_target_type']]) {
                 this.replaceFn[item['replace_target_type']](item, target, clone, eleParam);
                 return
@@ -913,7 +923,10 @@
     }
 
     const mapTitle = {
+        'no file': '没有文件！',
+        'redundantly import': '无需导入！',
         'super html extract and process processor': '超级html提取加工处理器',
+        "can't parse rule file": '不能解析规则文件！',
         'import': '导入',
         'export': '导出',
         'fetch': '抓取',
