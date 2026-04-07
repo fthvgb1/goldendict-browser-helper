@@ -29,7 +29,6 @@
         ev.preventDefault();
         ev.target.dataset['new'] = 'true';
         importFn(ev);
-        delete ev.target.dataset['new'];
     });
 
     function diff(a, b, fn) {
@@ -73,7 +72,7 @@
             download(`fetch-rule.${current.getFullYear()}-${current.getMonth()}-${current.getDate()}.${current.getHours()}.${current.getMinutes()}.${current.getSeconds()}.json`, data);
         },
         showProcessor(ev) {
-            const selector = '.fetch-import,.fetch-export,.sequentially-fetch';
+            const selector = '.fetch-import,.fetch-export';
             if (!ev.target.checked) {
                 saveFetchItems();
                 freshBtns();
@@ -107,6 +106,9 @@
         },
         async importFn(ev) {
             const file = ev.target.files[0];
+            const btn = ev.target.parentElement.querySelector('.fetch-import');
+            const refresh = btn.dataset?.['new'];
+            delete btn.dataset?.['new'];
             if (!file) {
                 Swal.showValidationMessage('没有文件！');
                 return
@@ -117,8 +119,9 @@
                 return
             }
             let newRule = [];
-            if (ev.target.dataset?.['new']) {
+            if (refresh) {
                 newRule = items;
+                getFetchItemEles().forEach(el => el.remove());
             } else {
                 const hadRule = getAnkiFetchParams('', false);
                 newRule = diff(items, hadRule, objectsEqual);
@@ -889,7 +892,7 @@
     function ankiFetchClickFn(button) {
         const triggerField = button.parentElement.parentElement.querySelector('.sentence_field,.field-name').value.trim();
         const param = getAnkiFetchParams(triggerField, true);
-        if (!param) {
+        if (param.length < 1) {
             return;
         }
         const eleCache = {}, sequence = GM_getValue('sequentially-fetch', false);
@@ -898,12 +901,8 @@
             param.forEach(item => executeAction(item, from, eleCache));
             return;
         }
-        const fetchItem = [];
-        param.forEach(item => item['operate-type'] !== 'fetch' ? executeAction(item, from, eleCache) : fetchItem.push(item));
-        if (!fetchItem) {
-            return;
-        }
-        [...from.children].forEach(el => fetchItem.forEach(item => executeAction(item, el, eleCache)));
+
+        [...from.children].forEach(el => param.forEach(item => executeAction(item, el, eleCache)));
     }
 
     function executeAction(item, from, eleCache = {}) {
