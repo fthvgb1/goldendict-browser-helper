@@ -476,10 +476,7 @@
         return ele;
     }
 
-    window['dev'] = true;
-
-
-    const log = window['dev'] ? console.log.bind(window.console) : () => {
+    const log = GM_getValue('dev', window?.['dev']) ? console.log.bind(window.console) : () => {
     };
 
     const actionHelper = {
@@ -625,12 +622,26 @@
             }
             return returnFn();
         },
-
+        defaultReg: /\{(.*?)}/,
         // fetch vars
         getVars(ele, rule, fetchConf, vars = {}) {
             const el = this.anchor2Ele(rule, ele, fetchConf);
             if (!el) {
-                vars[rule['super-fetch-name']] = vars?.[trims(rule['default-value'], '{}')] ?? rule['default-value'];
+                let d = rule['default-value'];
+                if (this.fetchReplaceVarsRex.test(rule['default-value'])) {
+                    const dd = d[d.length] === 'a'
+                    const name = this.defaultReg.exec(rule['default-value'])[1];
+                    for (const k of name.split('|')) {
+                        if (vars?.[k]) {
+                            if (dd && !vars[k]) {
+                                continue;
+                            }
+                            d = vars[k];
+                            break
+                        }
+                    }
+                    vars[rule['super-fetch-name']] = d;
+                }
                 log("query rule's value-selector fail", ele, rule['value-selector'], rule);
                 return vars;
             }
