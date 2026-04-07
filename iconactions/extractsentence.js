@@ -644,9 +644,8 @@
                     if (rule?.['fetch-format']) {
                         d = this.replaceVars2Format(vars, rule['fetch-format']);
                     }
-                    vars[rule['super-fetch-name']] = d;
-
                 }
+                vars[rule['super-fetch-name']] = d;
                 log("query rule's value-selector fail", ele, rule['value-selector'], rule);
                 return vars;
             }
