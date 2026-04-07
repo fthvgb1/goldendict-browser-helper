@@ -641,6 +641,11 @@
                         }
                     }
                     vars[rule['super-fetch-name']] = d;
+                    if (rule?.['fetch-format']) {
+                        d = this.replaceVars2Format(vars, rule['fetch-format']);
+                    }
+                    vars[rule['super-fetch-name']] = d;
+
                 }
                 log("query rule's value-selector fail", ele, rule['value-selector'], rule);
                 return vars;
@@ -656,7 +661,7 @@
             rule?.children?.forEach(item => this.getVars(el, item, fetchConf, childVars));
             Object.keys(childVars).forEach(k => vars[k] = childVars[k]);
             if (rule?.['fetch-format']) {
-                vars[`${rule['super-fetch-name']}`] = this.replaceVars2Format(vars, rule['fetch-format']);
+                vars[rule['super-fetch-name']] = this.replaceVars2Format(vars, rule['fetch-format']);
             }
             return vars;
         },
