@@ -629,11 +629,10 @@
             if (!el) {
                 let d = rule['default-value'];
                 if (this.fetchReplaceVarsRex.test(rule['default-value'])) {
-                    const dd = d[d.length] === 'a'
-                    const name = this.defaultReg.exec(rule['default-value'])[1];
-                    for (const k of name.split('|')) {
-                        if (vars?.[k]) {
-                            if (dd && !vars[k]) {
+                    const name = this.defaultReg.exec(rule['default-value'])[1].split('|');
+                    for (const k of name) {
+                        if (vars.hasOwnProperty(k)) {
+                            if (name.length > 1 && !vars[k]) {
                                 continue;
                             }
                             d = vars[k];
