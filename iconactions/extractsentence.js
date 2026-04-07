@@ -635,8 +635,8 @@
             const el = this.anchor2Ele(rule, ele, fetchConf);
             if (!el) {
                 let d = rule['default-value'];
-                if (this.fetchReplaceVarsRex.test(rule['default-value'])) {
-                    const name = this.defaultReg.exec(rule['default-value'])[1].split('|');
+                if (this.fetchReplaceVarsRex.test(d)) {
+                    const name = this.defaultReg.exec(d)[1].split('|');
                     for (const k of name) {
                         if (vars.hasOwnProperty(k)) {
                             if (name.length > 1 && !vars[k]) {
@@ -646,12 +646,11 @@
                             break
                         }
                     }
-                    vars[rule['super-fetch-name']] = d;
-                    if (rule?.['fetch-format']) {
-                        d = this.replaceVars2Format(vars, rule['fetch-format']);
-                    }
                 }
                 vars[rule['super-fetch-name']] = d;
+                if (d && rule?.['fetch-format']) {
+                    vars[rule['super-fetch-name']] = this.replaceVars2Format(vars, rule['fetch-format']);
+                }
                 log("query rule's value-selector fail", ele, rule['value-selector'], rule);
                 return vars;
             }
