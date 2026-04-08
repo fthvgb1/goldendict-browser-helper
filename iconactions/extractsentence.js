@@ -615,7 +615,8 @@
             }
             if (item['replacement-items'].length > 0) {
                 varEle = varEle.cloneNode(true);
-                if (item['fetch-data-type'] === 'text') {
+                if (item['fetch-data-type'] === 'text'
+                    && !this.textNode.has(this.getFieldElement(buttonField(param.fetchParam)).nodeName)) {
                     varEle.innerHTML = varEle.innerText;
                     returnFn = () => varEle.innerHTML;
                 }

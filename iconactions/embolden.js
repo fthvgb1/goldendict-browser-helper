@@ -10,7 +10,7 @@
         if (!item['searchValue'] || superFetchHook.fetchActionHelper.textNode.has(target.nodeName)) {
             return
         }
-        const words = parseWords(item, param);
+        const words = parseWords(item, param).replace(/&nbsp;/g, ' ');
         if (!words) {
             return;
         }
