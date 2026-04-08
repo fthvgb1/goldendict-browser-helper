@@ -76,7 +76,7 @@
             const data = JSON.stringify(getAnkiFetchParams('', false));
             const current = new Date();
             // wtf time format
-            download(`fetch-rule.${current.getFullYear()}-${current.getMonth()}-${current.getDate()}.${current.getHours()}.${current.getMinutes()}.${current.getSeconds()}.json`, data);
+            download(`fetch-rule.${current.getFullYear()}-${current.getMonth() + 1}-${current.getDate()}.${current.getHours()}.${current.getMinutes()}.${current.getSeconds()}.json`, data);
         },
         showProcessor(ev) {
             const selector = '.fetch-import,.fetch-export';
