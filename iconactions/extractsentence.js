@@ -643,6 +643,7 @@
                 vars[name] = cached[name];
                 return vars
             }
+            rule['value-selector'] = this.replaceVars2Format(vars, rule['value-selector']);
             const el = this.anchor2Ele(rule, ele, fetchConf);
             if (!el) {
                 let d = rule['default-value'];
