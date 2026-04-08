@@ -214,7 +214,7 @@
         sel.innerHTML = buildOption(opts, '', 0, 1);
         const fn = (ev) => {
             if (sel.value) {
-                ankiFetchData(map[sel.value], targetEle);
+                actionHelper.executeAction(map[sel.value], actionHelper.getFromEle(map[sel.value], targetEle), targetEle);
             }
             const evt = ev.type === 'click' ? 'change' : 'blur';
             sel.removeEventListener(evt, fn);
@@ -375,6 +375,7 @@
     let setting;
 
     function saveFetchItems() {
+        actionHelper.flushElementCache();
         const data = getFetchItemEles().map(convertFetchParam);
         data.length > 0 && GM_setValue('fetch-items', data);
     }
@@ -487,7 +488,11 @@
     };
 
     const actionHelper = {
-
+        executeAction(param, from = null, target = null) {
+            from = from ? from : this.getFromEle(param);
+            target = target ? target : this.getDestEle(param);
+            actions.dispatchAction(param, from, target);
+        },
         query(ele, selectorItem, last, keepItems = []) {
             const selector = selectorItem['fetch-selector'];
             const multiple = selectorItem['is_multiple'];
@@ -615,8 +620,7 @@
             }
             if (item['replacement-items'].length > 0) {
                 varEle = varEle.cloneNode(true);
-                if (item['fetch-data-type'] === 'text'
-                    && !this.textNode.has(this.getFieldElement(buttonField(param.fetchParam)).nodeName)) {
+                if (item['fetch-data-type'] === 'text' && !this.textNode.has(this.getDestEle(param.fetchParam).nodeName)) {
                     varEle.innerHTML = varEle.innerText;
                     returnFn = () => varEle.innerHTML;
                 }
@@ -772,15 +776,37 @@
             this.replaceString(item, target[item['replace_target_type']], v => target[item['replace_target_type']] = v);
         },
 
+        elementCache: {},
+        flushElementCache() {
+            this.elementCache = {};
+        },
 
-        getFieldElement(name, target = null) {
-            if ('*' === name && target) {
-                return target;
+        getEleAndCache(field) {
+            let el = this.elementCache[field];
+            if (!el) {
+                el = this.getFieldElement(field);
+                this.elementCache[field] = el;
             }
-            const el = document.querySelector(name);
+            return el;
+        },
+        getFromEle(item, triggerEle = null) {
+            const field = item['fetch-field'];
+            if ('*' === field && triggerEle) {
+                return triggerEle;
+            }
+            return this.getEleAndCache(field, triggerEle);
+        },
+        getDestEle(item) {
+            const field = item?.['fetch-to-field'] ?? item['fetch-field'];
+            return this.getEleAndCache(field);
+        },
+
+        getFieldElement(name) {
+
+            /*const el = document.querySelector(name);
             if (el) {
                 return el
-            }
+            }*/
             let from = document.querySelector(`:where(.field-name,.sentence_field)[value='${name}']`);
             return findParent(from, '.form-item,.sentence_setting')?.querySelector('.spell-content,.field-value') ?? null;
         },
@@ -849,12 +875,11 @@
     };
 
     function ankiFetchData(param, target = null, from = null) {
-        const targetField = buttonField(param);
         if (!target) {
-            target = actionHelper.getFieldElement(targetField);
+            target = actionHelper.getDestEle(param);
         }
         if (!from) {
-            from = actionHelper.getFieldElement(param['fetch-field'], target)
+            from = actionHelper.getFieldElement(param['fetch-field'], target);
         }
 
         if (target && from) {
@@ -865,12 +890,7 @@
     }
 
     function getAnkiFetchParams(targetField = '', activeFilter = true) {
-        let params = [];
-        if (getFetchItemEles().length < 1) {
-            params = GM_getValue('fetch-items');
-        } else {
-            params = getFetchItemEles().map(convertFetchParam);
-        }
+        const params = getFetchItemEles().length < 1 ? GM_getValue('fetch-items') : getFetchItemEles().map(convertFetchParam);
         if (!params || params.length < 1) {
             return;
         }
@@ -892,9 +912,9 @@
         if (param.length < 1) {
             return;
         }
-        const eleCache = {}, sequence = GM_getValue('sequentially-fetch', false);
+        const sequence = GM_getValue('sequentially-fetch', false);
         if (!sequence) {
-            param.forEach(item => executeAction(item, eleCache));
+            param.forEach(item => actionHelper.executeAction(item));
             return;
         }
         const fetchItems = param.filterAndMapX(item => item['operate-type'] === 'fetch' ? item : false);
@@ -902,22 +922,7 @@
             return;
         }
         const from = actionHelper.getFieldElement(fetchItems[0]['fetch-field']);
-        [...from.children].forEach(el => fetchItems.forEach(item => executeAction(item, eleCache, el)));
-    }
-
-    function executeAction(item, eleCache = {}, from = null) {
-        const field = buttonField(item);
-        let target = eleCache?.[field];
-        from = from ? from : eleCache?.[item['fetch-field']];
-        if (!target) {
-            target = actionHelper.getFieldElement(field);
-            eleCache[field] = target;
-        }
-        if (!from) {
-            from = actionHelper.getFieldElement(item['fetch-field']);
-            eleCache[item['fetch-field']] = from;
-        }
-        actions.dispatchAction(item, from, target);
+        [...from.children].forEach(el => fetchItems.forEach(item => actionHelper.executeAction(item, el)));
     }
 
     const mapTitle = {
