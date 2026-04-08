@@ -558,21 +558,22 @@
         },
 
         fetchItem(ele, target, item, rules) {
+            const cached = {};
             ele.forEach(
                 ell => ell.splice(0, item['fetch-num'] < 1 ? ell.length : item['fetch-num'])
                     .forEach(el => {
                         if (!el) {
                             return;
                         }
-                        const vars = this.getMultiVars(el, rules, item);
+                        const vars = this.getMultiVars(el, rules, item, cached);
                         const format = item['fetch-format'] ? item['fetch-format'] : Object.keys(vars).map(k => `{${k}}`).join('');
                         const value = this.replaceVars2Format(vars, format);
                         this.setValue(target, value, item);
                     }));
         },
 
-        getMultiVars(el, rules, fetchConf, vars = {}) {
-            rules.forEach(item => this.getVars(el, item, fetchConf, vars));
+        getMultiVars(el, rules, fetchConf, cached, vars = {}) {
+            rules.forEach(item => this.getVars(el, item, fetchConf, vars, cached));
             return vars
         },
 
@@ -636,7 +637,12 @@
         },
         defaultReg: /\{(.*?)}/,
         // fetch vars
-        getVars(ele, rule, fetchConf, vars = {}) {
+        getVars(ele, rule, fetchConf, vars = {}, cached = {}) {
+            const name = rule['super-fetch-name'];
+            if (rule.cached && cached.hasOwnProperty(name)) {
+                vars[name] = cached[name];
+                return vars
+            }
             const el = this.anchor2Ele(rule, ele, fetchConf);
             if (!el) {
                 let d = rule['default-value'];
@@ -652,10 +658,10 @@
                         }
                     }
                 }
-                vars[rule['super-fetch-name']] = d;
+                vars[name] = d;
                 log("query rule's value-selector fail", ele, rule['value-selector'], rule);
             } else {
-                vars[rule['super-fetch-name']] = this.extractValue(el, rule, {
+                vars[name] = this.extractValue(el, rule, {
                     rule,
                     beforeQueryEle: ele,
                     afterQueryEle: el,
@@ -664,11 +670,12 @@
                 });
             }
 
-            const childVars = {};
-            rule?.children?.forEach(item => this.getVars(el, item, fetchConf, childVars));
-            Object.keys(childVars).forEach(k => vars[k] = childVars[k]);
-            if (vars[rule['super-fetch-name']] && rule?.['fetch-format']) {
-                vars[rule['super-fetch-name']] = this.replaceVars2Format(vars, rule['fetch-format']);
+            rule?.children?.forEach(item => this.getVars(el, item, fetchConf, vars, cached));
+            if (vars[name] && rule?.['fetch-format']) {
+                vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
+            }
+            if (rule.cached) {
+                cached[name] = vars[name];
             }
             return vars;
         },
@@ -933,6 +940,7 @@
         'import': '导入',
         'export': '导出',
         'fetch': '抓取',
+        'cached': '缓存该值(只查询一次)',
         'right-operate': '右键选择执行一个操作',
         'keep-parent': '当子项不存在时取父项',
         'do-all': '一键执行全部操作',
