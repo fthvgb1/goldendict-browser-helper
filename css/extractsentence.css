@@ -64,7 +64,6 @@ input:required {
     border: 1px dashed #e3300d;
 }
 
-.fetch-replacement-item:not(:last-of-type) .replacement-add,
 .fetch-replacement-item:only-of-type .replacement-remove,
 .selector-item:not(:last-of-type) .add-selector-item,
 .selector-item:only-of-type .remove-selector-item,
