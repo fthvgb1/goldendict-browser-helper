@@ -1096,7 +1096,7 @@
         },
         replacement(data) {
             data['replacement-items'] = data?.['replacement-items'] ? data['replacement-items'] : [{}];
-            data['replacement-item-html'] = data?.['replacement-items']
+            data['replacement-item-html'] = data['replacement-items']
                 .map(item =>
                     templateHelper.buildTemplateHTML('replacement-item', {
                         ...item,
@@ -1107,7 +1107,7 @@
         },
         fetch(data) {
             data['selector-items'] = data?.['selector-items'] ? data['selector-items'] : [{}];
-            data['fetch-chain-html'] = (data?.['selector-items'] ?? [{}])
+            data['fetch-chain-html'] = data['selector-items']
                 .map(item => templateHelper.buildTemplateHTML('selector-chain', item))
                 .join('\n');
 
