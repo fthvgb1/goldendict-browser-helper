@@ -83,6 +83,7 @@
 
 ol .form-item:has( .sentence_setting) {
     display: block;
+    width: 103%;
 }
 
 ol .form-item:has( .sentence_setting):after {
@@ -104,7 +105,7 @@ ol .form-item .sentence_setting {
 }
 
 ol .form-item:has( .sentence_setting) :where(.spell) {
-    max-width: 38vw;
+    max-width: 39vw;
 }
 
 ol .form-item:has( .sentence_setting) .field-operate > * {
@@ -113,6 +114,10 @@ ol .form-item:has( .sentence_setting) .field-operate > * {
 
 ol .form-item:has( .sentence_setting) .field-operate input {
     margin: auto;
+}
+
+.form-item .field-operate select {
+    max-width: 3vw;
 }
 
 #sentence_field {
