@@ -839,7 +839,7 @@
         ankiContainer.querySelector('#autoSentenceField')?.addEventListener('blur', evt => {
             const inp = evt.target;
             const setting = ankiContainer.querySelector('.sentence_setting');
-            const item = ankiContainer.querySelector('.form-item:has(ol .form-item)');
+            const item = document.querySelector('.form-item:has(ol .form-item)');
             autoSentenceField = inp.value;
             if (!inp.value) {
                 item.insertAdjacentElement('afterend', setting);
