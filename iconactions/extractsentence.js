@@ -938,7 +938,7 @@
         'redundantly import': '无需导入！',
         'super html extract and process processor': '超级html提取加工处理器',
         "can't parse rule file": '不能解析规则文件！',
-        'import': '导入',
+        'import': '左键增量导入，右键清空原数据后导入',
         'export': '导出',
         'fetch': '抓取',
         'cached': '缓存该值(只查询一次)',
@@ -1095,7 +1095,8 @@
             });
         },
         replacement(data) {
-            data['replacement-item-html'] = (data?.['replacement-items'] ?? [{}])
+            data['replacement-items'] = data?.['replacement-items'] ? data['replacement-items'] : [{}];
+            data['replacement-item-html'] = data?.['replacement-items']
                 .map(item =>
                     templateHelper.buildTemplateHTML('replacement-item', {
                         ...item,
@@ -1105,6 +1106,7 @@
             return data['replacement-item-html'];
         },
         fetch(data) {
+            data['selector-items'] = data?.['selector-items'] ? data['selector-items'] : [{}];
             data['fetch-chain-html'] = (data?.['selector-items'] ?? [{}])
                 .map(item => templateHelper.buildTemplateHTML('selector-chain', item))
                 .join('\n');
