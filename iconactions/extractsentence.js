@@ -1188,7 +1188,7 @@
         });
         setting.addEventListener('contextmenu', evt => evt.target.dataset.op === 'add' && eventFn.copy(evt));
 
-        ankiContainer.querySelector('#auto-sentence').parentElement.insertAdjacentElement('afterend', div);
+        ankiContainer.querySelector('#autoSentenceField').parentElement.insertAdjacentElement('afterend', div);
     });
     return {
         ankiFetchClickFn,

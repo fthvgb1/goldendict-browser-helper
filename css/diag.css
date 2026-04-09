@@ -29,6 +29,10 @@
     width: 8vw
 }
 
+.anki-container .form-input {
+    margin: 1em 1em 3px;
+}
+
 .form-item .spell {
     margin-top: 1vw;
 }
@@ -76,6 +80,41 @@
     display: inline;
 }
 
+
+ol .form-item:has( .sentence_setting) {
+    display: block;
+}
+
+ol .form-item:has( .sentence_setting):after {
+    content: "";
+    clear: both;
+    display: table;
+}
+
+ol .form-item:has( .sentence_setting) > * {
+    float: left;
+}
+
+ol .form-item:has( .sentence_setting) .field-name {
+    margin-top: 10vw;
+}
+
+ol .form-item .sentence_setting {
+    display: inline-block;
+}
+
+ol .form-item:has( .sentence_setting) :where(.spell) {
+    max-width: 38vw;
+}
+
+ol .form-item:has( .sentence_setting) .field-operate > * {
+    display: block;
+}
+
+ol .form-item:has( .sentence_setting) .field-operate input {
+    margin: auto;
+}
+
 #sentence_field {
     width: 8vw;
 }
@@ -84,7 +123,7 @@
     width: 5vw;
 }
 
-.sentence-format, .anki-tag-search {
+.sentence-format, .anki-tag-search, .form-hidden {
     display: none;
 }
 

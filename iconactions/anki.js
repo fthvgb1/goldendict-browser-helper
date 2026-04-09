@@ -6,7 +6,7 @@
     PushExpandAnkiRichButton,
     PushExpandAnkiInputButton,
     PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn, PushHookAnkiChange,
-    addNewTags
+    addNewTags, ankiFormChange,
 } = (() => {
     let ankiHost = GM_getValue('ankiHost', 'http://127.0.0.1:8765');
     let richTexts = [];
@@ -427,11 +427,7 @@
             document.querySelector('#deckName').value = res.result[0].deckName;
         }
         document.querySelector('#model').value = result.modelName;
-        const sentenceInput = document.querySelector('#sentence_field');
-        const sentence = sentenceInput.value;
-        const fields = {
-            [sentence]: sentenceInput,
-        };
+        const fields = {};
         [...document.querySelectorAll('#shadowFields input.field-name')].map(input => fields[input.value] = input);
 
         for (const k of Object.keys(result.fields)) {
@@ -645,20 +641,16 @@
         })
     }
 
-    let enableSentence, sentenceNum, sentenceBackup;
+    let autoSentenceField, sentenceNum, sentenceBackup;
     const styles = [], htmls = [], closeFns = [], didRenderFns = [], changeFns = {
         ".sentence-format-setting": (ev) => {
             document.querySelector('.sentence-format').style.display = ev.target.checked ? 'block' : 'none';
-        },
-        "#auto-sentence": (ev) => {
-            document.querySelector('.sample-sentence').style.display = ev.target.checked ? 'grid' : 'none';
-            enableSentence = ev.target.checked
         },
         "#sentence_num": (ev) => {
             const {wordFormat, sentenceFormat} = sentenceFormatFn();
             const {sentence, offset, word,} = sentenceBackup;
             const num = parseInt(ev.target.value);
-            document.querySelector('.sample-sentence .spell-content').innerHTML = cutSentence(word, offset, sentence, num, wordFormat, sentenceFormat);
+            document.querySelector('.sentence_setting + .spell .spell-content').innerHTML = cutSentence(word, offset, sentence, num, wordFormat, sentenceFormat);
             sentenceNum = num
         },
         '#model': (ev, value) => {
@@ -748,23 +740,10 @@
         model = GM_getValue('model', '问答题');
         let modelFields = GM_getValue('modelFields-' + model, [[1, '正面', true], [2, '背面', false]]);
         deckName = GM_getValue('deckName', '');
-        enableSentence = GM_getValue('enableSentence', true);
-        const sentenceField = GM_getValue('sentenceField', '句子');
         sentenceNum = GM_getValue('sentenceNum', 1);
-        const lastValues = {ankiHost, model, deckName,}
-        const deckNameOptions = buildOption(deckNames, deckName);
+        const lastValues = {ankiHost, model, deckName,}, deckNameOptions = buildOption(deckNames, deckName);
         const modelOptions = buildOption(models, model);
-        const butts = buttonFields.hasOwnProperty(sentenceField) ? buttonFields[sentenceField].join('\n') : '';
-        const sentenceHtml = `<div class="wait-replace"></div>            
-            <div class="field-operate">
-                <button class="paste-html" title="粘贴">✍️</button>
-                <button class="text-clean" title="清空">🧹</button>
-                <button class="word-wrap-first" title="在首行换行">🔼</button>
-                <button class="word-wrap-last" title="在最后换行">🔽</button>
-                <button class="action-copy" title="复制innerHTML">⭕</button>
-                <button class="action-switch-text" title="切换为textrea">🖺</button>
-                ${buttons.join('\n')} ${butts}
-            </div>`
+        autoSentenceField = GM_getValue('autoSentenceField', '');
 
         const changeFn = ev => {
             for (const selector of Object.keys(changeFns)) {
@@ -802,7 +781,7 @@
         const ankiHtml = createHtml(`${style} 
     <div class="form-item">
         <label for="ankiHost" class="form-label">ankiConnect监听地址</label>
-        <input id="ankiHost" value="${ankiHost}" placeholder="ankiConnector监听地址" class="swal2-input">
+        <input id="ankiHost" value="${ankiHost}" placeholder="ankiConnector监听地址" class="form-input swal2-input">
         <div class="field-operate">
                 <button class="hammer">🔨</button>
             </div>
@@ -823,8 +802,8 @@
     </div>
     
     <div class="form-item">
-        <label for="auto-sentence" class="form-label">自动提取句子</label>
-        <input type="checkbox" ${enableSentence ? 'checked' : ''} class="swal2-checkbox" name="auto-sentence" id="auto-sentence">
+        <label for="autoSentenceField" class="form-label">自动提取句子</label>
+        <input type="text" id="autoSentenceField" name="autoSentenceField" value="${autoSentenceField}" title="提取到的字段" class="autoSentenceField swal2-input form-input">
     </div>
     
     <div class="form-item">
@@ -837,13 +816,8 @@
     </div>
     
     <div class="form-item" id="shadowFields">
-        <ol>${ol}</ol>
-    </div>
-    <div class="form-item sample-sentence">
-        <label class="form-label">句子</label>
-        <div class="sentence_setting">   
-            <label for="sentence_field" class="form-label">字段</label>
-            <input type="text" value="${sentenceField}" id="sentence_field" placeholder="句子字段" class="swal2-input sentence_field" name="sentence_field" >       
+         <ol>${ol}</ol>
+         <div class="sentence_setting form-hidden">
             <label class="form-label" for="sentence_num">句子数量</label>
             <input type="number" min="0" id="sentence_num" value="${sentenceNum}" class="swal2-input" placeholder="提取的句子数量">
             <input type="checkbox" class="sentence-format-setting swal2-checkbox" title="设置句子加粗和整句格式">
@@ -851,7 +825,6 @@
                 <input type="text" name="sentence_bold" value="${htmlSpecial(sentenceBold)}" class="sentence_bold sentence-format-input" title="加粗格式,默认: <b>{$bold}</b}" placeholder="加粗格式,默认: <b>{$bold}</b}">
                 <input type="text" value="${htmlSpecial(sentenceFormat)}" name="sentence_format" class="sentence_format sentence-format-input" title="整句格式,默认: <div>{$sentence}</div>" placeholder="整句格式,默认: <div>{$sentence}</div>">
             </dd>
-            ${sentenceHtml}
         </div>
     </div>
     
@@ -863,6 +836,23 @@
         const ankiContainer = document.createElement('div');
         ankiContainer.className = 'anki-container';
         ankiContainer.innerHTML = createHtml(ankiHtml);
+        ankiContainer.querySelector('#autoSentenceField')?.addEventListener('blur', evt => {
+            const inp = evt.target;
+            const setting = ankiContainer.querySelector('.sentence_setting');
+            const item = ankiContainer.querySelector('.form-item:has(ol .form-item)');
+            autoSentenceField = inp.value;
+            if (!inp.value) {
+                item.insertAdjacentElement('afterend', setting);
+                return
+            }
+
+            const input = ankiContainer.querySelector(`input.field-name[value=${inp.value}]`);
+            if (input) {
+                input.insertAdjacentElement('afterend', setting);
+                return;
+            }
+            item.insertAdjacentElement('afterend', setting);
+        });
         if (htmls.length > 0) {
             htmls.map(fn => fn(ankiContainer));
         }
@@ -872,18 +862,20 @@
                 if (eles.length > 0) {
                     richTexts.forEach((fn, index) => fn(eles[index]))
                 }
-                const se = document.querySelector('.sentence_setting .wait-replace');
-                if (se) {
-                    const editor = spell();
+                if (autoSentenceField) {
+                    const input = document.querySelector(`input.field-name[value=${autoSentenceField}]`);
+                    if (input) {
+                        input.insertAdjacentElement('afterend', document.querySelector('.sentence_setting'));
+                    }
+                }
+                const editor = document.querySelector('.sentence_setting +.spell');
+                if (editor) {
                     const {wordFormat, sentenceFormat} = sentenceFormatFn();
                     const {sentence, offset, word,} = sentenceBackup;
                     editor.querySelector('.spell-content').innerHTML = cutSentence(word, offset, sentence, sentenceNum, wordFormat, sentenceFormat);
-                    se.parentElement.replaceChild(editor, se);
                     enableImageResizeInDiv(editor.querySelector('.spell-content'))
                 }
-                if (!enableSentence) {
-                    document.querySelector('.sample-sentence').style.display = 'none';
-                }
+
                 let {result: tags} = await anki('getTags');
                 tags = tags.map(v => {
                     ankTags.add(v);
@@ -935,15 +927,14 @@
                     }
                 });
                 const {wordFormat, sentenceFormat} = sentenceFormatFn();
-                [
-                    [enableSentence, 'enableSentence'],
-                    //[sentenceNum, 'sentenceNum'],
-                    [document.querySelector('#sentence_field').value, 'sentenceField'],
-                    [wordFormat, 'sentence_bold'],
-                    [sentenceFormat, 'sentence_format'],
-                ].forEach(v => {
-                    if (v[0] !== GM_getValue(v[1])) {
-                        GM_setValue(v[1], v[0])
+                const fieldObj = {
+                    autoSentenceField,
+                    'sentence_bold': wordFormat,
+                    'sentence_format': sentenceFormat
+                };
+                Object.keys(fieldObj).forEach(k => {
+                    if (fieldObj[k] !== GM_getValue(k)) {
+                        GM_setValue(k, fieldObj[k]);
                     }
                 })
                 if (modelField.length !== modelFields.length || !modelField.every((v, i) => v === modelFields[i])) {
@@ -986,10 +977,7 @@
         const $tags = $('#anki-tags');
         const tags = $tags.val();
         tags.length > 0 && addNewTags($tags, tags);
-        if (enableSentence) {
-            const el = document.querySelector('.sentence_setting .spell-content');
-            fields[document.querySelector('#sentence_field').value] = await checkAndStoreMedia(el.tagName === 'DIV' ? el.innerHTML : el.value);
-        }
+
         const params = {
             "note": {
                 "deckName": form.deckName,
@@ -1036,7 +1024,7 @@
         anki, queryAnki, showAnkiCard, searchAnki,
         PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook, PushExpandAnkiRichButton, PushExpandAnkiInputButton,
         PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn, PushHookAnkiChange,
-        addNewTags
+        addNewTags, ankiFormChange: changeFns,
     };
 
 })();
