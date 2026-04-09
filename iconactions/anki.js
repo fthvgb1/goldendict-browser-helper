@@ -802,7 +802,7 @@
     </div>
     
     <div class="form-item">
-        <label for="autoSentenceField" class="form-label">自动提取句子</label>
+        <label for="autoSentenceField" class="form-label">提取上下文本句子到</label>
         <input type="text" id="autoSentenceField" name="autoSentenceField" value="${autoSentenceField}" title="提取到的字段" class="autoSentenceField swal2-input form-input">
     </div>
     
