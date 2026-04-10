@@ -151,20 +151,20 @@
                 setting.children[0].insertAdjacentHTML('beforeend', options);
             }
         },
+        addTplFn: {
+            tpl: name => templateHelper.buildTemplateHTML(name, {}),
+
+            tplFn: fn => templateHelper?.[fn]?.() ?? ''
+        },
         add(ev) {
             const el = ev.target.dataset?.target ? findParent(ev.target, ev.target.dataset.target) : ev.target.parentElement;
-            if (ev.target.dataset?.tplFn && templateHelper[ev.target.dataset?.tplFn]) {
-                const t = templateHelper[ev.target.dataset?.tplFn]({});
-                if (t) {
-                    el.insertAdjacentElement('afterend', templateHelper.createElement('div', {innerHTML: t}).children[0]);
-                    return
-                }
-            }
-            if (ev.target.dataset?.tpl) {
-                const t = templateHelper.buildTemplateHTML(ev.target.dataset.tpl);
-                if (t) {
-                    el.insertAdjacentElement('afterend', templateHelper.createElement('div', {innerHTML: t}).children[0]);
-                    return
+            for (const name of ['tplFn', 'tpl']) {
+                if (ev.target.dataset?.[name]) {
+                    const t = this.addTplFn[name](ev.target.dataset?.[name]);
+                    t && el.insertAdjacentElement('afterend',
+                        templateHelper.createElement('div', {innerHTML: t}).children[0]
+                    );
+                    return;
                 }
             }
             const em = el.cloneNode(true);
@@ -1111,7 +1111,7 @@
                 return val;
             });
         },
-        replacement(data) {
+        replacement(data = {}) {
             data['replacement-items'] = data?.['replacement-items'] ? data['replacement-items'] : [{}];
             data['replacement-item-html'] = data['replacement-items']
                 .map(item =>
@@ -1122,7 +1122,7 @@
                 ).join('\n');
             return data['replacement-item-html'];
         },
-        fetch(data) {
+        fetch(data = {}) {
             data['selector-items'] = data?.['selector-items'] ? data['selector-items'] : [{}];
             data['fetch-chain-html'] = data['selector-items']
                 .map(item => templateHelper.buildTemplateHTML('selector-chain', item))
