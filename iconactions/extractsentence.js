@@ -153,6 +153,20 @@
         },
         add(ev) {
             const el = ev.target.dataset?.target ? findParent(ev.target, ev.target.dataset.target) : ev.target.parentElement;
+            if (ev.target.dataset?.tplFn && templateHelper[ev.target.dataset?.tplFn]) {
+                const t = templateHelper[ev.target.dataset?.tplFn]({});
+                if (t) {
+                    el.insertAdjacentElement('afterend', templateHelper.createElement('div', {innerHTML: t}).children[0]);
+                    return
+                }
+            }
+            if (ev.target.dataset?.tpl) {
+                const t = templateHelper.buildTemplateHTML(ev.target.dataset.tpl);
+                if (t) {
+                    el.insertAdjacentElement('afterend', templateHelper.createElement('div', {innerHTML: t}).children[0]);
+                    return
+                }
+            }
             const em = el.cloneNode(true);
             em.querySelectorAll('input,select').forEach(ele => {
                 const fn = {
@@ -814,17 +828,12 @@
         },
 
         getFieldElement(name) {
-
-            /*const el = document.querySelector(name);
-            if (el) {
-                return el
-            }*/
             let from = document.querySelector(`:where(.field-name,.sentence_field)[value='${name}']`);
             return findParent(from, '.form-item,.sentence_setting')?.querySelector('.spell-content,.field-value') ?? null;
         },
 
 
-        buildFetchItem(data = null) {
+        buildFetchItem(data = {}) {
             data['operate-type'] = data['operate-type'] ?? 'fetch';
             data['op'] = op;
             templateHelper?.[data['operate-type']] && templateHelper[data['operate-type']](data);
@@ -1049,7 +1058,12 @@
         templateFnHook: {},
         templateCache: {},
         replaceRex: /\{\{(.*?)}}/g,
-        buildTemplateHTML(template, vars = null) {
+        createElement(tag, attrs = {}) {
+            const el = document.createElement(tag);
+            Object.keys(attrs).forEach(k => el[k] = attrs[k]);
+            return el;
+        },
+        buildTemplateHTML(template, vars = {}) {
             let t = this.templateCache?.[template] ?? '';
             if (!t) {
                 t = GM_getResourceText(template) ?? '';
@@ -1059,7 +1073,7 @@
                 return t
             }
             if (this.templateFnHook?.[template]) {
-                const d = document.createElement('div');
+                const d = this.createElement('div');
                 d.innerHTML = t;
                 const r = this.templateFnHook[template](d, vars);
                 t = r instanceof HTMLElement ? r.innerHTML : r;
@@ -1121,7 +1135,7 @@
                     'replacement-item-html': templateHelper.replacement(item),
                 })
             ).join('\n')
-            return data;
+            return data['super-fetch-item-html'];
         }
     };
 

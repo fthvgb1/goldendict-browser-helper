@@ -431,7 +431,8 @@
     const op = {
         'function': (fn, k) => fn(k),
         'object': attr => Object.keys(attr).map(k => `${k}="${attr[k]}"`).join(' '),
-        'string': s => s
+        'string': s => s,
+        'number': (i, v) => v?.[i] ? op.object(v[i]) : ''
     }
 
     /**
@@ -460,7 +461,7 @@
         }
 
         return arr.map(v => {
-            let att = op?.[typeof attr]?.(attr, v), sel = '';
+            let att = op?.[typeof attr]?.(attr, v, arr) ?? '', sel = '';
             if (typeof v === 'string' || typeof v === 'number') {
                 sel = sels.has(v) ? 'selected' : '';
                 return `<option ${att} ${sel} value="${v}">${v}</option>`
