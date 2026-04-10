@@ -1,11 +1,10 @@
 ;(() => {
     superFetchHook.hookLang({
         'embolden': `加粗`,
-        'bold': `加粗的字段，如有多个值，可以指定分隔符如 正面@@\`,\`%%<b>{$bold}</b> %%后为格式`,
+        'bold': `{word}语法，悬念到选项上看对应模式说明`,
     });
 
     superFetchHook.htmlType['embolden'] = superFetchHook.lang('embolden');
-
     superFetchHook.fetchActionHelper.replaceFn.embolden = (item, target, clone = false, param = {}) => {
         if (!item['searchValue'] || superFetchHook.fetchActionHelper.textNode.has(target.nodeName)) {
             return
@@ -18,7 +17,50 @@
         embolden(target, words, format);
     }
 
+    const templateFn = superFetchHook.buildChildrenHtmlFn.templateFnHook?.['replacement-item'];
+    superFetchHook.buildChildrenHtmlFn.templateFnHook['replacement-item'] = (html, vars) => {
+        if (vars['replace_target_type'] === 'embolden') {
+            const input = html.querySelector('.replace_regex_pattern');
+            input.replaceWith(buildSelect(vars['replace_regex_pattern']))
+        }
+        return templateFn ? templateFn(html, vars) : html;
+    };
+
+    PushHookAnkiChange('.replace_target_type', (ev, call) => {
+        const type = ev.target.value;
+        if (type !== 'embolden') {
+            call && call(ev)
+            return
+        }
+        const input = ev.target.parentElement.querySelector('input.replace_regex_pattern');
+        if (!input) {
+            return;
+        }
+        input.replaceWith(buildSelect());
+    });
+
+    const title = {
+        field: ['字段', "指定字段"],
+        selector: ['选择器', "某个字段下的选择器,语法为 field@selector'"],
+        anchor: ['锚定选择器', '使用锚定选择器语法'],
+        variable: ['变量', '使用变量，直接使用标识名，无需用{}包裹'],
+    }
+
+    function buildSelect(sel = '') {
+        const select = document.createElement('select');
+        select.name = 'replace_regex_pattern';
+        select.title = superFetchHook.lang('bold');
+        select.className = 'replace_regex_pattern';
+        select.innerHTML = buildOption(
+            Object.keys(modeFn).map(k => [k, title[k][0]]), sel, 0, 1, k => ` title="${title[k[0]][1]}" `
+        );
+        return select
+    }
+
     const modeFn = {
+        variable(f, s, item, param) {
+            return param.vars[item.searchValue] ?? '';
+        },
         field(field) {
             return document.querySelector(`.field-name[value=${field}]+input`)?.value;
         },
@@ -33,9 +75,6 @@
             }
             return superFetchHook.fetchActionHelper.textNode.has(ele.nodeName) ? ele.value : ele.innerText;
         },
-        variable(f, s, item, param) {
-            return param.vars[item.searchValue] ?? '';
-        }
     };
 
     function parseWords(item, param) {

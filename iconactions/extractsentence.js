@@ -462,7 +462,7 @@
         }
         let ele = el;
         while (ele) {
-            ele = anchorFn?.[t] ? anchorFn[t](ele) : null;
+            ele = anchorFn?.[t]?.(ele);
             if (ele && ele.matches(sel)) {
                 break
             }
@@ -479,7 +479,7 @@
             if (!ele) {
                 break;
             }
-            ele = anchorFn?.[t] ? anchorFn[t](ele) : null;
+            ele = anchorFn?.[t]?.(ele);
         } while (--num)
         return ele;
     }
@@ -587,12 +587,16 @@
                 return ele.querySelector(expression);
             }
             for (const exp of expression.split('%')) {
-                if (exp.startsWith('parent')) {
+                if (exp === 'parent') {
                     const parentSelector = item['selector-items']?.[item['selector-items'].length - 2]?.['fetch-selector'];
                     ele = ele?.eleType === 'parent' ? ele : findELeBySelector('p', parentSelector, ele);
                     continue;
                 }
-                if (exp.startsWith('child')) {
+                if (exp === 'doc') {
+                    ele = document;
+                    continue;
+                }
+                if (exp === 'child') {
                     if (ele?.eleType === 'parent') {
                         return null
                     }
@@ -963,11 +967,7 @@
         'fetch-data-type': '提取类型',
         'fetch-repeat': '不重复',
         'fetch-num': '提取的数量,默认0为全部',
-        'fetch-value-replacement': '提取的值去除或替换,[=]前后分为表示要替换的值和替换值，多个用@@分隔，支持正则， 如 去掉·和将。替换为. 为 ·@@。[=].',
-        'fetch-html-replacement': 'html去除或替换,[=]前后分为表示要替换的值和替换值，多个用@@分隔，支持正则， 如 去掉·和将。替换为. 为 ·@@。[=].，在提取为值之前执行',
         'fetch-value-trim': '提取的值去除首尾空白符如空格等',
-        'fetch-value-replacement-ignore-case': '是否忽略大小写',
-        'fetch-html-replacement-ignore-case': '是否忽略大小写',
         'tag-selector': '标签的选择器',
         'fetch-tag': '设置的标签',
         'fetch-active': '是否启用这个操作项',
@@ -1059,7 +1059,10 @@
                 return t
             }
             if (this.templateFnHook?.[template]) {
-                t = this.templateFnHook[template](t, vars);
+                const d = document.createElement('div');
+                d.innerHTML = t;
+                const r = this.templateFnHook[template](d, vars);
+                t = r instanceof HTMLElement ? r.innerHTML : r;
             }
             return t.replace(this.replaceRex, (substring, name) => {
                 const names = name.split('|');
@@ -1169,6 +1172,20 @@
         }
     }
 
+    const types = new Set(Object.keys(htmlType));
+    PushHookAnkiChange('.replace_target_type', evt => {
+        const input = evt.target.parentElement.querySelector('.replace_regex_pattern');
+        if (types.has(evt.target.value) && (!input || input.nodeName !== 'INPUT')) {
+            const inp = document.createElement('input');
+            inp.type = 'text';
+            inp.name = 'replace_regex_pattern';
+            inp.className = 'replace_regex_pattern';
+            inp.title = mapTitle['replace_regex_pattern'];
+            inp.placeholder = mapTitle['replace_regex_pattern'];
+            input.replaceWith(inp);
+        }
+    });
+
 
     PushHookAnkiHtml((ankiContainer) => {
         const div = document.createElement('div');
@@ -1200,7 +1217,7 @@
         setEleDrag,
         superFetchHook: {
             eventHook: eventFn,
-            formProcessor,
+            formProcessor, anchorFn,
             mapTitle, fetchActions: actions,
             fetchActionHelper: actionHelper,
             mergeMap: (obj, kv) => Object.keys(kv).forEach(k => obj[k] = kv[k]),

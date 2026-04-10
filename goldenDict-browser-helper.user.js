@@ -2,7 +2,7 @@
 // @name         goldenDict-browser-helper
 // @namespace    https://github.com/fthvgb1
 // @homepage     https://github.com/fthvgb1/goldendict-browser-helper
-// @version      2.09
+// @version      2.10
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1
 // @match        http://*/*

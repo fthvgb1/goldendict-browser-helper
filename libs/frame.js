@@ -427,16 +427,23 @@
         return div
     }
 
+
+    const op = {
+        'function': (fn, k) => fn(k),
+        'object': attr => Object.keys(attr).map(k => `${k}="${attr[k]}"`).join(' '),
+        'string': s => s
+    }
+
     /**
      *
      * @param arr ['', {} , [], ...] | {}
      * @param selected selected value or values
      * @param key option value field or index
      * @param val option innerText field or index
-     * @param attr option other attributes
+     * @param attr closure|string|object other attributes
      * @returns {*} options string
      */
-    function buildOption(arr, selected = '', key = 'k', val = 'v', attr = null) {
+    function buildOption(arr, selected = '', key = 'k', val = 'v', attr = undefined) {
         const sels = new Set();
         if (Array.isArray(selected)) {
             selected.forEach(sels.add);
@@ -446,15 +453,14 @@
 
         if (typeof arr === 'object' && !Array.isArray(arr)) {
             arr = Object.keys(arr).map(k => [k, arr[k]]);
-            key = 0;
-            val = 1;
+            if (typeof key !== 'number') {
+                key = 0;
+                val = 1;
+            }
         }
 
         return arr.map(v => {
-            let att = '', sel = '';
-            if (attr !== null && v[attr] && typeof v[attr] === 'object') {
-                att = Object.keys(v[attr]).map(k => `${k}="${v[attr][k]}"`).join(' ');
-            }
+            let att = op?.[typeof attr]?.(attr, v), sel = '';
             if (typeof v === 'string' || typeof v === 'number') {
                 sel = sels.has(v) ? 'selected' : '';
                 return `<option ${att} ${sel} value="${v}">${v}</option>`
