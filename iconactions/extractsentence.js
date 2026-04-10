@@ -467,12 +467,12 @@
         ps: el => el.previousElementSibling,
     };
 
-    function findELeBySelector(t, sel, el) {
+    function findELeBySelector(t, sel, el, multiple = false) {
         if (!el) {
             return null;
         }
         if (t === 's') {
-            return el.querySelector(sel);
+            return multiple ? el.querySelectorAll(sel) : el.querySelector(sel);
         }
         let ele = el;
         while (ele) {
@@ -594,13 +594,17 @@
         grammarCharacters: new Set(['s', 'ps', 'p', 'ns']),
         anchor2Ele(rule, ele, item) {
             const expression = rule['value-selector'];
-            if (!expression.includes('@')) {
+            const multiple = rule['multiple_child'] ?? false;
+            if (!expression.includes('@') && !expression.includes('%')) {
                 if (expression === 'child') {
                     return ele;
                 }
-                return ele.querySelector(expression);
+                return multiple ? ele.querySelectorAll(expression) : ele.querySelector(expression);
             }
-            for (const exp of expression.split('%')) {
+            const expressions = expression.split('%');
+            let i = 0;
+            for (const exp of expressions) {
+                i++;
                 if (exp === 'parent') {
                     const parentSelector = item['selector-items']?.[item['selector-items'].length - 2]?.['fetch-selector'];
                     ele = ele?.eleType === 'parent' ? ele : findELeBySelector('p', parentSelector, ele);
@@ -620,7 +624,9 @@
                 if (arr.length < 1 || !this.grammarCharacters.has(arr[0])) {
                     continue
                 }
-                ele = isNaN(parseInt(arr[1])) ? findELeBySelector(arr[0], arr.slice(1).join(''), ele) : findEleByNum(arr[0], arr[1], ele);
+                ele = isNaN(parseInt(arr[1])) ?
+                    findELeBySelector(arr[0], arr.slice(1).join(''), ele, multiple && i === expressions.length)
+                    : findEleByNum(arr[0], arr[1], ele);
                 if (!ele) {
                     return null;
                 }
@@ -654,6 +660,40 @@
             return returnFn();
         },
         defaultReg: /\{(.*?)}/,
+        getDefaultValue(rule, vars) {
+            let d = rule['default-value'];
+            if (this.fetchReplaceVarsRex.test(d)) {
+                const name = this.defaultReg.exec(d)[1].split('|');
+                for (const k of name) {
+                    if (vars.hasOwnProperty(k)) {
+                        if (name.length > 1 && !vars[k]) {
+                            continue;
+                        }
+                        d = vars[k];
+                        break
+                    }
+                }
+            }
+            vars[rule['super-fetch-name']] = d;
+            if (d && rule?.['fetch-format']) {
+                d = this.replaceVars2Format(vars, rule['fetch-format']);
+            }
+            vars[rule['super-fetch-name']] = d;
+            return d;
+        },
+
+
+        parseVar(vars, name, el, rule, ele, fetchConf, cached) {
+            vars[name] = this.extractValue(el, rule,
+                {
+                    rule, beforeQueryEle: ele, afterQueryEle: el,
+                    fetchParam: fetchConf, vars
+                });
+            rule?.children?.forEach(item => this.getVars(el, item, fetchConf, vars, cached));
+            if (vars[name] && rule?.['fetch-format']) {
+                vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
+            }
+        },
         // fetch vars
         getVars(ele, rule, fetchConf, vars = {}, cached = {}) {
             const name = rule['super-fetch-name'];
@@ -663,35 +703,17 @@
             }
             rule['value-selector'] = this.replaceVars2Format(vars, rule['value-selector']);
             const el = this.anchor2Ele(rule, ele, fetchConf);
-            if (!el) {
-                let d = rule['default-value'];
-                if (this.fetchReplaceVarsRex.test(d)) {
-                    const name = this.defaultReg.exec(d)[1].split('|');
-                    for (const k of name) {
-                        if (vars.hasOwnProperty(k)) {
-                            if (name.length > 1 && !vars[k]) {
-                                continue;
-                            }
-                            d = vars[k];
-                            break
-                        }
-                    }
-                }
-                vars[name] = d;
+            if (!el || el?.length < 1) {
+                vars[name] = this.getDefaultValue(rule, vars);
                 log("query rule's value-selector fail", ele, rule['value-selector'], rule);
+            } else if (el instanceof NodeList && el.length > 0) {
+                vars[name] = [...el].map(ell => {
+                    const v = {...vars};
+                    this.parseVar(v, name, ell, rule, ele, fetchConf, cached);
+                    return v[name];
+                }).join(rule.separator);
             } else {
-                vars[name] = this.extractValue(el, rule, {
-                    rule,
-                    beforeQueryEle: ele,
-                    afterQueryEle: el,
-                    fetchParam: fetchConf,
-                    vars
-                });
-            }
-
-            rule?.children?.forEach(item => this.getVars(el, item, fetchConf, vars, cached));
-            if (vars[name] && rule?.['fetch-format']) {
-                vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
+                this.parseVar(vars, name, el, rule, ele, fetchConf, cached);
             }
             if (rule.cached) {
                 cached[name] = vars[name];
@@ -743,8 +765,8 @@
             rule[''] = {};
             arr['super-fetch-items'].forEach(item => {
                 rule[item['super-fetch-name']] = item;
-                if (!item['value-selector']) {
-                    log('value-selector emptied', item);
+                if (!item['value-selector'] && !item['default-value']) {
+                    log('value-selector or default value emptied', item);
                     return;
                 }
                 valid = true
@@ -948,12 +970,14 @@
 
     const mapTitle = {
         'no file': '没有文件！',
+        'multiple_child': '子项按组查询（queryAll），此时格式化作用于单组元素，整个值为用分隔符拼接',
         'redundantly import': '无需导入！',
         'super html extract and process processor': '超级html提取加工处理器',
         "can't parse rule file": '不能解析规则文件！',
         'import': '左键增量导入，右键清空原数据后导入',
         'export': '导出',
         'fetch': '抓取',
+        'separator': '分隔符',
         'cached': '缓存该值(只查询一次)',
         'right-operate': '右键选择执行一个操作',
         'keep-parent': '当子项不存在时取父项',
@@ -968,9 +992,7 @@
         'parent-super-name': '父提取值的标识名',
         'fetch-selector': '选择器，多个时，前一个为后一个的父选择器，最后一个为锚选择器',
         'is_multiple': '是否有多个',
-        'value-selector': '值选择器',
-        'fetch-exclude-selector': '提取值需要排除的选择器',
-        'fetch-join-selector': '组合选择器',
+        'value-selector': '值选择器，值可为 parent child doc selector (p|ps|ns)@selector [%(p|ps|ns)@selector1] ...',
         'fetch-format': '提取的格式，可以使用{自身标识(即提取的值)或子项标识}，为空为时默认为 {自身标识}, ',
         'fetch-data-handle': '提取到后的操作',
         'fetch-data-type': '提取类型',
@@ -984,7 +1006,7 @@
         'fetch-copy': '复制此项',
         'fetch-add': '在此项后台添加一个操作项',
         'super-fetch-name': '提取值的标识名',
-        'default-value': '默认值',
+        'default-value': '默认值，可使用变量{标识名1[|标识名2]...}',
         'replace_target_type': '替换目标类型',
         'text': '文本',
         'add': '左键添加一个空白项，右键复制当前项',

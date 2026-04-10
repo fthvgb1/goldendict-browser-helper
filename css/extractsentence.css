@@ -55,6 +55,10 @@ input:required {
     border: #31e963 double 1px;
 }
 
+[data-multiple-required] {
+    border-color: aqua;
+}
+
 .fetch-replacement-item {
     border: 1px dashed #3c135a;
     margin-top: 5px;
@@ -64,6 +68,7 @@ input:required {
     border: 1px dashed #e3300d;
 }
 
+.multiple_child:not(:checked) + .separator,
 .fetch-replacement-item:only-of-type .replacement-remove,
 .selector-item:not(:last-of-type) .add-selector-item,
 .selector-item:only-of-type .remove-selector-item,
@@ -110,7 +115,7 @@ input[name=parent-selector], input[name=child-selector] {
     width: 9vw;
 }
 
-.default-value {
+.default-value, .parent-super-name {
     width: 5vw;
 }
 
@@ -118,10 +123,9 @@ input[name=parent-selector], input[name=child-selector] {
     width: 17vw
 }
 
-.fetch-variable {
+.fetch-variable, .separator {
     width: 3vw
 }
-
 
 
 .super-fetch-item {
