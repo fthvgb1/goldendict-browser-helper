@@ -650,15 +650,23 @@
         },
         extractValue(varEle, item, param = {}) {
             let returnFn = () => {
+                if (this.textNode.has(varEle.nodeName)) {
+                    return varEle.value;
+                }
                 const t = item['fetch-data-type'] === 'text' ? 'innerText' : item['fetch-data-type'];
                 return varEle?.[t] ?? '';
             }
             if (item['replacement-items'].length > 0) {
-                varEle = varEle.cloneNode(true);
-                if (item['fetch-data-type'] === 'text' && !this.textNode.has(this.getDestEle(param.fetchParam).nodeName)) {
-                    varEle.innerHTML = varEle.innerText;
-                    returnFn = () => varEle.innerHTML;
+                if (this.valueNode.has(varEle.nodeName)) {
+                    varEle = templateHelper.createElement('div', {innerHTML: varEle.value});
+                } else {
+                    varEle = varEle.cloneNode(true);
+                    if (item['fetch-data-type'] === 'text' && !this.textNode.has(this.getDestEle(param.fetchParam).nodeName)) {
+                        varEle.innerHTML = varEle.innerText;
+                        returnFn = () => varEle.innerHTML;
+                    }
                 }
+
                 item['replacement-items'].forEach(rule => {
                     const r = this.replace(rule, varEle, true, param);
                     if (!r) {
@@ -813,9 +821,21 @@
                 item['replaceValue']));
         },
         textNode: new Set(['INPUT', 'TEXTAREA']),
-        replaceFn: {},
+        valueNode: new Set(['INPUT', 'TEXTAREA', 'SELECT']),
+        accessEmpty: new Set(['toUpperCase', 'toLowerCase']),
+        replaceFn: {
+            'toUpperCase': (item, target) => actionHelper.convertCase(target, 'toUpperCase'),
+            'toLowerCase': (item, target) => actionHelper.convertCase(target, 'toLowerCase')
+        },
+        convertCase(target, op) {
+            if (this.textNode.has(target.nodeName)) {
+                target.value = target.value[op]()
+                return
+            }
+            target.innerText = target.innerText[op]();
+        },
         replace(item, target, clone = false, eleParam = {}) {
-            if (!item['searchValue']) {
+            if (!item['searchValue'] && !this.accessEmpty.has(item['replace_target_type'])) {
                 return
             }
             if (this.replaceFn?.[item['replace_target_type']]) {
@@ -1001,6 +1021,8 @@
         'import': '左键增量导入，右键清空原数据后导入',
         'export': '导出',
         'fetch': '抓取',
+        'toUpperCase': '转成大写',
+        'toLowerCase': '转成小写',
         'separator': '分隔符',
         'cached': '缓存该值(只查询一次)',
         'right-operate': '右键选择执行一个操作',
@@ -1100,6 +1122,8 @@
         'remove element': mapTitle['remove element'],
         'innerHTML': mapTitle['innerHTML'],
         'outerHTML': mapTitle['outerHTML'],
+        'toUpperCase': mapTitle['toUpperCase'],
+        'toLowerCase': mapTitle['toLowerCase'],
     }, htmlType = {
         'text': mapTitle['text'],
         'innerHTML': mapTitle['innerHTML'],
