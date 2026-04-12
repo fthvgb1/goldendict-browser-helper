@@ -691,7 +691,8 @@
 
 
         parseVar(vars, name, el, rule, ele, fetchConf, from, cached) {
-            rule?.children?.forEach(item => this.getVars(el, item, fetchConf, from, vars, cached));
+            const children = {};
+            rule?.children?.forEach(item => children[item['super-fetch-name']] = this.getVars(el, item, fetchConf, from, vars, cached));
             vars[name] = '';
             if (rule['fetch-data-type'] !== 'htmlElement') {
                 vars[name] = this.extractValue(el, rule,
@@ -702,23 +703,24 @@
                 if (vars[name] && rule?.['fetch-format']) {
                     vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
                 }
-                return
+                return vars[name];
             }
             if (rule?.['fetch-format']) {
-                for (const key of Object.keys(vars)) {
+                for (const key of Object.keys(children)) {
                     if (vars[key]) {
                         vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
                         break
                     }
                 }
             }
+            return vars[name]
         },
         // fetch vars
         getVars(ele, rule, fetchConf, from, vars = {}, cached = {}) {
             const name = rule['super-fetch-name'];
             if (rule.cached && cached.hasOwnProperty(name)) {
                 vars[name] = cached[name];
-                return vars
+                return vars[name];
             }
             rule['value-selector'] = this.replaceVars2Format(vars, rule['value-selector']);
             const el = this.anchor2Ele(rule, ele, fetchConf, from);
@@ -728,8 +730,7 @@
             } else if (el instanceof NodeList && el.length > 0) {
                 vars[name] = [...el].map(ell => {
                     const v = {...vars};
-                    this.parseVar(v, name, ell, rule, ele, fetchConf, from, cached);
-                    return v[name];
+                    return this.parseVar(v, name, ell, rule, ele, fetchConf, from, cached);
                 }).join(rule.separator);
             } else {
                 this.parseVar(vars, name, el, rule, ele, fetchConf, from, cached);
@@ -737,7 +738,7 @@
             if (rule.cached) {
                 cached[name] = vars[name];
             }
-            return vars;
+            return vars[name];
         },
 
 
