@@ -536,7 +536,7 @@
         PushButtonFn('rich', className, button, clickFn, field, contextMenuFn)
     }
 
-    function buildTextarea(rawStr = false, field = '', value = '', checked = false) {
+    function buildTextarea(rawStr = false, field = '', value = '<div><br></div>', checked = false) {
         const li = document.createElement('div');
         const checkeds = checked ? 'checked' : '';
         const richText = spell();

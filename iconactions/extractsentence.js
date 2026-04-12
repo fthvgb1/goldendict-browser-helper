@@ -692,6 +692,8 @@
                         break
                     }
                 }
+            } else {
+                d = dd;
             }
             vars[rule['super-fetch-name']] = d;
             if (d && rule?.['fetch-format']) {
@@ -794,7 +796,7 @@
             rule[''] = {};
             arr['super-fetch-items'].forEach(item => {
                 rule[item['super-fetch-name']] = item;
-                if (!item['value-selector'] && !item['default-value'] && !item['fetch-format']) {
+                if (!item['value-selector'] && !item['default-value']) {
                     log('value-selector or default value emptied', item);
                     return;
                 }
