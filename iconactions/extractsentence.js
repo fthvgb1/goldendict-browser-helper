@@ -587,17 +587,20 @@
         },
 
         getMultiVars(el, rules, fetchConf, cached, vars = {}) {
-            rules.forEach(item => this.getVars(el, item, fetchConf, vars, cached));
+            rules.forEach(item => this.getVars(el, item, fetchConf, el, vars, cached));
             return vars
         },
 
         grammarCharacters: new Set(['s', 'ps', 'p', 'ns']),
-        anchor2Ele(rule, ele, item) {
+        anchor2Ele(rule, ele, item, from) {
             const expression = rule['value-selector'];
             const multiple = rule['multiple_child'] ?? false;
             if (!expression.includes('@') && !expression.includes('%')) {
                 if (expression === 'child') {
                     return ele;
+                }
+                if (expression === 'spell') {
+                    return from
                 }
                 return multiple ? ele.querySelectorAll(expression) : ele.querySelector(expression);
             }
@@ -608,6 +611,10 @@
                 if (exp === 'parent') {
                     const parentSelector = item['selector-items']?.[item['selector-items'].length - 2]?.['fetch-selector'];
                     ele = ele?.eleType === 'parent' ? ele : findELeBySelector('p', parentSelector, ele);
+                    continue;
+                }
+                if (exp === 'spell') {
+                    ele = from
                     continue;
                 }
                 if (exp === 'doc') {
@@ -683,37 +690,49 @@
         },
 
 
-        parseVar(vars, name, el, rule, ele, fetchConf, cached) {
-            vars[name] = this.extractValue(el, rule,
-                {
-                    rule, beforeQueryEle: ele, afterQueryEle: el,
-                    fetchParam: fetchConf, vars
-                });
-            rule?.children?.forEach(item => this.getVars(el, item, fetchConf, vars, cached));
-            if (vars[name] && rule?.['fetch-format']) {
-                vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
+        parseVar(vars, name, el, rule, ele, fetchConf, from, cached) {
+            rule?.children?.forEach(item => this.getVars(el, item, fetchConf, from, vars, cached));
+            vars[name] = '';
+            if (rule['fetch-data-type'] !== 'htmlElement') {
+                vars[name] = this.extractValue(el, rule,
+                    {
+                        rule, beforeQueryEle: ele, afterQueryEle: el,
+                        fetchParam: fetchConf, vars
+                    });
+                if (vars[name] && rule?.['fetch-format']) {
+                    vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
+                }
+                return
+            }
+            if (rule?.['fetch-format']) {
+                for (const key of Object.keys(vars)) {
+                    if (vars[key]) {
+                        vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
+                        break
+                    }
+                }
             }
         },
         // fetch vars
-        getVars(ele, rule, fetchConf, vars = {}, cached = {}) {
+        getVars(ele, rule, fetchConf, from, vars = {}, cached = {}) {
             const name = rule['super-fetch-name'];
             if (rule.cached && cached.hasOwnProperty(name)) {
                 vars[name] = cached[name];
                 return vars
             }
             rule['value-selector'] = this.replaceVars2Format(vars, rule['value-selector']);
-            const el = this.anchor2Ele(rule, ele, fetchConf);
+            const el = this.anchor2Ele(rule, ele, fetchConf, from);
             if (!el || el?.length < 1) {
                 vars[name] = this.getDefaultValue(rule, vars);
                 log("query rule's value-selector fail", ele, rule['value-selector'], rule);
             } else if (el instanceof NodeList && el.length > 0) {
                 vars[name] = [...el].map(ell => {
                     const v = {...vars};
-                    this.parseVar(v, name, ell, rule, ele, fetchConf, cached);
+                    this.parseVar(v, name, ell, rule, ele, fetchConf, from, cached);
                     return v[name];
                 }).join(rule.separator);
             } else {
-                this.parseVar(vars, name, el, rule, ele, fetchConf, cached);
+                this.parseVar(vars, name, el, rule, ele, fetchConf, from, cached);
             }
             if (rule.cached) {
                 cached[name] = vars[name];
@@ -765,7 +784,7 @@
             rule[''] = {};
             arr['super-fetch-items'].forEach(item => {
                 rule[item['super-fetch-name']] = item;
-                if (!item['value-selector'] && !item['default-value']) {
+                if (!item['value-selector'] && !item['default-value'] && !item['fetch-format']) {
                     log('value-selector or default value emptied', item);
                     return;
                 }
@@ -783,7 +802,7 @@
 
         replaceString(item, target, assign) {
             if (!item['replace_regex_pattern']) {
-                assign(target.replace(item['searchValue'], item['replaceValue']));
+                assign(target.replaceAll(item['searchValue'], item['replaceValue']));
                 return;
             }
             //log(`'${target}'`,`'${target.replace(new RegExp(item['searchValue'],  item['replace_regex_pattern']), item['replaceValue'])}'`);
@@ -892,10 +911,12 @@
                 return;
             }
             const selectorItems = [...param['selector-items']];
-            let ele = from, keep = [];
+            let ele = from, keep = [], i = 0;
             while (true) {
+                i++;
                 const selectorItem = selectorItems.splice(0, 1)?.[0];
                 if (!selectorItem?.['fetch-selector']) {
+                    i === 1 && actionHelper.fetchItem([[from]], target, param, rule);
                     return;
                 }
                 const last = selectorItems.length < 1;
@@ -1019,6 +1040,7 @@
         'cover': '覆盖',
         'append': '追加',
         'none': '啥都不干',
+        'htmlElement': '元素',
     };
     const allowFn = {
         htmlSpecial, leftTrim, rightTrim, trims,
@@ -1070,11 +1092,16 @@
 
     const op = {'fetch': mapTitle['fetch'], 'replacement': mapTitle['replacement'], 'tag': mapTitle['tag']};
     const handleOp = {'append': mapTitle['append'], 'cover': mapTitle['cover'], 'none': mapTitle['none']};
-    const htmlType = {
+    const opType = {
         'text': mapTitle['text'],
         'remove element': mapTitle['remove element'],
         'innerHTML': mapTitle['innerHTML'],
-        'outerHTML': mapTitle['outerHTML']
+        'outerHTML': mapTitle['outerHTML'],
+    }, htmlType = {
+        'text': mapTitle['text'],
+        'innerHTML': mapTitle['innerHTML'],
+        'outerHTML': mapTitle['outerHTML'],
+        'htmlElement': mapTitle['htmlElement'],
     };
     const templateHelper = {
         templateFnHook: {},
@@ -1139,7 +1166,7 @@
                 .map(item =>
                     templateHelper.buildTemplateHTML('replacement-item', {
                         ...item,
-                        htmlType,
+                        opType,
                     })
                 ).join('\n');
             return data['replacement-item-html'];
@@ -1153,7 +1180,7 @@
             data['handleOp'] = handleOp;
             data['super-fetch-item-html'] = (data?.['super-fetch-items'] ?? [{}]).map(item =>
                 templateHelper.buildTemplateHTML('fetch-item', {
-                    ...item, htmlType,
+                    ...item, htmlType, opType,
                     'replacement-item-html': templateHelper.replacement(item),
                 })
             ).join('\n')
@@ -1259,7 +1286,7 @@
             mergeMap: (obj, kv) => Object.keys(kv).forEach(k => obj[k] = kv[k]),
             hookLang: lang => Object.keys(lang).forEach(k => mapTitle[k] = lang[k]),
             lang: name => allowFn.lang(name),
-            allowFn, op, htmlType, handleOp,
+            allowFn, op, htmlType, handleOp, opType,
             buildChildrenHtmlFn: templateHelper,
         }
     }

@@ -4,7 +4,7 @@
         'bold': `{word}语法，悬念到选项上看对应模式说明`,
     });
 
-    superFetchHook.htmlType['embolden'] = superFetchHook.lang('embolden');
+    superFetchHook.opType['embolden'] = superFetchHook.lang('embolden');
     superFetchHook.fetchActionHelper.replaceFn.embolden = (item, target, clone = false, param = {}) => {
         if (!item['searchValue'] || superFetchHook.fetchActionHelper.textNode.has(target.nodeName)) {
             return

@@ -138,3 +138,8 @@ input[name=parent-selector], input[name=child-selector] {
     color: transparent;
     border: 1px dashed #ccc;
 }
+
+.fetch-dd .fetch-data-type:has(option[value=htmlElement]:checked) ~ input.default-value,
+.fetch-dd:has(option[value=htmlElement]:checked) ~ .fetch-dd {
+    display: none;
+}
