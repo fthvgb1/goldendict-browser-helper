@@ -594,6 +594,9 @@
         grammarCharacters: new Set(['s', 'ps', 'p', 'ns']),
         anchor2Ele(rule, ele, item, from) {
             const expression = rule['value-selector'];
+            if (!expression) {
+                return null
+            }
             const multiple = rule['multiple_child'] ?? false;
             if (!expression.includes('@') && !expression.includes('%')) {
                 if (expression === 'child') {
@@ -668,9 +671,10 @@
         },
         defaultReg: /\{(.*?)}/,
         getDefaultValue(rule, vars) {
-            let d = rule['default-value'];
-            if (this.fetchReplaceVarsRex.test(d)) {
-                const name = this.defaultReg.exec(d)[1].split('|');
+            let d = '';
+            let dd = rule['default-value'];
+            if (this.fetchReplaceVarsRex.test(dd)) {
+                const name = this.defaultReg.exec(dd)[1].split('|');
                 for (const k of name) {
                     if (vars.hasOwnProperty(k)) {
                         if (name.length > 1 && !vars[k]) {
@@ -689,11 +693,9 @@
             return d;
         },
 
-
         parseVar(vars, name, el, rule, ele, fetchConf, from, cached) {
             const children = {};
             rule?.children?.forEach(item => children[item['super-fetch-name']] = this.getVars(el, item, fetchConf, from, vars, cached));
-            vars[name] = '';
             if (rule['fetch-data-type'] !== 'htmlElement') {
                 vars[name] = this.extractValue(el, rule,
                     {
@@ -708,12 +710,11 @@
             if (rule?.['fetch-format']) {
                 for (const key of Object.keys(children)) {
                     if (vars[key]) {
-                        vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
-                        break
+                        return vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
                     }
                 }
             }
-            return vars[name]
+            return vars[name] = this.getDefaultValue(rule, vars);
         },
         // fetch vars
         getVars(ele, rule, fetchConf, from, vars = {}, cached = {}) {
@@ -821,6 +822,7 @@
                 this.replaceFn[item['replace_target_type']](item, target, clone, eleParam);
                 return
             }
+            item.replaceValue = this.replaceVars2Format(eleParam.vars, item.replaceValue);
             if (this.textNode.has(target.nodeName) && item['replace_target_type'] === 'text') {
                 this.replaceString(item, target.value, val => target.value = val);
                 return;
