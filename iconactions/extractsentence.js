@@ -666,7 +666,7 @@
             });
         },
         extractValue(varEle, item, param = {}) {
-            let returnFn = (varEle) => {
+            let returnFn = () => {
                 if (this.textNode.has(varEle.nodeName)) {
                     return varEle.value;
                 }
