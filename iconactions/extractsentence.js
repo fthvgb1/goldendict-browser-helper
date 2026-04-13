@@ -654,8 +654,19 @@
         replaceVars2Format(vars, str) {
             return str.replace(this.fetchReplaceVarsRex, (substring, name) => vars?.[name] ?? substring);
         },
+
+        handItems(items, varEle, param, fn, clone = false) {
+            items.forEach(rule => {
+                const r = this.replace(rule, varEle, clone, param);
+                if (!r) {
+                    return
+                }
+                varEle = r;
+                fn(r);
+            });
+        },
         extractValue(varEle, item, param = {}) {
-            let returnFn = () => {
+            let returnFn = (varEle) => {
                 if (this.textNode.has(varEle.nodeName)) {
                     return varEle.value;
                 }
@@ -672,57 +683,63 @@
                         returnFn = () => varEle.innerHTML;
                     }
                 }
-
-                item['replacement-items'].forEach(rule => {
-                    const r = this.replace(rule, varEle, true, param);
-                    if (!r) {
-                        return
-                    }
-                    varEle = r;
-                });
+                this.handItems(item['replacement-items'], varEle, param, el => varEle = el, true);
             }
             return returnFn();
         },
         defaultReg: /\{(.*?)}/,
-        getDefaultValue(rule, vars) {
-            let d = '';
-            let dd = rule['default-value'];
-            if (this.fetchReplaceVarsRex.test(dd)) {
-                const name = this.defaultReg.exec(dd)[1].split('|');
+        getDefVars(defaultVal, vars) {
+            if (this.fetchReplaceVarsRex.test(defaultVal)) {
+                const name = this.defaultReg.exec(defaultVal)[1].split('|');
                 for (const k of name) {
                     if (vars.hasOwnProperty(k)) {
                         if (name.length > 1 && !vars[k]) {
                             continue;
                         }
-                        d = vars[k];
+                        defaultVal = vars[k];
                         break
                     }
                 }
-            } else {
-                d = dd;
             }
-            vars[rule['super-fetch-name']] = d;
-            if (d && rule?.['fetch-format']) {
-                d = this.replaceVars2Format(vars, rule['fetch-format']);
+            return defaultVal;
+        },
+        getDefaultValue(rule, vars, param) {
+            const format = rule['fetch-format'], selector = rule['value-selector'], name = rule['super-fetch-name'];
+            let defaultVal = rule['default-value'];
+            vars[name] = defaultVal;
+            if (format && !selector && !defaultVal) {
+                return vars[name] = this.replaceVars2Format(vars, format);
             }
-            vars[rule['super-fetch-name']] = d;
-            return d;
+            if (defaultVal) {
+                vars[name] = defaultVal = this.getDefVars(defaultVal, vars);
+                if (format) {
+                    vars[name] = defaultVal = this.replaceVars2Format(vars, format);
+                }
+            }
+
+            if (!selector && !format && defaultVal) {
+                let d = templateHelper.createElement('div', {innerHTML: defaultVal});
+                this.handItems(rule['replacement-items'], d, param, el => d = el, true);
+                vars[name] = d.innerHTML;
+            }
+            return vars[name];
         },
 
         parseVar(vars, name, el, rule, ele, fetchConf, from, cached) {
             const children = {};
-            rule?.children?.forEach(item => children[item['super-fetch-name']] = this.getVars(el, item, fetchConf, from, vars, cached));
             if (rule['fetch-data-type'] !== 'htmlElement') {
                 vars[name] = this.extractValue(el, rule,
                     {
                         rule, beforeQueryEle: ele, afterQueryEle: el,
                         fetchParam: fetchConf, vars
                     });
+                rule?.children?.forEach(item => children[item['super-fetch-name']] = this.getVars(el, item, fetchConf, from, vars, cached));
                 if (vars[name] && rule?.['fetch-format']) {
                     vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
                 }
                 return vars[name];
             }
+            rule?.children?.forEach(item => children[item['super-fetch-name']] = this.getVars(el, item, fetchConf, from, vars, cached));
             if (rule?.['fetch-format']) {
                 for (const key of Object.keys(children)) {
                     if (vars[key]) {
@@ -730,7 +747,10 @@
                     }
                 }
             }
-            return vars[name] = this.getDefaultValue(rule, vars);
+            return vars[name] = this.getDefaultValue(rule, vars, {
+                rule, beforeQueryEle: ele, afterQueryEle: el,
+                fetchParam: fetchConf, vars
+            });
         },
         // fetch vars
         getVars(ele, rule, fetchConf, from, vars = {}, cached = {}) {
@@ -742,7 +762,10 @@
             rule['value-selector'] = this.replaceVars2Format(vars, rule['value-selector']);
             const el = this.anchor2Ele(rule, ele, fetchConf, from);
             if (!el || el?.length < 1) {
-                vars[name] = this.getDefaultValue(rule, vars);
+                vars[name] = this.getDefaultValue(rule, vars, {
+                    rule, beforeQueryEle: ele, afterQueryEle: el,
+                    fetchParam: fetchConf, vars
+                });
                 log("query rule's value-selector fail", ele, rule['value-selector'], rule);
             } else if (el instanceof NodeList && el.length > 0) {
                 const s = new Set();
@@ -811,7 +834,7 @@
             rule[''] = {};
             arr['super-fetch-items'].forEach(item => {
                 rule[item['super-fetch-name']] = item;
-                if (!item['value-selector'] && !item['default-value']) {
+                if (!item['value-selector'] && !item['default-value'] && !item['fetch-format']) {
                     log('value-selector or default value emptied', item);
                     return;
                 }
@@ -837,13 +860,36 @@
                     item['replace_regex_pattern'] === 'none' ? '' : item['replace_regex_pattern']),
                 item['replaceValue']));
         },
+        isTextNode(ele) {
+            return this.textNode.has(ele)
+        },
         textNode: new Set(['INPUT', 'TEXTAREA']),
         valueNode: new Set(['INPUT', 'TEXTAREA', 'SELECT']),
         accessEmpty: new Set(['toUpperCase', 'toLowerCase']),
         replaceFn: {
             'toUpperCase': (item, target) => actionHelper.convertCase(target, 'toUpperCase'),
-            'toLowerCase': (item, target) => actionHelper.convertCase(target, 'toLowerCase')
+            'toLowerCase': (item, target) => actionHelper.convertCase(target, 'toLowerCase'),
+            parseTemplate(item, target, clone = false, eleParam = {}) {
+                if (!item?.templateVar || !item.replaceValue) {
+                    return
+                }
+                item.replaceValue = actionHelper.replaceVars2Format(eleParam.vars, item.replaceValue);
+                actionHelper.isTextNode(target) ? actionHelper.inputHandleFn.parseTemplate(item, target, clone, eleParam)
+                    : actionHelper.generalElementHandleFn.parseTemplate(item, target, clone, eleParam)
+            },
         },
+
+        generalElementHandleFn: {
+            parseTemplate(item, target, clone = false, eleParam = {}) {
+                actionHelper.replaceString(item, actionHelper.replaceVars2Format(eleParam.vars, item.templateVar), r => target.innerHTML = r);
+            },
+        },
+        inputHandleFn: {
+            parseTemplate(item, target) {
+                actionHelper.replaceString(item, item?.templateVar, r => target.value = r);
+            },
+        },
+
         convertCase(target, op) {
             if (this.textNode.has(target.nodeName)) {
                 target.value = target.value[op]()
@@ -859,6 +905,10 @@
                 this.replaceFn[item['replace_target_type']](item, target, clone, eleParam);
                 return
             }
+            return this.generallyReplace(item, target, clone, eleParam);
+        },
+
+        generallyReplace(item, target, clone = false, eleParam = {}) {
             item.replaceValue = this.replaceVars2Format(eleParam.vars, item.replaceValue);
             if (this.textNode.has(target.nodeName) && item['replace_target_type'] === 'text') {
                 this.replaceString(item, target.value, val => target.value = val);
@@ -868,12 +918,19 @@
                 this.replaceString(item, target.innerText, v => target.innerText = v);
                 return;
             }
+            if (this.textNode.has(target.nodeName) && this.inputHandleFn[item['replace_target_type']]) {
+                return this.inputHandleFn[item['replace_target_type']](item, target, clone, eleParam);
+            }
+            if (this.generalElementHandleFn[item['replace_target_type']]) {
+                return this.generalElementHandleFn[item['replace_target_type']](item, target, clone, eleParam);
+            }
+
             if (item['replace_target_type'] === 'remove element') {
                 target.querySelectorAll(item['searchValue']).forEach(el => el.remove());
                 return;
             }
             if (clone && item['replace_target_type'] === 'outerHTML') {
-                const el = document.createElement('div');
+                const el = templateHelper.createElement('div');
                 el.insertAdjacentElement('beforeend', target);
                 this.replaceString(item, el.innerHTML, v => {
                     el.innerHTML = v;
@@ -1038,6 +1095,8 @@
         'import': '左键增量导入，右键清空原数据后导入',
         'export': '左键全部导出，右键导出显示的记录',
         'fetch': '抓取',
+        'parseTemplate': '解析模板字符串',
+        'templateVar': '模板字符串，可以为变量，相当于提取解析模板',
         'toUpperCase': '转成大写',
         'toLowerCase': '转成小写',
         'separator': '分隔符',
@@ -1141,6 +1200,7 @@
         'outerHTML': mapTitle['outerHTML'],
         'toUpperCase': mapTitle['toUpperCase'],
         'toLowerCase': mapTitle['toLowerCase'],
+        'parseTemplate': mapTitle['parseTemplate'],
     }, htmlType = {
         'text': mapTitle['text'],
         'innerHTML': mapTitle['innerHTML'],

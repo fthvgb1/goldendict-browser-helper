@@ -144,3 +144,12 @@ input[name=parent-selector], input[name=child-selector] {
 .replace_target_type:has(option[value=toLowerCase]:checked) ~ :not(button) {
     display: none;
 }
+
+.replace_target_type:has(option[value=parseTemplate]:checked) + .templateVar {
+    display: inline;
+    width: 3vw;
+}
+
+.replace_target_type:has(option[value=parseTemplate]:checked) ~ .replace_regex_pattern {
+    width: 2vw;
+}
