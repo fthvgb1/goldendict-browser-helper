@@ -715,6 +715,7 @@
                 if (format) {
                     vars[name] = defaultVal = this.replaceVars2Format(vars, format);
                 }
+                return vars[name];
             }
 
             if (!selector && !format && defaultVal) {
