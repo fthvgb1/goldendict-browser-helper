@@ -23,7 +23,13 @@
     PushExpandAnkiInputButton('fetch-add', '', (e) => {
         findParent(e.target, '.fetch-item').insertAdjacentElement('afterend', actionHelper.buildFetchItem({}));
     });
-    PushExpandAnkiInputButton('fetch-export', '', () => eventFn.export());
+    PushExpandAnkiInputButton('fetch-export', '', () => eventFn.export(),
+        '', evt => {
+            evt.preventDefault();
+            eventFn.export(
+                [...setting.querySelectorAll('.fetch-item:not(.fetch-hidden)')].map(convertFetchParam)
+            )
+        });
     const importFn = ev => ev.target.parentElement.querySelector('.fetch-file').click();
     PushExpandAnkiInputButton('fetch-import', '', importFn, '', ev => {
         ev.preventDefault();
@@ -72,11 +78,11 @@
 
     const eventFn = {
         dragEle: {},
-        export() {
-            const data = JSON.stringify(getAnkiFetchParams('', false));
+        export(params = getAnkiFetchParams('', false)) {
+            const data = JSON.stringify(params);
             const current = new Date();
             // wtf time format
-            download(`fetch-rule.${current.getFullYear()}-${current.getMonth() + 1}-${current.getDate()}.${current.getHours()}.${current.getMinutes()}.${current.getSeconds()}.json`, data);
+            download(`fetch-rule.${current.getFullYear()}-${current.getMonth() + 1}-${current.getDate()}.${current.getHours()}.${current.getMinutes()}.${current.getSeconds()}.total.${params.length}.rows.json`, data);
         },
         showProcessor(ev) {
             const selector = '.fetch-import,.fetch-export';
@@ -262,7 +268,7 @@
 
         // Cleanup
         window.URL.revokeObjectURL(a.href);
-        document.body.removeChild(a);
+        a.remove();
     }
 
     function settingItemSwitchDisplay(ev) {
@@ -739,9 +745,18 @@
                 vars[name] = this.getDefaultValue(rule, vars);
                 log("query rule's value-selector fail", ele, rule['value-selector'], rule);
             } else if (el instanceof NodeList && el.length > 0) {
-                vars[name] = [...el].map(ell => {
+                const s = new Set();
+                vars[name] = [...el].filterAndMapX(ell => {
                     const v = {...vars};
-                    return this.parseVar(v, name, ell, rule, ele, fetchConf, from, cached);
+                    const r = this.parseVar(v, name, ell, rule, ele, fetchConf, from, cached);
+                    if (!rule?.['fetch-repeat']) {
+                        return r;
+                    }
+                    if (s.has(r)) {
+                        return false;
+                    }
+                    s.add(r);
+                    return r;
                 }).join(rule.separator);
             } else {
                 this.parseVar(vars, name, el, rule, ele, fetchConf, from, cached);
@@ -1021,7 +1036,7 @@
         'super html extract and process processor': '超级html提取加工处理器',
         "can't parse rule file": '不能解析规则文件！',
         'import': '左键增量导入，右键清空原数据后导入',
-        'export': '导出',
+        'export': '左键全部导出，右键导出显示的记录',
         'fetch': '抓取',
         'toUpperCase': '转成大写',
         'toLowerCase': '转成小写',
@@ -1264,7 +1279,7 @@
         }
     }
 
-    const types = new Set(Object.keys(htmlType));
+    const types = new Set(Object.keys(opType));
     PushHookAnkiChange('.replace_target_type', evt => {
         const input = evt.target.parentElement.querySelector('.replace_regex_pattern');
         if (types.has(evt.target.value) && (!input || input.nodeName !== 'INPUT')) {

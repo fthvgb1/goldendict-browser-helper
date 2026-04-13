@@ -796,8 +796,8 @@
     </div>
     
     <div class="form-item">
-        <label for="tags" class="form-label">标签</label>
-        <select class="swal2-select js-example-basic-multiple js-states form-control" id="anki-tags"></select>
+        <label for="anki-tags" class="form-label">标签</label>
+        <select class="swal2-select js-example-basic-multiple js-states form-control" name="anki-tags" id="anki-tags"></select>
         <button class="anki-tag-search" title="左键搜索 右键设置正面字段">🔍</button>
     </div>
     
