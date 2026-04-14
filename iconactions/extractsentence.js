@@ -1298,7 +1298,7 @@
                 if (vars?.[t]) {
                     if (vars[t] instanceof Node) {
                         tpl.replaceWith(vars[t]);
-                    } else if (Array.isArray(vars[t])) {
+                    } else if (Array.isArray(vars[t]) || vars[t] instanceof NodeList) {
                         tpl.replaceWith(...vars[t]);
                     }
                     return;
