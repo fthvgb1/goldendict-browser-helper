@@ -167,9 +167,7 @@
             for (const name of ['tplFn', 'tpl']) {
                 if (ev.target.dataset?.[name]) {
                     const t = this.addTplFn[name](ev.target.dataset?.[name]);
-                    t && el.insertAdjacentElement('afterend',
-                        templateHelper.createElement('div', {innerHTML: t}).children[0]
-                    );
+                    el.insertAdjacentElement('afterend', t[0]);
                     return;
                 }
             }
@@ -879,7 +877,7 @@
                 item['replaceValue']));
         },
         isTextNode(ele) {
-            return this.textNode.has(ele)
+            return this.textNode.has(ele.nodeName)
         },
         textNode: new Set(['INPUT', 'TEXTAREA']),
         valueNode: new Set(['INPUT', 'TEXTAREA', 'SELECT']),
@@ -1001,18 +999,19 @@
             data['operate-type'] = data['operate-type'] ?? 'fetch';
             data['op'] = op;
             templateHelper?.[data['operate-type']] && templateHelper[data['operate-type']](data);
-            data['fetch-operator'] = templateHelper.buildTemplateHTML(data['operate-type'], data);
-            const div = document.createElement('div');
-            div.innerHTML = templateHelper.buildTemplateHTML('fetch-base', data);
+            data['fetch-operator'] = [...templateHelper.buildTemplateHTML(data['operate-type'], data).children];
+            const div = templateHelper.buildTemplateHTML('fetch-base', data);
             div.querySelector('.operate-type').addEventListener('change', actionHelper.switchAction(data));
             div.querySelector('.fetch-active').addEventListener('change', fetchActive);
-            return div.children[0];
+            return div;
         },
         switchAction(data) {
             return e => {
                 const v = e.target.value;
                 templateHelper?.[v] && templateHelper[v](data);
-                findParent(e.target, '.fetch-item').querySelector('.fetch-action-container').innerHTML = templateHelper.buildTemplateHTML(v, data);
+                const el = templateHelper.buildTemplateHTML(v, data);
+                const container = findParent(e.target, '.fetch-item').querySelector('.fetch-action-container');
+                container.innerHTML = el.innerHTML;
             }
         }
     };
@@ -1216,7 +1215,13 @@
         if (!express.includes('.')) {
             return vars?.[express] ?? defaults;
         }
-        return express.split('.').reduce((prev, cur) => prev?.[cur] ?? defaults, vars);
+        for (const name of express.split('.')) {
+            if (!vars?.[name]) {
+                return defaults;
+            }
+            vars = vars[name];
+        }
+        return vars;
     }
 
     const op = {'fetch': mapTitle['fetch'], 'replacement': mapTitle['replacement'], 'tag': mapTitle['tag']};
@@ -1255,13 +1260,7 @@
             if (!t) {
                 return t
             }
-            if (this.templateFnHook?.[template]) {
-                const d = this.createElement('div');
-                d.innerHTML = t;
-                const r = this.templateFnHook[template](d, vars);
-                t = r instanceof HTMLElement ? r.innerHTML : r;
-            }
-            return t.replace(this.replaceRex, (substring, name) => {
+            t = t.replace(this.replaceRex, (substring, name) => {
                 const names = name.split('|');
                 let val = getVarVal(vars, names[0]);
                 if (names.length < 2) {
@@ -1293,6 +1292,28 @@
                 }
                 return val;
             });
+            const ele = this.createElement('div', {innerHTML: t});
+            ele.querySelectorAll('template').forEach(tpl => {
+                const t = tpl.innerHTML;
+                if (vars?.[t]) {
+                    if (vars[t] instanceof Node) {
+                        tpl.replaceWith(vars[t]);
+                    } else if (Array.isArray(vars[t])) {
+                        tpl.replaceWith(...vars[t]);
+                    }
+                    return;
+                }
+                const name = t.split('|');
+                if (name.length < 2) {
+                    tpl.replaceWith(this.buildTemplateHTML(name[0]))
+                    return
+                }
+                tpl.replaceWith(this.buildTemplateHTML(name[0], name[1] === '.' ? vars : getVarVal(vars, name[1], null)));
+            });
+            if (this.templateFnHook?.[template]) {
+                this.templateFnHook[template](ele, vars);
+            }
+            return ele.children.length > 1 ? ele : ele.children[0];
         },
         replacement(data = {}) {
             data['replacement-items'] = data?.['replacement-items'] ? data['replacement-items'] : [{}];
@@ -1302,14 +1323,13 @@
                         ...item,
                         opType,
                     })
-                ).join('\n');
+                );
             return data['replacement-item-html'];
         },
         fetch(data = {}) {
             data['selector-items'] = data?.['selector-items'] ? data['selector-items'] : [{}];
             data['fetch-chain-html'] = data['selector-items']
-                .map(item => templateHelper.buildTemplateHTML('selector-chain', item))
-                .join('\n');
+                .map(item => templateHelper.buildTemplateHTML('selector-chain', item));
 
             data['handleOp'] = handleOp;
             data['super-fetch-item-html'] = (data?.['super-fetch-items'] ?? [{}]).map(item =>
@@ -1317,7 +1337,7 @@
                     ...item, htmlType, opType,
                     'replacement-item-html': templateHelper.replacement(item),
                 })
-            ).join('\n')
+            );
             return data['super-fetch-item-html'];
         }
     };
@@ -1387,12 +1407,11 @@
         actionHelper.flushElementCache();
     });
 
-    PushHookAnkiHtml((ankiContainer) => {
-        const div = document.createElement('div');
-        div.className = 'form-item fetch-sentence-container';
-        div.innerHTML = templateHelper.buildTemplateHTML('fetch-form', {
+    PushHookAnkiHtml(ankiContainer => {
+        const div = templateHelper.buildTemplateHTML('fetch-form', {
             'sequentially-fetch': GM_getValue('sequentially-fetch', false),
         });
+        div.className = 'form-item fetch-sentence-container';
         setting = div.querySelector('.select-setting');
         const ty = new Set(['add', 'remove']);
         setting.addEventListener('click', evt => {
