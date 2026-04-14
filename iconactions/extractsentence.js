@@ -605,11 +605,9 @@
             }
             const multiple = rule['multiple_child'] ?? false;
             if (!expression.includes('@') && !expression.includes('%')) {
-                if (expression === 'child') {
-                    return ele;
-                }
-                if (expression === 'spell') {
-                    return from
+                const m = {child: ele, spell: from, doc: document};
+                if (m?.[expression]) {
+                    return m[expression];
                 }
                 return multiple ? ele.querySelectorAll(expression) : ele.querySelector(expression);
             }
@@ -650,9 +648,18 @@
             return ele;
         },
         fetchReplaceVarsRex: /\{(.*?)}/g,
-
+        templateVarself: /\{\{(.*?)}}/g,
+        tamperVar: /\{\$(.*?)}/g,
         replaceVars2Format(vars, str) {
-            return str.replace(this.fetchReplaceVarsRex, (substring, name) => vars?.[name] ?? substring);
+            return str.replace(this.tamperVar, (substring, name) => {
+                const t = GM_getValue(name, '');
+                return t ? t : substring
+            }).replace(this.templateVarself, (substring, name) => {
+                if (!vars?.[name]) {
+                    return substring
+                }
+                return vars?.[name].replace(this.fetchReplaceVarsRex, (substring, name) => vars?.[name] ?? substring);
+            }).replace(this.fetchReplaceVarsRex, (substring, name) => vars?.[name] ?? substring);
         },
 
         handItems(items, varEle, param, clone = false) {
@@ -691,15 +698,19 @@
         defaultReg: /\{(.*?)}/,
         getDefVars(defaultVal, vars) {
             if (this.fetchReplaceVarsRex.test(defaultVal)) {
-                const name = this.defaultReg.exec(defaultVal)[1].split('|');
-                for (const k of name) {
-                    if (vars.hasOwnProperty(k)) {
-                        if (name.length > 1 && !vars[k]) {
-                            continue;
+                if (defaultVal.includes('|')) {
+                    const name = this.defaultReg.exec(defaultVal)[1].split('|');
+                    for (const k of name) {
+                        if (vars.hasOwnProperty(k)) {
+                            if (name.length > 1 && !vars[k]) {
+                                continue;
+                            }
+                            defaultVal = vars[k];
+                            break
                         }
-                        defaultVal = vars[k];
-                        break
                     }
+                } else {
+                    defaultVal = this.replaceVars2Format(vars, defaultVal)
                 }
             }
             return defaultVal;
