@@ -655,15 +655,16 @@
             return str.replace(this.fetchReplaceVarsRex, (substring, name) => vars?.[name] ?? substring);
         },
 
-        handItems(items, varEle, param, fn, clone = false) {
+        handItems(items, varEle, param, clone = false) {
             items.forEach(rule => {
-                const r = this.replace(rule, varEle, clone, param);
+                const r = this.replace({...rule}, varEle, clone, param);
+                param.vars[param.rule['super-fetch-name']] = varEle.innerHTML;
                 if (!r) {
                     return
                 }
                 varEle = r;
-                fn(r);
             });
+            return varEle.innerHTML;
         },
         extractValue(varEle, item, param = {}) {
             let returnFn = () => {
@@ -683,7 +684,7 @@
                         returnFn = () => varEle.innerHTML;
                     }
                 }
-                this.handItems(item['replacement-items'], varEle, param, el => varEle = el, true);
+                varEle.innerHTML = this.handItems(item['replacement-items'], varEle, param, true);
             }
             return returnFn();
         },
@@ -712,16 +713,20 @@
             }
             if (defaultVal) {
                 vars[name] = defaultVal = this.getDefVars(defaultVal, vars);
+            }
+            if (selector) {
                 if (format) {
                     vars[name] = defaultVal = this.replaceVars2Format(vars, format);
                 }
                 return vars[name];
             }
 
-            if (!selector && !format && defaultVal) {
+            if (defaultVal) {
                 let d = templateHelper.createElement('div', {innerHTML: defaultVal});
-                this.handItems(rule['replacement-items'], d, param, el => d = el, true);
-                vars[name] = d.innerHTML;
+                vars[name] = this.handItems(rule['replacement-items'], d, param, true);
+            }
+            if (format) {
+                vars[name] = this.replaceVars2Format(vars, format);
             }
             return vars[name];
         },
@@ -747,6 +752,7 @@
                         return vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
                     }
                 }
+                return vars[name];
             }
             return vars[name] = this.getDefaultValue(rule, vars, {
                 rule, beforeQueryEle: ele, afterQueryEle: el,
@@ -871,10 +877,10 @@
             'toUpperCase': (item, target) => actionHelper.convertCase(target, 'toUpperCase'),
             'toLowerCase': (item, target) => actionHelper.convertCase(target, 'toLowerCase'),
             parseTemplate(item, target, clone = false, eleParam = {}) {
+                item.replaceValue = actionHelper.replaceVars2Format(eleParam.vars, item.replaceValue);
                 if (!item?.templateVar || !item.replaceValue) {
                     return
                 }
-                item.replaceValue = actionHelper.replaceVars2Format(eleParam.vars, item.replaceValue);
                 actionHelper.isTextNode(target) ? actionHelper.inputHandleFn.parseTemplate(item, target, clone, eleParam)
                     : actionHelper.generalElementHandleFn.parseTemplate(item, target, clone, eleParam)
             },
