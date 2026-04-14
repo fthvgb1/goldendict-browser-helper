@@ -1009,9 +1009,7 @@
             return e => {
                 const v = e.target.value;
                 templateHelper?.[v] && templateHelper[v](data);
-                const el = templateHelper.buildTemplateHTML(v, data);
-                const container = findParent(e.target, '.fetch-item').querySelector('.fetch-action-container');
-                container.innerHTML = el.innerHTML;
+                templateHelper.buildTemplateHTML(v, data, findParent(e.target, '.fetch-item').querySelector('.fetch-action-container'));
             }
         }
     };
@@ -1251,7 +1249,7 @@
             Object.keys(attrs).forEach(k => el[k] = attrs[k]);
             return el;
         },
-        buildTemplateHTML(template, vars = {}) {
+        buildTemplateHTML(template, vars = {}, ele = document.createElement('div')) {
             let t = this.templateCache?.[template] ?? '';
             if (!t) {
                 t = GM_getResourceText(template) ?? '';
@@ -1292,7 +1290,7 @@
                 }
                 return val;
             });
-            const ele = this.createElement('div', {innerHTML: t});
+            ele.innerHTML = t;
             ele.querySelectorAll('template').forEach(tpl => {
                 const t = tpl.innerHTML;
                 if (vars?.[t]) {
