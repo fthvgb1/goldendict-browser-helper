@@ -881,21 +881,15 @@
                 if (!item?.templateVar || !item.replaceValue) {
                     return
                 }
-                actionHelper.isTextNode(target) ? actionHelper.inputHandleFn.parseTemplate(item, target, clone, eleParam)
-                    : actionHelper.generalElementHandleFn.parseTemplate(item, target, clone, eleParam)
+                item.templateVar = actionHelper.replaceVars2Format(eleParam.vars, item.templateVar);
+                actionHelper.replaceString(item, item.templateVar,
+                    actionHelper.isTextNode(target) ? r => target.value = r : r => target.innerHTML = r
+                );
             },
         },
 
-        generalElementHandleFn: {
-            parseTemplate(item, target, clone = false, eleParam = {}) {
-                actionHelper.replaceString(item, actionHelper.replaceVars2Format(eleParam.vars, item.templateVar), r => target.innerHTML = r);
-            },
-        },
-        inputHandleFn: {
-            parseTemplate(item, target) {
-                actionHelper.replaceString(item, item?.templateVar, r => target.value = r);
-            },
-        },
+        generalElementHandleFn: {},
+        inputHandleFn: {},
 
         convertCase(target, op) {
             if (this.textNode.has(target.nodeName)) {
