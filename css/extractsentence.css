@@ -141,7 +141,9 @@ input[name=parent-selector], input[name=child-selector] {
 
 .fetch-dd:has(option[value=htmlElement]:checked) ~ .fetch-dd,
 .replace_target_type:has(option[value=toUpperCase]:checked) ~ :not(button),
-.replace_target_type:has(option[value=toLowerCase]:checked) ~ :not(button) {
+.replace_target_type:has(option[value=toLowerCase]:checked) ~ :not(button),
+.replace_target_type:has(option[value=escapeHTML]:checked) ~ :not(button),
+.replace_target_type:has(option[value=unescapeHTML]:checked) ~ :not(button) {
     display: none;
 }
 

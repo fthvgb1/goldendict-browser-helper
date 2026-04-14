@@ -6,7 +6,7 @@
 
     superFetchHook.opType['embolden'] = superFetchHook.lang('embolden');
     superFetchHook.fetchActionHelper.replaceFn.embolden = (item, target, clone = false, param = {}) => {
-        if (!item['searchValue'] || superFetchHook.fetchActionHelper.textNode.has(target.nodeName)) {
+        if (!item['searchValue'] || superFetchHook.fetchActionHelper.isTextNode(target)) {
             return
         }
         const words = parseWords(item, param).replace(/&nbsp;/g, ' ');
@@ -73,7 +73,7 @@
             if (!ele) {
                 return '';
             }
-            return superFetchHook.fetchActionHelper.textNode.has(ele.nodeName) ? ele.value : ele.innerText;
+            return superFetchHook.fetchActionHelper.isTextNode(ele) ? ele.value : ele.innerText;
         },
     };
 

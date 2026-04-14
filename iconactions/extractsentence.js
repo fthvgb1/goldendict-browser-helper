@@ -668,7 +668,7 @@
         },
         extractValue(varEle, item, param = {}) {
             let returnFn = () => {
-                if (this.textNode.has(varEle.nodeName)) {
+                if (this.isTextNode(varEle)) {
                     return varEle.value;
                 }
                 const t = item['fetch-data-type'] === 'text' ? 'innerText' : item['fetch-data-type'];
@@ -679,7 +679,7 @@
                     varEle = templateHelper.createElement('div', {innerHTML: varEle.value});
                 } else {
                     varEle = varEle.cloneNode(true);
-                    if (item['fetch-data-type'] === 'text' && !this.textNode.has(this.getDestEle(param.fetchParam).nodeName)) {
+                    if (item['fetch-data-type'] === 'text' && !this.isTextNode(this.getDestEle(param.fetchParam))) {
                         varEle.innerHTML = varEle.innerText;
                         returnFn = () => varEle.innerHTML;
                     }
@@ -799,7 +799,7 @@
 
 
         setValue(target, value, item) {
-            this.textNode.has(target.nodeName) ? this.setInputOrTextarea(target, value, item) : this.setEle(target, value, item);
+            this.isTextNode(target) ? this.setInputOrTextarea(target, value, item) : this.setEle(target, value, item);
         },
 
         setEle(target, value, item) {
@@ -872,7 +872,7 @@
         },
         textNode: new Set(['INPUT', 'TEXTAREA']),
         valueNode: new Set(['INPUT', 'TEXTAREA', 'SELECT']),
-        accessEmpty: new Set(['toUpperCase', 'toLowerCase']),
+        accessEmpty: new Set(['toUpperCase', 'toLowerCase', 'escapeHTML', 'unescapeHTML']),
         replaceFn: {
             'toUpperCase': (item, target) => actionHelper.convertCase(target, 'toUpperCase'),
             'toLowerCase': (item, target) => actionHelper.convertCase(target, 'toLowerCase'),
@@ -888,11 +888,25 @@
             },
         },
 
-        generalElementHandleFn: {},
-        inputHandleFn: {},
+        generalElementHandleFn: {
+            escapeHTML(item, target) {
+                target.innerHTML = htmlSpecial(target.innerHTML);
+            },
+            unescapeHTML(item, target) {
+                target.innerHTML = decodeHtmlSpecial(target.innerHTML);
+            }
+        },
+        inputHandleFn: {
+            escapeHTML(item, target) {
+                target.value = htmlSpecial(target.value);
+            },
+            unescapeHTML(item, target) {
+                target.value = decodeHtmlSpecial(target.value);
+            }
+        },
 
         convertCase(target, op) {
-            if (this.textNode.has(target.nodeName)) {
+            if (this.isTextNode(target)) {
                 target.value = target.value[op]()
                 return
             }
@@ -911,7 +925,7 @@
 
         generallyReplace(item, target, clone = false, eleParam = {}) {
             item.replaceValue = this.replaceVars2Format(eleParam.vars, item.replaceValue);
-            if (this.textNode.has(target.nodeName) && item['replace_target_type'] === 'text') {
+            if (this.isTextNode(target) && item['replace_target_type'] === 'text') {
                 this.replaceString(item, target.value, val => target.value = val);
                 return;
             }
@@ -919,10 +933,10 @@
                 this.replaceString(item, target.innerText, v => target.innerText = v);
                 return;
             }
-            if (this.textNode.has(target.nodeName) && this.inputHandleFn[item['replace_target_type']]) {
+            if (this.isTextNode(target) && this.inputHandleFn?.[item['replace_target_type']]) {
                 return this.inputHandleFn[item['replace_target_type']](item, target, clone, eleParam);
             }
-            if (this.generalElementHandleFn[item['replace_target_type']]) {
+            if (this.generalElementHandleFn?.[item['replace_target_type']]) {
                 return this.generalElementHandleFn[item['replace_target_type']](item, target, clone, eleParam);
             }
 
@@ -1096,6 +1110,8 @@
         'import': '左键增量导入，右键清空原数据后导入',
         'export': '左键全部导出，右键导出显示的记录',
         'fetch': '抓取',
+        'escapeHTML': '转义HTML特殊实体',
+        'unescapeHTML': '去除HTML特殊实体',
         'parseTemplate': '解析模板字符串',
         'templateVar': '模板字符串，可以为变量，相当于提取解析模板',
         'toUpperCase': '转成大写',
@@ -1202,6 +1218,8 @@
         'toUpperCase': mapTitle['toUpperCase'],
         'toLowerCase': mapTitle['toLowerCase'],
         'parseTemplate': mapTitle['parseTemplate'],
+        'escapeHTML': mapTitle['escapeHTML'],
+        'unescapeHTML': mapTitle['unescapeHTML'],
     }, htmlType = {
         'text': mapTitle['text'],
         'innerHTML': mapTitle['innerHTML'],
@@ -1340,10 +1358,9 @@
         }
     }
 
-    const types = new Set(Object.keys(opType));
     PushHookAnkiChange('.replace_target_type', evt => {
         const input = evt.target.parentElement.querySelector('.replace_regex_pattern');
-        if (types.has(evt.target.value) && (!input || input.nodeName !== 'INPUT')) {
+        if (Object.keys(opType).includes(evt.target.value) && (!input || input.nodeName !== 'INPUT')) {
             const inp = document.createElement('input');
             inp.type = 'text';
             inp.name = 'replace_regex_pattern';
@@ -1354,6 +1371,10 @@
         }
     });
 
+    PushExpandAnkiRichButton('action-switch-text', '', (evt, fn) => {
+        fn?.(evt);
+        actionHelper.flushElementCache();
+    });
 
     PushHookAnkiHtml((ankiContainer) => {
         const div = document.createElement('div');
