@@ -1102,7 +1102,7 @@
             return;
         }
         const fetchItems = param.filterAndMapX(item => item['operate-type'] === 'fetch' ? item : false);
-        if (!fetchItems) {
+        if (!fetchItems || fetchItems?.length < 1) {
             return;
         }
         const from = actionHelper.getFieldElement(fetchItems[0]['fetch-field']);
