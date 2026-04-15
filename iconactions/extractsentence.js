@@ -656,7 +656,7 @@
                 if (!vars?.[name]) {
                     return substring
                 }
-                return vars?.[name].replace(this.fetchReplaceVarsRex, (substring, name) => vars?.[name] ?? substring);
+                return this.replaceVars2Format(vars, vars[name]);
             }).replace(this.fetchReplaceVarsRex, (substring, name) => vars?.[name] ?? substring);
         },
 
