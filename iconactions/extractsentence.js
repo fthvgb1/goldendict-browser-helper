@@ -99,13 +99,14 @@
             }
             if (rule?.children?.length > 0) {
                 deep++;
+                if (deep > this.maxDeep) {
+                    this.maxDeep = deep;
+                }
                 rule.children.forEach(child => {
                     this.calculateWidth(el, child, deep)
                 })
             }
-            if (deep > this.maxDeep) {
-                this.maxDeep = deep;
-            }
+
 
         },
         changedEleSelector: '.swal2-popup, #shadowFields > ol, ol .form-item:has( .sentence_setting) :where(.spell), .form-item .spell-content',
