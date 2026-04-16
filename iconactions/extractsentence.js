@@ -76,8 +76,58 @@
             && Object.keys(o1).every(p => o1[p] === o2[p])
     }
 
+    function vw(percent) {
+        const w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+        return (percent * w) / 100;
+    }
+
     const eventFn = {
         dragEle: {},
+        maxDeep: 0,
+        offsetWidth: 1,// vw
+
+        autoAddWidths: evt => {
+            if (evt.target.className !== 'super-fetch-name') {
+                return
+            }
+            eventFn.autoAddWidth();
+        },
+        calculateWidth(el, rule, deep) {
+            if (deep > 0) {
+                const ele = el.querySelector(`.super-fetch-item:has(input[value="${rule['super-fetch-name']}"])`);
+                ele.style.marginLeft = `${deep * eventFn.offsetWidth}vw`;
+            }
+            if (rule?.children?.length > 0) {
+                deep++;
+                rule.children.forEach(child => {
+                    this.calculateWidth(el, child, deep)
+                })
+            }
+            if (deep > this.maxDeep) {
+                this.maxDeep = deep;
+            }
+
+        },
+        changedEleSelector: '.swal2-popup, #shadowFields > ol, ol .form-item:has( .sentence_setting) :where(.spell), .form-item .spell-content',
+        autoAddWidth() {
+            const old = this.maxDeep;
+            const items = [...setting.querySelectorAll('.fetch-item:not(.fetch-hidden):has(option[value=fetch]:checked)')]
+                .map(el => [el, convertFetchParam(el)]);
+            items.forEach(item => {
+                const el = item[0];
+                const rules = actionHelper.parseFetchRule(item[1]);
+                rules.forEach(rule => this.calculateWidth(el, rule, 0));
+            });
+            if (this.maxDeep > old) {
+                const offset = vw(eventFn.offsetWidth * this.maxDeep);
+                document.querySelectorAll(this.changedEleSelector).forEach(el => {
+                    let w = parseFloat(getComputedStyle(el).width.replace('px', ''));
+                    w += offset;
+                    el.style.width = `${w}px`;
+                    el.style.maxWidth = '100%';
+                });
+            }
+        },
         export(params = getAnkiFetchParams('', false)) {
             const data = JSON.stringify(params);
             const current = new Date();
@@ -94,6 +144,7 @@
                 ev.target.parentElement.querySelectorAll(selector).forEach(btn => btn.classList.add('fetch-hidden'))
                 return
             }
+            eventFn.autoAddWidth();
             let fetchItems = GM_getValue('fetch-items', [{}]);
             fetchItems.forEach(item => setting.appendChild(actionHelper.buildFetchItem(item)));
             if (GM_getValue('fetch-display-type', 1) === 2) {
@@ -317,6 +368,7 @@
         }
         hidden();
         fn(ev.target.value);
+        eventFn.autoAddWidth();
     });
 
 
@@ -657,7 +709,12 @@
                     return substring
                 }
                 return this.replaceVars2Format(vars, vars[name]);
-            }).replace(this.fetchReplaceVarsRex, (substring, name) => vars?.[name] ?? substring);
+            }).replace(this.fetchReplaceVarsRex, (substring, name) => {
+                if (vars?.[name]) {
+                    return vars[name]
+                }
+                return name[name.length - 1] === '?' ? '' : substring
+            });
         },
 
         handItems(items, varEle, param, clone = false) {
@@ -1152,7 +1209,7 @@
         'fetch-delete': '删除此项',
         'fetch-copy': '复制此项',
         'fetch-add': '在此项后台添加一个操作项',
-        'super-fetch-name': '提取值的标识名',
+        'super-fetch-name': '提取值的唯一标识名，可以作为变量名',
         'default-value': '默认值，可使用变量{标识名1[|标识名2]...}',
         'replace_target_type': '替换目标类型',
         'text': '文本',
@@ -1422,6 +1479,7 @@
             }
             eventFn.add(evt);
         });
+        setting.addEventListener('blur', eventFn.autoAddWidths, true);
         setting.addEventListener('contextmenu', evt => evt.target.dataset.op === 'add' && eventFn.copy(evt));
 
         ankiContainer.querySelector('#autoSentenceField').parentElement.insertAdjacentElement('afterend', div);
