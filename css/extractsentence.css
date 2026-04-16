@@ -155,3 +155,7 @@ input[name=parent-selector], input[name=child-selector] {
 .replace_target_type:has(option[value=parseTemplate]:checked) ~ .replace_regex_pattern {
     width: 2vw;
 }
+
+.super-fetch-name, .super-fetch-item {
+    background-color: attr(data-color type(< color >));
+}

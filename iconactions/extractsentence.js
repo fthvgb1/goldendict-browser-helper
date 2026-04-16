@@ -102,7 +102,14 @@
                 if (deep > this.maxDeep) {
                     this.maxDeep = deep;
                 }
+                const input = el.querySelector(`.super-fetch-name[value="${rule['super-fetch-name']}"]`);
+                let color = input.dataset?.color;
+                if (!color) {
+                    color = `hsla(${Math.random() * 360}, 51%, 85%, 0.7)`;
+                    input.dataset.color = color;
+                }
                 rule.children.forEach(child => {
+                    el.querySelector(`.super-fetch-item:has(.parent-super-name[value='${rule["super-fetch-name"]}']):has(.super-fetch-name[value='${child["super-fetch-name"]}'])`).dataset.color = color;
                     this.calculateWidth(el, child, deep)
                 })
             }
