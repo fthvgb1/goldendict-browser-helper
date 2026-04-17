@@ -934,8 +934,7 @@
                         rule[item['parent-super-name']]['children'].push(item)
                         : rule[item['parent-super-name']]['children'] = [item];
                 } catch (e) {
-                    log(item);
-                    throw e;
+                    console.log(item, 'error parent name', e);
                 }
 
             });
@@ -1444,11 +1443,7 @@
                     //log(e.target, tar, '---------', currentItem, cur);
                     return;
                 }
-                if (tar > cur) {
-                    e.target.insertAdjacentElement('afterend', currentItem);
-                    return;
-                }
-                currentItem.insertAdjacentElement('afterend', e.target);
+                e.target.insertAdjacentElement(tar > cur ? 'afterend' : 'beforebegin', currentItem);
             },
             dragend(e) {
                 currentItem.classList.remove('moving');
