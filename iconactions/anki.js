@@ -6,7 +6,7 @@
     PushExpandAnkiRichButton,
     PushExpandAnkiInputButton,
     PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn, PushHookAnkiChange,
-    addNewTags, ankiFormChange,
+    addNewTags, ankiFormChange, inputEventSelectors
 } = (() => {
     let ankiHost = GM_getValue('ankiHost', 'http://127.0.0.1:8765');
     let richTexts = [];
@@ -189,6 +189,9 @@
         div.innerHTML = createHtml('<br>');
         return div
     })();
+
+
+    const inputSelector = ['.field-name'];
 
     const clickFns = {
         'hammer': async (ev) => {
@@ -757,14 +760,11 @@
             }
         }
         document.addEventListener('change', changeFn);
-        const clickFn = async ev => {
-            const className = ev.target.className;
-            clickFns.hasOwnProperty(className) && clickFns[className] && clickFns[className](ev);
-        }
+        const clickFn = async ev => clickFns?.[ev.target.className]?.(ev);
+
         document.addEventListener('click', clickFn);
-        const contextMenuFn = (ev) => {
-            contextMenuFns.hasOwnProperty(ev.target.className) && contextMenuFns[ev.target.className](ev);
-        };
+        const contextMenuFn = ev => contextMenuFns?.[ev.target.className]?.(ev);
+
         document.addEventListener('contextmenu', contextMenuFn);
         const sentenceBold = GM_getValue('sentence_bold', '');
         const sentenceFormat = GM_getValue('sentence_format', '')
@@ -861,6 +861,11 @@
         }
         await Swal.fire({
             didRender: async () => {
+                ankiContainer.addEventListener('input', evt => {
+                    if (evt.target.matches(inputSelector.join(','))) {
+                        evt.target.setAttribute('value', evt.target.value);
+                    }
+                }, true);
                 const eles = document.querySelectorAll('.wait-replace');
                 if (eles.length > 0) {
                     richTexts.forEach((fn, index) => fn(eles[index]))
@@ -1027,7 +1032,7 @@
         anki, queryAnki, showAnkiCard, searchAnki,
         PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook, PushExpandAnkiRichButton, PushExpandAnkiInputButton,
         PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn, PushHookAnkiChange,
-        addNewTags, ankiFormChange: changeFns,
+        addNewTags, ankiFormChange: changeFns, inputEventSelectors: inputSelector
     };
 
 })();

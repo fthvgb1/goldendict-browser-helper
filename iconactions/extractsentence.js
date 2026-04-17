@@ -85,9 +85,9 @@
         dragEle: {},
         maxDeep: 0,
         offsetWidth: 1,// vw
-
+        inputValueSelectors: new Set(['super-fetch-name', 'parent-super-name']),
         autoAddWidths: evt => {
-            if (evt.target.className !== 'super-fetch-name') {
+            if (!eventFn.inputValueSelectors.has(evt.target.className)) {
                 return
             }
             eventFn.autoAddWidth();
@@ -95,8 +95,12 @@
         calculateWidth(el, rule, deep) {
             if (deep > 0) {
                 const ele = el.querySelector(`.super-fetch-item:has(input[value="${rule['super-fetch-name']}"])`);
-                ele.style.marginLeft = `${deep * eventFn.offsetWidth}vw`;
+                if (ele) {
+                    ele.style.marginLeft = `${deep * eventFn.offsetWidth}vw`;
+                }
             }
+            const item = el.querySelector(`.super-fetch-item:has(.super-fetch-name[value='${rule["super-fetch-name"]}'])`);
+            item.dataset.deep = deep;
             if (rule?.children?.length > 0) {
                 deep++;
                 if (deep > this.maxDeep) {
@@ -109,7 +113,10 @@
                     input.dataset.color = color;
                 }
                 rule.children.forEach(child => {
-                    el.querySelector(`.super-fetch-item:has(.parent-super-name[value='${rule["super-fetch-name"]}']):has(.super-fetch-name[value='${child["super-fetch-name"]}'])`).dataset.color = color;
+                    const ele = el.querySelector(`.super-fetch-item:has(.super-fetch-name[value='${child["super-fetch-name"]}'])`);
+                    if (ele) {
+                        ele.dataset.color = color;
+                    }
                     this.calculateWidth(el, child, deep)
                 })
             }
@@ -718,10 +725,11 @@
                 }
                 return this.replaceVars2Format(vars, vars[name]);
             }).replace(this.fetchReplaceVarsRex, (substring, name) => {
-                if (vars?.[name]) {
-                    return vars[name]
+                if (name.endsWith('?')) {
+                    name = trims(name, '?');
+                    return vars?.[name] ?? '';
                 }
-                return name[name.length - 1] === '?' ? '' : substring
+                return vars?.[name] ?? substring;
             });
         },
 
@@ -754,6 +762,7 @@
                         returnFn = () => varEle.innerHTML;
                     }
                 }
+                param.vars[param.rule['super-fetch-name']] = varEle.innerHTML;
                 varEle.innerHTML = this.handItems(item['replacement-items'], varEle, param, true);
             }
             return returnFn();
@@ -919,10 +928,16 @@
                     log('value-selector or default value emptied', item);
                     return;
                 }
-                valid = true
-                rule[item['parent-super-name']]?.['children'] ?
-                    rule[item['parent-super-name']]['children'].push(item)
-                    : rule[item['parent-super-name']]['children'] = [item];
+                valid = true;
+                try {
+                    rule[item['parent-super-name']]?.['children'] ?
+                        rule[item['parent-super-name']]['children'].push(item)
+                        : rule[item['parent-super-name']]['children'] = [item];
+                } catch (e) {
+                    log(item);
+                    throw e;
+                }
+
             });
             if (!valid) {
                 return null;
@@ -1417,10 +1432,23 @@
             dragenter(e) {
                 e.preventDefault();
                 const children = [...ele.querySelectorAll(selector)];
-                if (e.target === currentItem || children.length <= 1 || e.target === ele || !children.includes(e.target)) {
+                if (e.target === currentItem || children.length <= 1) {
                     return
                 }
-                e.target.insertAdjacentElement('afterend', currentItem);
+                if (!e.target.classList.contains('moving') && !currentItem?.classList?.contains('moving')) {
+                    //log(e.target, currentItem)
+                    return;
+                }
+                const cur = children.indexOf(currentItem), tar = children.indexOf(e.target);
+                if (cur < 0 || tar < 0) {
+                    //log(e.target, tar, '---------', currentItem, cur);
+                    return;
+                }
+                if (tar > cur) {
+                    e.target.insertAdjacentElement('afterend', currentItem);
+                    return;
+                }
+                currentItem.insertAdjacentElement('afterend', e.target);
             },
             dragend(e) {
                 currentItem.classList.remove('moving');
@@ -1487,6 +1515,7 @@
             }
             eventFn.add(evt);
         });
+        inputEventSelectors.push('.super-fetch-name,.parent-super-name');
         setting.addEventListener('blur', eventFn.autoAddWidths, true);
         setting.addEventListener('contextmenu', evt => evt.target.dataset.op === 'add' && eventFn.copy(evt));
 
