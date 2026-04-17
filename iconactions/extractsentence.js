@@ -83,6 +83,23 @@
 
     const eventFn = {
         dragEle: {},
+        foldHidden(items, name, hidden) {
+            const children = items.querySelectorAll(`.super-fetch-item:has(.parent-super-name[value="${name}"])`);
+            children.forEach(el => {
+                    hidden === '👐' ? el.classList.remove('fetch-hidden') : el.classList.add('fetch-hidden');
+                    const pname = el.querySelector(`.super-fetch-name`).value;
+                    el.children[0].innerText = '🙏';
+                    this.foldHidden(items, pname, hidden);
+                }
+            );
+        },
+        fold(evt) {
+            const fold = evt.target.innerText;
+            evt.target.innerText = fold === '👐' ? '🙏' : '👐';
+            const name = evt.target.parentElement.querySelector('.super-fetch-name').value;
+            const items = findParent(evt.target, '.super-fetch-items');
+            eventFn.foldHidden(items, name, fold);
+        },
         maxDeep: 0,
         offsetWidth: 1,// vw
         inputValueSelectors: new Set(['super-fetch-name', 'parent-super-name']),
@@ -102,6 +119,7 @@
             const item = el.querySelector(`.super-fetch-item:has(.super-fetch-name[value='${rule["super-fetch-name"]}'])`);
             item.dataset.deep = deep;
             if (rule?.children?.length > 0) {
+                item.dataset.fold = 'true';
                 deep++;
                 if (deep > this.maxDeep) {
                     this.maxDeep = deep;
@@ -119,9 +137,9 @@
                     }
                     this.calculateWidth(el, child, deep)
                 })
+            } else {
+                delete item.dataset?.fold
             }
-
-
         },
         changedEleSelector: '.swal2-popup, #shadowFields > ol, ol .form-item:has( .sentence_setting) :where(.spell), .form-item .spell-content',
         autoAddWidth() {
@@ -1190,6 +1208,7 @@
 
     const mapTitle = {
         'no file': '没有文件！',
+        'fold-or-unfold': '折叠或展开子项',
         'multiple_child': '子项按组查询（queryAll），此时格式化作用于单组元素，整个值为用分隔符拼接',
         'redundantly import': '无需导入！',
         'super html extract and process processor': '超级html提取加工处理器',
@@ -1487,6 +1506,8 @@
             input.replaceWith(inp);
         }
     });
+
+    PushExpandAnkiInputButton('fetch-fold', '', eventFn.fold)
 
     PushExpandAnkiRichButton('action-switch-text', '', (evt, fn) => {
         fn?.(evt);

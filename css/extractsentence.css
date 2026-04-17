@@ -131,6 +131,7 @@ input[name=parent-selector], input[name=child-selector] {
 .super-fetch-item {
     border: #135a27 solid 1px;
     margin-top: 5px;
+    position: relative;
 }
 
 .moving {
@@ -156,6 +157,17 @@ input[name=parent-selector], input[name=child-selector] {
     width: 2vw;
 }
 
+.fetch-fold {
+    left: 0;
+    position: absolute;
+    cursor: pointer;
+    display: none;
+}
+
 .super-fetch-name, .super-fetch-item {
     background-color: attr(data-color type(<color>));
+}
+
+.super-fetch-item[data-fold] .fetch-fold {
+    display: inline;
 }
