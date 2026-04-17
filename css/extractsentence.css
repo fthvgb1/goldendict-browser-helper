@@ -157,5 +157,5 @@ input[name=parent-selector], input[name=child-selector] {
 }
 
 .super-fetch-name, .super-fetch-item {
-    background-color: attr(data-color type(< color >));
+    background-color: attr(data-color type(<color>));
 }
