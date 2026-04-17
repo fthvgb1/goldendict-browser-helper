@@ -86,19 +86,24 @@
         foldHidden(items, name, hidden) {
             const children = items.querySelectorAll(`.super-fetch-item:has(.parent-super-name[value="${name}"])`);
             children.forEach(el => {
-                    hidden === '👐' ? el.classList.remove('fetch-hidden') : el.classList.add('fetch-hidden');
+                    hidden === '➕' ? el.classList.remove('fetch-hidden') : el.classList.add('fetch-hidden');
                     const pname = el.querySelector(`.super-fetch-name`).value;
-                    el.children[0].innerText = '🙏';
-                    this.foldHidden(items, pname, hidden);
+                el.children[0].innerText = '➖';
+                this.foldHidden(items, pname, hidden);
                 }
             );
         },
         fold(evt) {
             const fold = evt.target.innerText;
-            evt.target.innerText = fold === '👐' ? '🙏' : '👐';
+            evt.target.innerText = fold === '➕' ? '➖' : '➕';
             const name = evt.target.parentElement.querySelector('.super-fetch-name').value;
             const items = findParent(evt.target, '.super-fetch-items');
             eventFn.foldHidden(items, name, fold);
+            if (fold === '➕') {
+                evt.target.parentElement.scrollIntoView({
+                    behavior: 'smooth'
+                });
+            }
         },
         maxDeep: 0,
         offsetWidth: 1,// vw

@@ -158,7 +158,8 @@ input[name=parent-selector], input[name=child-selector] {
 }
 
 .fetch-fold {
-    left: 0;
+    left: -2.5vw;
+    top: 2vw;
     position: absolute;
     cursor: pointer;
     display: none;
