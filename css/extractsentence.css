@@ -165,9 +165,9 @@ input[name=parent-selector], input[name=child-selector] {
     display: none;
 }
 
-.super-fetch-name, .super-fetch-item {
+/*.super-fetch-name, .super-fetch-item {
     background-color: attr(data-color type(<color>));
-}
+}*/
 
 .super-fetch-item[data-fold] .fetch-fold {
     display: inline;

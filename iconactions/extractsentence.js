@@ -134,11 +134,13 @@
                 if (!color) {
                     color = `hsla(${Math.random() * 360}, 51%, 85%, 0.7)`;
                     input.dataset.color = color;
+                    input.style.backgroundColor = color;
                 }
                 rule.children.forEach(child => {
                     const ele = el.querySelector(`.super-fetch-item:has(.super-fetch-name[value='${child["super-fetch-name"]}'])`);
                     if (ele) {
                         ele.dataset.color = color;
+                        ele.style.backgroundColor = color;
                     }
                     this.calculateWidth(el, child, deep)
                 })
@@ -603,6 +605,9 @@
         },
         query(ele, selectorItem, last, keepItems = []) {
             const selector = selectorItem['fetch-selector'];
+            if (selector === 'doc') {
+                return last ? [[document]] : document;
+            }
             const multiple = selectorItem['is_multiple'];
             const keep = selectorItem['keep-parent'];
             if (ele instanceof NodeList || Array.isArray(ele)) {
