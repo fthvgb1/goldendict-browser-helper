@@ -317,7 +317,7 @@
             }
         },
         'text-clean': (ev) => {
-            ev.target.parentElement.previousElementSibling.querySelector('.spell-content').innerHTML = '';
+            ev.target.parentElement.previousElementSibling.querySelector('.spell-content').innerHTML = '<div><br></div>';
         },
         'paste-html': async (ev) => {
             ev.target.parentElement.previousElementSibling.querySelector('.spell-content').focus();

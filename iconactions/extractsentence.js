@@ -88,8 +88,8 @@
             children.forEach(el => {
                     hidden === '➕' ? el.classList.remove('fetch-hidden') : el.classList.add('fetch-hidden');
                     const pname = el.querySelector(`.super-fetch-name`).value;
-                el.children[0].innerText = '➖';
-                this.foldHidden(items, pname, hidden);
+                    el.children[0].innerText = '➖';
+                    this.foldHidden(items, pname, hidden);
                 }
             );
         },
@@ -610,52 +610,52 @@
             }
             const multiple = selectorItem['is_multiple'];
             const keep = selectorItem['keep-parent'];
-            if (ele instanceof NodeList || Array.isArray(ele)) {
-                const eles = [];
-                if (!last) {
-                    ele.forEach(el => {
-                        if (multiple) {
-                            const ell = el.querySelectorAll(selector);
-                            if (ell.length < 1) {
-                                keep && keepItems.push(el);
-                                return;
-                            }
-                            ell.forEach(ell => eles.push(ell));
-                            return
-                        }
-                        const e = el.querySelector(selector);
-                        if (!e) {
-                            keep && keepItems.push(el);
-                            return;
-                        }
-                        eles.push(el);
-                    });
-                    return eles;
+            if (!(ele instanceof NodeList) && !Array.isArray(ele)) {
+                const r = this.queryResults(ele, selector, multiple);
+                if (r && last) {
+                    return multiple ? [[...r, ...keepItems.map(this.flagParent)]] : [[r]];
                 }
-
+                return r;
+            }
+            const eles = [];
+            if (!last) {
                 ele.forEach(el => {
-                    const item = [];
                     if (multiple) {
                         const ell = el.querySelectorAll(selector);
                         if (ell.length < 1) {
                             keep && keepItems.push(el);
                             return;
                         }
-                        ell.forEach(e => item.push(e));
-                        eles.push(item);
+                        ell.forEach(ell => eles.push(ell));
                         return
                     }
                     const e = el.querySelector(selector);
-                    !e && keep && keepItems.push(el);
-                    e && eles.push([e]);
+                    if (!e) {
+                        keep && keepItems.push(el);
+                        return;
+                    }
+                    eles.push(el);
                 });
-                return [...eles, ...keepItems.map(this.flagParent)];
+                return eles;
             }
-            const r = this.queryResults(ele, selector, multiple);
-            if (r && last) {
-                return multiple ? [[...r, ...keepItems.map(this.flagParent)]] : [[r]];
-            }
-            return r;
+
+            ele.forEach(el => {
+                const item = [];
+                if (multiple) {
+                    const ell = el.querySelectorAll(selector);
+                    if (ell.length < 1) {
+                        keep && keepItems.push(el);
+                        return;
+                    }
+                    ell.forEach(e => item.push(e));
+                    eles.push(item);
+                    return
+                }
+                const e = el.querySelector(selector);
+                !e && keep && keepItems.push(el);
+                e && eles.push([e]);
+            });
+            return [...eles, ...keepItems.map(this.flagParent)];
         },
         queryResults(ele, selector, multiple) {
             if (multiple) {
@@ -744,6 +744,9 @@
         templateVarself: /\{\{(.*?)}}/g,
         tamperVar: /\{\$(.*?)}/g,
         replaceVars2Format(vars, str) {
+            if (!str) {
+                return str;
+            }
             return str.replace(this.tamperVar, (substring, name) => {
                 const t = GM_getValue(name, '');
                 return t ? t : substring
@@ -1040,6 +1043,10 @@
         },
 
         generallyReplace(item, target, clone = false, eleParam = {}) {
+            if (item['replace_target_type'] === 'remove element') {
+                target.querySelectorAll(item.searchValue).forEach(el => el.remove());
+                return;
+            }
             item.replaceValue = this.replaceVars2Format(eleParam.vars, item.replaceValue);
             if (this.isTextNode(target) && item['replace_target_type'] === 'text') {
                 this.replaceString(item, target.value, val => target.value = val);
@@ -1056,10 +1063,6 @@
                 return this.generalElementHandleFn[item['replace_target_type']](item, target, clone, eleParam);
             }
 
-            if (item['replace_target_type'] === 'remove element') {
-                target.querySelectorAll(item['searchValue']).forEach(el => el.remove());
-                return;
-            }
             if (clone && item['replace_target_type'] === 'outerHTML') {
                 const el = templateHelper.createElement('div');
                 el.insertAdjacentElement('beforeend', target);
