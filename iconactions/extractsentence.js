@@ -155,8 +155,8 @@
                 .map(el => [el, convertFetchParam(el)]);
             items.forEach(item => {
                 const el = item[0];
-                const rules = actionHelper.parseFetchRule(item[1]);
-                rules.forEach(rule => this.calculateWidth(el, rule, 0));
+                const rules = actionHelper.parseFetchRule(item[1]['super-fetch-items'].filter(v => v?.operation !== 'handle'));
+                rules?.forEach(rule => this.calculateWidth(el, rule, 0));
             });
             if (this.maxDeep > old) {
                 const offset = vw(eventFn.offsetWidth * this.maxDeep);
@@ -709,7 +709,7 @@
             for (const exp of expressions) {
                 i++;
                 if (exp === 'parent') {
-                    const parentSelector = item['selector-items']?.[item['selector-items'].length - 2]?.['fetch-selector'];
+                    const parentSelector = item?.['selector-items']?.[item['selector-items'].length - 2]?.['fetch-selector'];
                     ele = ele?.eleType === 'parent' ? ele : findELeBySelector('p', parentSelector, ele);
                     continue;
                 }
@@ -788,7 +788,9 @@
                     varEle = templateHelper.createElement('div', {innerHTML: varEle.value});
                 } else {
                     varEle = varEle.cloneNode(true);
-                    if (item['fetch-data-type'] === 'text' && !this.isTextNode(this.getDestEle(param.fetchParam))) {
+                    let textNode = this.getDestEle(param.fetchParam);
+                    textNode = textNode ? this.isTextNode(textNode) : false;
+                    if (item['fetch-data-type'] === 'text' && !textNode) {
                         varEle.innerHTML = varEle.innerText;
                         returnFn = () => varEle.innerHTML;
                     }
@@ -846,13 +848,12 @@
         },
 
         parseVar(vars, name, el, rule, ele, fetchConf, from, cached) {
-            const children = {};
+            const children = {}, param = {
+                rule, beforeQueryEle: ele, afterQueryEle: el,
+                fetchParam: fetchConf, vars, from
+            };
             if (rule['fetch-data-type'] !== 'htmlElement') {
-                vars[name] = this.extractValue(el, rule,
-                    {
-                        rule, beforeQueryEle: ele, afterQueryEle: el,
-                        fetchParam: fetchConf, vars
-                    });
+                vars[name] = this.extractValue(el, rule, param);
                 rule?.children?.forEach(item => children[item['super-fetch-name']] = this.getVars(el, item, fetchConf, from, vars, cached));
                 if (vars[name] && rule?.['fetch-format']) {
                     vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
@@ -868,10 +869,7 @@
                 }
                 return vars[name];
             }
-            return vars[name] = this.getDefaultValue(rule, vars, {
-                rule, beforeQueryEle: ele, afterQueryEle: el,
-                fetchParam: fetchConf, vars
-            });
+            return vars[name] = this.getDefaultValue(rule, vars, param);
         },
         // fetch vars
         getVars(ele, rule, fetchConf, from, vars = {}, cached = {}) {
@@ -885,7 +883,7 @@
             if (!el || el?.length < 1) {
                 vars[name] = this.getDefaultValue(rule, vars, {
                     rule, beforeQueryEle: ele, afterQueryEle: el,
-                    fetchParam: fetchConf, vars
+                    fetchParam: fetchConf, vars, from
                 });
                 log("query rule's value-selector fail", ele, rule['value-selector'], rule);
             } else if (el instanceof NodeList && el.length > 0) {
@@ -953,7 +951,7 @@
         parseFetchRule(arr, rule = {}) {
             let valid = false;
             rule[''] = {};
-            arr['super-fetch-items'].forEach(item => {
+            arr.forEach(item => {
                 rule[item['super-fetch-name']] = item;
                 if (!item['value-selector'] && !item['default-value'] && !item['fetch-format']) {
                     log('value-selector or default value emptied', item);
@@ -976,9 +974,10 @@
             return rule['']?.children ?? null;
         },
 
-        replaceString(item, target, assign) {
+        replaceString(item, target, assign, vars = {}) {
             if (!item['replace_regex_pattern']) {
-                assign(target.replaceAll(item['searchValue'], item['replaceValue']));
+                item.searchValue = this.replaceVars2Format(vars, item.searchValue);
+                assign(target.replaceAll(item.searchValue, item.replaceValue));
                 return;
             }
             //log(`'${target}'`,`'${target.replace(new RegExp(item['searchValue'],  item['replace_regex_pattern']), item['replaceValue'])}'`);
@@ -1002,7 +1001,7 @@
                 }
                 item.templateVar = actionHelper.replaceVars2Format(eleParam.vars, item.templateVar);
                 actionHelper.replaceString(item, item.templateVar,
-                    actionHelper.isTextNode(target) ? r => target.value = r : r => target.innerHTML = r
+                    actionHelper.isTextNode(target) ? r => target.value = r : r => target.innerHTML = r, eleParam.vars
                 );
             },
         },
@@ -1049,11 +1048,11 @@
             }
             item.replaceValue = this.replaceVars2Format(eleParam.vars, item.replaceValue);
             if (this.isTextNode(target) && item['replace_target_type'] === 'text') {
-                this.replaceString(item, target.value, val => target.value = val);
+                this.replaceString(item, target.value, val => target.value = val, eleParam.vars);
                 return;
             }
             if (item.replace_target_type === 'text') {
-                this.replaceString(item, target.innerText, v => target.innerText = v);
+                this.replaceString(item, target.innerText, v => target.innerText = v, eleParam.vars);
                 return;
             }
             if (this.isTextNode(target) && this.inputHandleFn?.[item['replace_target_type']]) {
@@ -1068,10 +1067,10 @@
                 el.insertAdjacentElement('beforeend', target);
                 this.replaceString(item, el.innerHTML, v => {
                     el.innerHTML = v;
-                });
+                }, eleParam.vars);
                 return el.children[0];
             }
-            this.replaceString(item, target[item['replace_target_type']], v => target[item['replace_target_type']] = v);
+            this.replaceString(item, target[item['replace_target_type']], v => target[item['replace_target_type']] = v, eleParam.vars);
         },
 
         elementCache: {},
@@ -1135,7 +1134,7 @@
                 log('not have valid fetch rule!', param)
                 return;
             }
-            const rule = actionHelper.parseFetchRule(param);
+            const rule = actionHelper.parseFetchRule(param?.['super-fetch-items']);
             if (!rule) {
                 log('not have valid fetch rule!')
                 return;
@@ -1159,6 +1158,28 @@
                 }
             }
             actionHelper.fetchItem(ele, target, param, rule);
+        },
+        handleElement(param, from, target) {
+            const fetchItems = [], handleItems = [], vars = {};
+            param['super-fetch-items'].forEach(item => item?.operation === 'handle' ? handleItems.push(item) : fetchItems.push(item));
+            const rule = actionHelper.parseFetchRule(fetchItems);
+            if (rule) {
+                actionHelper.getMultiVars(from, rule, param, vars, vars);
+            }
+            handleItems.forEach(item => {
+                target.querySelectorAll(item['value-selector']).forEach(ele => {
+                    actionHelper.handItems(item['replacement-items'], ele, {
+                        vars, rule: param
+                    });
+                    if (!item?.['fetch-format']) {
+                        return
+                    }
+                    item['fetch-data-type'] = item['fetch-data-type'] === 'text' ? 'innerText' : item['fetch-data-type'];
+                    const name = item['super-fetch-name'], attr = item['fetch-data-type'];
+                    vars[name] = ele[attr];
+                    ele[attr] = actionHelper.replaceVars2Format(vars, item['fetch-format']);
+                });
+            });
         },
         replacement(param, target) {
             param['replacement-items'].forEach(item => actionHelper.replace(item, target));
@@ -1222,6 +1243,8 @@
     const mapTitle = {
         'no file': '没有文件！',
         'fold-or-unfold': '折叠或展开子项',
+        'handleElement': '处理元素',
+        'handle': '处理',
         'multiple_child': '子项按组查询（queryAll），此时格式化作用于单组元素，整个值为用分隔符拼接',
         'redundantly import': '无需导入！',
         'super html extract and process processor': '超级html提取加工处理器',
@@ -1333,8 +1356,14 @@
         return vars;
     }
 
-    const op = {'fetch': mapTitle['fetch'], 'replacement': mapTitle['replacement'], 'tag': mapTitle['tag']};
+    const op = {
+        'fetch': mapTitle['fetch'],
+        'replacement': mapTitle['replacement'],
+        'tag': mapTitle['tag'],
+        handleElement: mapTitle['handleElement']
+    };
     const handleOp = {'append': mapTitle['append'], 'cover': mapTitle['cover'], 'none': mapTitle['none']};
+    const operations = {fetch: mapTitle['fetch'], handle: mapTitle['handle']};
     const opType = {
         'text': mapTitle['text'],
         'remove element': mapTitle['remove element'],
@@ -1424,6 +1453,10 @@
             }
             return ele.children.length > 1 ? ele : ele.children[0];
         },
+
+        handleElement(data = {}) {
+            this['super-fetch-items'](data);
+        },
         replacement(data = {}) {
             data['replacement-items'] = data?.['replacement-items'] ? data['replacement-items'] : [{}];
             data['replacement-item-html'] = data['replacement-items']
@@ -1441,13 +1474,15 @@
                 .map(item => templateHelper.buildTemplateHTML('selector-chain', item));
 
             data['handleOp'] = handleOp;
-            data['super-fetch-item-html'] = (data?.['super-fetch-items'] ?? [{}]).map(item =>
+            return this['super-fetch-items'](data);
+        },
+        'super-fetch-items': (data = {}) => {
+            return data['super-fetch-item-html'] = (data?.['super-fetch-items'] ?? [{}]).map(item =>
                 templateHelper.buildTemplateHTML('fetch-item', {
-                    ...item, htmlType, opType,
+                    ...item, htmlType, opType, operations,
                     'replacement-item-html': templateHelper.replacement(item),
                 })
             );
-            return data['super-fetch-item-html'];
         }
     };
 

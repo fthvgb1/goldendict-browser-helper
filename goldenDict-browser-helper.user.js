@@ -46,6 +46,7 @@
 
 // @resource fetch-base https://github.com/fthvgb1/goldendict-browser-helper/blob/master/templates/base.html?raw=true
 // @resource fetch https://github.com/fthvgb1/goldendict-browser-helper/blob/master/templates/fetch.html?raw=true
+// @resource handleElement https://github.com/fthvgb1/goldendict-browser-helper/blob/master/templates/handleElement.html?raw=true
 // @resource fetch-item https://github.com/fthvgb1/goldendict-browser-helper/blob/master/templates/fetch-item.html?raw=true
 // @resource selector-chain https://github.com/fthvgb1/goldendict-browser-helper/blob/master/templates/selector-chain.html?raw=true
 // @resource tag https://github.com/fthvgb1/goldendict-browser-helper/blob/master/templates/tag.html?raw=true

@@ -4,6 +4,9 @@
         <input class="super-fetch-name" name="super-fetch-name" placeholder="{{super-fetch-name|lang}}" required
                title="{{super-fetch-name|lang}}" type="text"
                value="{{super-fetch-name}}">
+        <select class="operation" name="operation">
+            {{operations|buildOption(operation)}}
+        </select>
         <button class="add-super-fetch-item" data-op="add" data-target=".super-fetch-item" data-tpl-fn="fetch"
                 title="{{add|lang}}">+
         </button>

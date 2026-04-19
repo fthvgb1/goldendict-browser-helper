@@ -2,6 +2,7 @@
     superFetchHook.hookLang({
         'embolden': `加粗`,
         'bold': `{word}语法，悬念到选项上看对应模式说明`,
+        'specificValue': '具体值'
     });
 
     superFetchHook.opType['embolden'] = superFetchHook.lang('embolden');
@@ -44,6 +45,7 @@
         selector: ['选择器', "某个字段下的选择器,语法为 field@selector'"],
         anchor: ['锚定选择器', '使用锚定选择器语法'],
         variable: ['变量', '使用变量，直接使用标识名，无需用{}包裹'],
+        specificValue: ['具体值', '具体值']
     }
 
     function buildSelect(sel = '') {
@@ -59,7 +61,7 @@
 
     const modeFn = {
         variable(f, s, item, param) {
-            return param.vars[item.searchValue] ?? '';
+            return param.vars[superFetchHook.allowFn.trims(item.searchValue, '{}')] ?? '';
         },
         field(field) {
             return document.querySelector(`.field-name[value=${field}]+input`)?.value;
@@ -75,6 +77,9 @@
             }
             return superFetchHook.fetchActionHelper.isTextNode(ele) ? ele.value : ele.innerText;
         },
+        specificValue(f, s, item) {
+            return item.searchValue;
+        }
     };
 
     function parseWords(item, param) {
