@@ -756,9 +756,16 @@
                 }
                 return this.replaceVars2Format(vars, vars[name]);
             }).replace(this.fetchReplaceVarsRex, (substring, name) => {
+                name = name.replace('@i@', vars['@i@']);
                 if (name.endsWith('?')) {
-                    name = trims(name, '?');
+                    name = rightTrim(name, '?');
+                    if (name.includes('.')) {
+                        return getVarVal(vars, name, '');
+                    }
                     return vars?.[name] ?? '';
+                }
+                if (name.includes('.')) {
+                    return getVarVal(vars, name, substring);
                 }
                 return vars?.[name] ?? substring;
             });
@@ -776,27 +783,33 @@
             return varEle.innerHTML;
         },
         extractValue(varEle, item, param = {}) {
-            let returnFn = () => {
-                if (this.isTextNode(varEle)) {
-                    return varEle.value;
+            const type = item['fetch-data-type'], name = param.rule['super-fetch-name'];
+            let returnFn, value;
+            if (!this.isTextNode(varEle)) {
+                param.vars[name] = value = type === 'text' ? varEle.innerHTML : varEle[type];
+                returnFn = () => {
+                    const t = type === 'text' ? 'innerText' : type;
+                    return varEle?.[t] ?? '';
                 }
-                const t = item['fetch-data-type'] === 'text' ? 'innerText' : item['fetch-data-type'];
-                return varEle?.[t] ?? '';
+            } else {
+                param.vars[name] = value = varEle.value;
+                returnFn = () => value;
             }
-            if (item['replacement-items'].length > 0) {
+
+            const first = item['replacement-items']?.[0];
+            if (first && (first.searchValue || this.accessEmpty.has(first.replace_target_type))) {
                 if (this.valueNode.has(varEle.nodeName)) {
                     varEle = templateHelper.createElement('div', {innerHTML: varEle.value});
                 } else {
                     varEle = varEle.cloneNode(true);
                     let textNode = this.getDestEle(param.fetchParam);
                     textNode = textNode ? this.isTextNode(textNode) : false;
-                    if (item['fetch-data-type'] === 'text' && !textNode) {
+                    if (type === 'text' && !textNode) {
                         varEle.innerHTML = varEle.innerText;
                         returnFn = () => varEle.innerHTML;
                     }
                 }
-                param.vars[param.rule['super-fetch-name']] = varEle.innerHTML;
-                varEle.innerHTML = this.handItems(item['replacement-items'], varEle, param, true);
+                varEle.innerHTML = value = this.handItems(item['replacement-items'], varEle, param, true);
             }
             return returnFn();
         },
@@ -859,6 +872,8 @@
                     vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
                 }
                 return vars[name];
+            } else {
+                vars[name] = el;
             }
             rule?.children?.forEach(item => children[item['super-fetch-name']] = this.getVars(el, item, fetchConf, from, vars, cached));
             if (rule?.['fetch-format']) {
@@ -867,9 +882,9 @@
                         return vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
                     }
                 }
-                return vars[name];
+                return '';
             }
-            return vars[name] = this.getDefaultValue(rule, vars, param);
+            return vars[name] ? vars[name] : this.getDefaultValue(rule, vars, param);
         },
         // fetch vars
         getVars(ele, rule, fetchConf, from, vars = {}, cached = {}) {
@@ -888,8 +903,9 @@
                 log("query rule's value-selector fail", ele, rule['value-selector'], rule);
             } else if (el instanceof NodeList && el.length > 0) {
                 const s = new Set();
-                vars[name] = [...el].filterAndMapX(ell => {
+                vars[name] = [...el].filterAndMapX((ell, i) => {
                     const v = {...vars};
+                    v['@i@'] = i;
                     const r = this.parseVar(v, name, ell, rule, ele, fetchConf, from, cached);
                     if (!rule?.['fetch-repeat']) {
                         return r;
@@ -899,7 +915,10 @@
                     }
                     s.add(r);
                     return r;
-                }).join(rule.separator);
+                });
+                if (rule['concatenation']) {
+                    vars[name] = vars[name].join(rule.separator)
+                }
             } else {
                 this.parseVar(vars, name, el, rule, ele, fetchConf, from, cached);
             }
@@ -1167,7 +1186,8 @@
                 actionHelper.getMultiVars(from, rule, param, vars, vars);
             }
             handleItems.forEach(item => {
-                target.querySelectorAll(item['value-selector']).forEach(ele => {
+                target.querySelectorAll(item['value-selector']).forEach((ele, i) => {
+                    vars['@i@'] = i;
                     actionHelper.handItems(item['replacement-items'], ele, {
                         vars, rule: param
                     });
@@ -1245,6 +1265,7 @@
         'fold-or-unfold': '折叠或展开子项',
         'handleElement': '处理元素',
         'handle': '处理',
+        'concatenation': '拼接',
         'multiple_child': '子项按组查询（queryAll），此时格式化作用于单组元素，整个值为用分隔符拼接',
         'redundantly import': '无需导入！',
         'super html extract and process processor': '超级html提取加工处理器',

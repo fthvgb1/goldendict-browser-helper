@@ -22,8 +22,10 @@
         Object.defineProperty(Array.prototype, 'filterAndMapX', {
             value: function (fn) {
                 const arr = [];
+                let i = -1;
                 for (const item of this) {
-                    const r = fn(item);
+                    ++i;
+                    const r = fn(item, i);
                     if (r === false) {
                         continue
                     }
