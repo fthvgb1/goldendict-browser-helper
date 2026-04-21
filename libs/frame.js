@@ -433,7 +433,7 @@
     const op = {
         'function': (fn, k) => fn(k),
         'object': attr => Object.keys(attr).map(k => `${k}="${attr[k]}"`).join(' '),
-        'string': s => s,
+        'string': (s, v) => v && !isNaN(parseInt(s)) ? op.object(v[s]) : s,
         'number': (i, v) => v?.[i] ? op.object(v[i]) : ''
     }
 

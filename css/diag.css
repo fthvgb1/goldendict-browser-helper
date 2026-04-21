@@ -62,9 +62,6 @@
     text-align: left;
 }
 
-.sentence_field {
-    width: 8vw;
-}
 
 #sentence_type {
     min-width: initial;
@@ -120,9 +117,6 @@ ol .form-item:has( .sentence_setting) .field-operate input {
     max-width: 3vw;
 }
 
-#sentence_field {
-    width: 8vw;
-}
 
 #sentence_num {
     width: 5vw;
