@@ -488,12 +488,10 @@
             });
             return param;
         },
-        fns: [],
         convertFetchParam(item) {
-            if (formProcessor.fns.length < 1) {
-                formProcessor.fns = [formProcessor.getFormValue, ...Object.keys(actions.handlers).filterAndMapX(k => actions.handlers[k]?.form ?? false)];
-            }
-            return formProcessor.fns.reduce((data, fn) => fn(item, data), {});
+            const data = formProcessor.getFormValue(item), t = data['operate-type'];
+            actions.handlers[t]?.form?.(item, data);
+            return data;
         }
     };
 
@@ -1316,6 +1314,7 @@
                 scope: 'html',
                 text: mapTitle['handleElement'],
                 desc: mapTitle['handleElement-desc'],
+                form: (el, data) => actions.handlers.fetch.form(el, data),
                 getTemplate: (data) => {
                     actions.handlers.fetch.getFetchItem(data);
                     return templateHelper.buildTemplateHTML('handleElement', data);
