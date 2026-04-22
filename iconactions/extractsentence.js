@@ -116,14 +116,14 @@
             // wtf time format
             download(`fetch-rule.${current.getFullYear()}-${current.getMonth() + 1}-${current.getDate()}.${current.getHours()}.${current.getMinutes()}.${current.getSeconds()}.total.${params.length}.rows.json`, data);
         },
+        selector: '.fetch-import,.fetch-export',
         showProcessor(ev) {
-            const selector = '.fetch-import,.fetch-export';
             if (!ev.target.checked) {
                 saveFetchItems();
                 freshBtns();
                 setting.children[0].classList.add('fetch-hidden');
                 getFetchItemEles().map(e => e.remove());
-                ev.target.parentElement.querySelectorAll(selector).forEach(btn => btn.classList.add('fetch-hidden'))
+                ev.target.parentElement.querySelectorAll(eventFn.selector).forEach(btn => btn.classList.add('fetch-hidden'))
                 return
             }
             let fetchItems = GM_getValue('fetch-items', [{}]);
@@ -140,14 +140,7 @@
                 setting.children[0].classList.remove('fetch-hidden');
                 setting.children.length > 2 && [...setting.children].slice(2).forEach(e => e.classList.add('fetch-hidden'));
             }
-            const fns = [...setting.querySelectorAll('.fetch-replacement-items')].map(el => setEleDrag(el, 'li'));
-            eventFn.dragEle['replaceItem'] = onOff => fns.forEach(fn => fn(onOff));
-            eventFn.dragEle.replaceItem(true);
-            eventFn.dragEle['fetch-item'] = setEleDrag(setting, '.fetch-item');
-            eventFn.dragEle['fetch-item'](true);
-            eventFn.dragEle['super-fetch-item'] = setEleDrag(setting, '.super-fetch-item');
-            eventFn.dragEle['super-fetch-item'](true);
-            ev.target.parentElement.querySelectorAll(selector).forEach(btn => btn.classList.remove('fetch-hidden'))
+            ev.target.parentElement.querySelectorAll(eventFn.selector).forEach(btn => btn.classList.remove('fetch-hidden'))
         },
         async importFn(ev) {
             const file = ev.target.files[0];
@@ -711,8 +704,8 @@
     };
 
     function setEleDrag(ele, selector, config = {}) {
-        let currentItem;
-        const turnDrag = onoff => ele.querySelectorAll(selector).forEach(item => item.draggable = onoff)
+        let currentItem, flag = false;
+        const turnDrag = onoff => ele.querySelectorAll(selector).forEach(item => item.draggable = onoff);
         const evenFn = {
             dragstart(e) {
                 e.dataTransfer.effectAllowed = 'move';
@@ -729,12 +722,20 @@
                     //log(e.target, currentItem)
                     return;
                 }
-                const cur = children.indexOf(currentItem), tar = children.indexOf(e.target);
-                if (cur < 0 || tar < 0) {
-                    //log(e.target, tar, '---------', currentItem, cur);
+                const cur = children.indexOf(currentItem);
+                let tar = children.indexOf(e.target);
+                if (cur < 0) {
                     return;
                 }
-                e.target.insertAdjacentElement(tar > cur ? 'afterend' : 'beforebegin', currentItem);
+                let tarEle = e.target;
+                if (tar < 0) {
+                    tarEle = findParent(e.target, selector);
+                    if (!tarEle) {
+                        return;
+                    }
+                    tar = children.indexOf(tarEle);
+                }
+                tarEle.insertAdjacentElement(tar > cur ? 'afterend' : 'beforebegin', currentItem);
             },
             dragend(e) {
                 currentItem.classList.remove('moving');
@@ -744,13 +745,15 @@
                 e.preventDefault();
             },
             mousedown(ev) {
-                if (ev.target.tagName === 'INPUT') {
+                if (actionHelper.isTextNode(ev.target)) {
                     turnDrag(false);
+                    flag = true
                 }
             },
             mouseup(ev) {
-                if (ev.target.tagName === 'INPUT') {
+                if (flag) {
                     turnDrag(true);
+                    flag = false;
                 }
             },
             ...config

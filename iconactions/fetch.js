@@ -782,6 +782,13 @@
     evt.showProcessor = ev => {
         show(ev);
         !ev.target.checked && evt.autoAddWidths(ev);
+        const fns = [...setting.querySelectorAll('.fetch-replacement-items')].map(el => setEleDrag(el, 'li'));
+        eventFn.dragEle['replaceItem'] = onOff => fns.forEach(fn => fn(onOff));
+        eventFn.dragEle.replaceItem(true);
+        eventFn.dragEle['fetch-item'] = setEleDrag(setting, '.fetch-item');
+        eventFn.dragEle['fetch-item'](true);
+        eventFn.dragEle['super-fetch-item'] = setEleDrag(setting, '.super-fetch-item');
+        eventFn.dragEle['super-fetch-item'](true);
     };
 
     superFetchHook.mergeMap(superFetchHook.fetchActionHelper, actionHelper);
