@@ -76,11 +76,6 @@
             && Object.keys(o1).every(p => o1[p] === o2[p])
     }
 
-    function vw(percent) {
-        const w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-        return (percent * w) / 100;
-    }
-
     const eventFn = {
         contextMenuAction(ev) {
             const button = ev.target, input = button.parentElement.parentElement.querySelector('.field-name');
@@ -112,91 +107,9 @@
             button.replaceWith(sel);
         },
         dragEle: {},
-        foldHidden(items, name, hidden) {
-            const children = items.querySelectorAll(`.super-fetch-item:has(.parent-super-name[value="${name}"])`);
-            children.forEach(el => {
-                    hidden === '➕' ? el.classList.remove('fetch-hidden') : el.classList.add('fetch-hidden');
-                    const pname = el.querySelector(`.super-fetch-name`).value;
-                    el.children[0].innerText = '➖';
-                    this.foldHidden(items, pname, hidden);
-                }
-            );
-        },
-        fold(evt) {
-            const fold = evt.target.innerText;
-            evt.target.innerText = fold === '➕' ? '➖' : '➕';
-            const name = evt.target.parentElement.querySelector('.super-fetch-name').value;
-            const items = findParent(evt.target, '.super-fetch-items');
-            eventFn.foldHidden(items, name, fold);
-            if (fold === '➕') {
-                evt.target.parentElement.scrollIntoView({
-                    behavior: 'smooth'
-                });
-            }
-        },
-        maxDeep: 0,
-        offsetWidth: 1,// vw
-        inputValueSelectors: new Set(['super-fetch-name', 'parent-super-name']),
-        autoAddWidths: evt => {
-            if (!eventFn.inputValueSelectors.has(evt.target.className)) {
-                return
-            }
-            eventFn.autoAddWidth();
-        },
-        calculateWidth(el, rule, deep) {
-            if (deep > 0) {
-                const ele = el.querySelector(`.super-fetch-item:has(input[value="${rule['super-fetch-name']}"])`);
-                if (ele) {
-                    ele.style.marginLeft = `${deep * eventFn.offsetWidth}vw`;
-                }
-            }
-            const item = el.querySelector(`.super-fetch-item:has(.super-fetch-name[value='${rule["super-fetch-name"]}'])`);
-            item.dataset.deep = deep;
-            if (rule?.children?.length > 0) {
-                item.dataset.fold = 'true';
-                deep++;
-                if (deep > this.maxDeep) {
-                    this.maxDeep = deep;
-                }
-                const input = el.querySelector(`.super-fetch-name[value="${rule['super-fetch-name']}"]`);
-                let color = input.dataset?.color;
-                if (!color) {
-                    color = `hsla(${Math.random() * 360}, 51%, 85%, 0.7)`;
-                    input.dataset.color = color;
-                    input.style.backgroundColor = color;
-                }
-                rule.children.forEach(child => {
-                    const ele = el.querySelector(`.super-fetch-item:has(.super-fetch-name[value='${child["super-fetch-name"]}'])`);
-                    if (ele) {
-                        ele.dataset.color = color;
-                        ele.style.backgroundColor = color;
-                    }
-                    this.calculateWidth(el, child, deep)
-                })
-            } else {
-                delete item.dataset?.fold
-            }
-        },
+
         changedEleSelector: '.swal2-popup, #shadowFields > ol, ol .form-item:has( .sentence_setting) :where(.spell), .form-item .spell-content',
-        autoAddWidth() {
-            const old = this.maxDeep;
-            const items = [...setting.querySelectorAll('.fetch-item:not(.fetch-hidden):has(option[value=fetch]:checked)')]
-                .map(el => [el, formProcessor.convertFetchParam(el)]);
-            items.forEach(item => {
-                const el = item[0];
-                const rules = actionHelper.parseFetchRule(item[1]['super-fetch-items'].filter(v => v?.operation !== 'handle'));
-                rules?.forEach(rule => this.calculateWidth(el, rule, 0));
-            });
-            if (this.maxDeep > old) {
-                const offset = vw(eventFn.offsetWidth * this.maxDeep);
-                document.querySelectorAll(this.changedEleSelector).forEach(el => {
-                    let w = parseFloat(getComputedStyle(el).width.replace('px', ''));
-                    w += offset;
-                    el.style.width = `${w}px`;
-                    el.style.maxWidth = '100%';
-                });
-            }
-        },
+
         export(params = getAnkiFetchParams('', false)) {
             const data = JSON.stringify(params);
             const current = new Date();
@@ -213,7 +126,6 @@
                 ev.target.parentElement.querySelectorAll(selector).forEach(btn => btn.classList.add('fetch-hidden'))
                 return
             }
-            eventFn.autoAddWidth();
             let fetchItems = GM_getValue('fetch-items', [{}]);
             fetchItems.forEach(item => setting.appendChild(actionHelper.buildFetchItem(item)));
             if (GM_getValue('fetch-display-type', 1) === 2) {
@@ -331,7 +243,7 @@
         }
     };
 
-    PushHookAnkiChange('.fetch-file', eventFn.importFn);
+    PushHookAnkiChange('.fetch-file', ev => eventFn.importFn(ev));
     PushExpandAnkiInputButton('fetch-copy', '', (e) => {
         const item = findParent(e.target, '.fetch-item');
         const copyItem = item.cloneNode(true);
@@ -417,12 +329,11 @@
         }
         hidden();
         fn(ev.target.value);
-        eventFn.autoAddWidth();
     });
 
 
     // show extract processor
-    PushHookAnkiChange('#fetch.swal2-checkbox', eventFn.showProcessor);
+    PushHookAnkiChange('#fetch.swal2-checkbox', ev => eventFn.showProcessor(ev));
 
     PushHookAnkiChange('.fetch-active', fetchActive);
 
@@ -868,7 +779,6 @@
         }
     });
 
-    PushExpandAnkiInputButton('fetch-fold', '', eventFn.fold)
 
     PushExpandAnkiRichButton('action-switch-text', '', (evt, fn) => {
         fn?.(evt);
@@ -999,7 +909,6 @@
             eventFn.add(evt);
         });
         inputEventSelectors.push('.super-fetch-name,.parent-super-name');
-        setting.addEventListener('blur', eventFn.autoAddWidths, true);
         setting.addEventListener('contextmenu', evt => evt.target.dataset.op === 'add' && eventFn.copy(evt));
 
         ankiContainer.querySelector('#autoSentenceField').parentElement.insertAdjacentElement('afterend', div);
