@@ -610,17 +610,7 @@
 
     const handleOp = {'append': mapTitle['append'], 'cover': mapTitle['cover'], 'none': mapTitle['none']};
     const operations = {fetch: mapTitle['fetch'], handle: mapTitle['handle']};
-    const opType = {
-        'text': mapTitle['text'],
-        'remove element': mapTitle['remove element'],
-        'innerHTML': mapTitle['innerHTML'],
-        'outerHTML': mapTitle['outerHTML'],
-        'toUpperCase': mapTitle['toUpperCase'],
-        'toLowerCase': mapTitle['toLowerCase'],
-        'parseTemplate': mapTitle['parseTemplate'],
-        'escapeHTML': mapTitle['escapeHTML'],
-        'unescapeHTML': mapTitle['unescapeHTML'],
-    }, htmlType = {
+    const htmlType = {
         'text': mapTitle['text'],
         'innerHTML': mapTitle['innerHTML'],
         'outerHTML': mapTitle['outerHTML'],
@@ -734,6 +724,9 @@
                         return;
                     }
                     tar = children.indexOf(tarEle);
+                    if (tar < 0) {
+                        return;
+                    }
                 }
                 tarEle.insertAdjacentElement(tar > cur ? 'afterend' : 'beforebegin', currentItem);
             },
@@ -769,18 +762,6 @@
         }
     }
 
-    PushHookAnkiChange('.replace_target_type', evt => {
-        const input = evt.target.parentElement.querySelector('.replace_regex_pattern');
-        if (Object.keys(opType).includes(evt.target.value) && (!input || input.nodeName !== 'INPUT')) {
-            const inp = document.createElement('input');
-            inp.type = 'text';
-            inp.name = 'replace_regex_pattern';
-            inp.className = 'replace_regex_pattern';
-            inp.title = mapTitle['replace_regex_pattern'];
-            inp.placeholder = mapTitle['replace_regex_pattern'];
-            input.replaceWith(inp);
-        }
-    });
 
 
     PushExpandAnkiRichButton('action-switch-text', '', (evt, fn) => {
@@ -936,7 +917,7 @@
             mergeMap: (obj, kv) => Object.keys(kv).forEach(k => obj[k] = kv[k]),
             hookLang: lang => Object.keys(lang).forEach(k => mapTitle[k] = lang[k]),
             lang: name => allowFn.lang(name),
-            allowFn, htmlType, handleOp, opType, operations,
+            allowFn, htmlType, handleOp, operations,
             buildChildrenHtmlFn: templateHelper,
         }
     }

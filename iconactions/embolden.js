@@ -5,40 +5,29 @@
         'specificValue': '具体值'
     });
 
-    superFetchHook.opType['embolden'] = superFetchHook.lang('embolden');
-    superFetchHook.fetchActionHelper.replaceFn.embolden = (item, target, clone = false, param = {}) => {
-        if (!item['searchValue'] || superFetchHook.fetchActionHelper.isTextNode(target)) {
-            return
+    superFetchHook.valueHandlers.embolden = {
+        text: superFetchHook.lang('embolden'),
+        title: superFetchHook.lang('embolden'),
+        handle(item, target, clone = false, param = {}) {
+            if (!item['searchValue'] || superFetchHook.fetchActionHelper.isTextNode(target)) {
+                return
+            }
+            const words = parseWords(item, param).replace(/&nbsp;/g, ' ');
+            if (!words) {
+                return;
+            }
+            const format = item?.replaceValue ? item.replaceValue : '<b>{word}</b>';
+            embolden(target, words, format);
+        },
+        form(li, data) {
+            //superFetchHook.log(li,data);
+        },
+        renderHook(html, vars) {
+            const input = html.querySelector('.replace_regex_pattern');
+            input.replaceWith(buildSelect(vars?.['replace_regex_pattern'] ?? ''))
         }
-        const words = parseWords(item, param).replace(/&nbsp;/g, ' ');
-        if (!words) {
-            return;
-        }
-        const format = item?.replaceValue ? item.replaceValue : '<b>{word}</b>';
-        embolden(target, words, format);
     }
 
-    const templateFn = superFetchHook.buildChildrenHtmlFn.templateFnHook?.['replacement-item'];
-    superFetchHook.buildChildrenHtmlFn.templateFnHook['replacement-item'] = (html, vars) => {
-        if (vars['replace_target_type'] === 'embolden') {
-            const input = html.querySelector('.replace_regex_pattern');
-            input.replaceWith(buildSelect(vars['replace_regex_pattern']))
-        }
-        return templateFn ? templateFn(html, vars) : html;
-    };
-
-    PushHookAnkiChange('.replace_target_type', (ev, call) => {
-        const type = ev.target.value;
-        if (type !== 'embolden') {
-            call && call(ev)
-            return
-        }
-        const input = ev.target.parentElement.querySelector('input.replace_regex_pattern');
-        if (!input) {
-            return;
-        }
-        input.replaceWith(buildSelect());
-    });
 
     const title = {
         field: ['字段', "指定字段"],

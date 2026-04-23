@@ -16,7 +16,7 @@
     htmlSpecial,
     decodeHtmlSpecial,
     base64ToUint8Array,
-    setMapVal,
+    setMapVal, iterateObjByKey,
 } = (() => {
     if (!Array.prototype.filterAndMapX) {
         Object.defineProperty(Array.prototype, 'filterAndMapX', {
@@ -25,7 +25,7 @@
                 let i = -1;
                 for (const item of this) {
                     ++i;
-                    const r = fn(item, i);
+                    const r = fn(item, i, this);
                     if (r === false) {
                         continue
                     }
@@ -536,6 +536,14 @@
         }
     }
 
+    function iterateObjByKey(obj, fn, filterMap = true) {
+        const arr = Object.keys(obj);
+        if (filterMap) {
+            return arr.filterAndMapX(k => fn(k, obj[k]));
+        }
+        arr.forEach(k => fn(k, obj[k]));
+    }
+
     return {
         PushContextMenu,
         PushIconAction,
@@ -552,7 +560,7 @@
         htmlSpecial,
         decodeHtmlSpecial,
         base64ToUint8Array,
-        setMapVal,
+        setMapVal, iterateObjByKey,
     }
 })();
 

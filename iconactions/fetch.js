@@ -2,10 +2,14 @@
 
     const rightTrim = superFetchHook.allowFn.rightTrim;
     const {
-        htmlType, opType, operations, formProcessor,
+        htmlType, operations, formProcessor,
         buildChildrenHtmlFn: templateHelper, mapTitle,
         log, getVarVal, anchorFn, handleOp, eventHook: eventFn,
     } = superFetchHook;
+
+    superFetchHook.hookLang({
+        'simpleValueHandlers': '简单函数集合',
+    });
 
     function findELeBySelector(t, sel, el, multiple = false) {
         if (!el) {
@@ -37,6 +41,119 @@
         } while (--num)
         return ele;
     }
+
+    const valueHandlers = {
+        text: {
+            text: mapTitle['text'],
+            title: mapTitle['text'],
+            handle(item, target, clone = false, eleParam = {}) {
+                this.processor('innerText', item, target, clone, eleParam);
+            },
+            processor(attr, item, target, clone, eleParam) {
+                item.replaceValue = actionHelper.replaceVars2Format(eleParam.vars, item.replaceValue);
+                if (actionHelper.isTextNode(target)) {
+                    actionHelper.replaceString(item, target.value, val => target.value = val, eleParam.vars);
+                    return;
+                }
+                actionHelper.replaceString(item, target[attr], val => target[attr] = val, eleParam.vars);
+            }
+        },
+        innerHTML: {
+            text: mapTitle['innerHTML'],
+            title: mapTitle['innerHTML'],
+            handle(item, target, clone, eleParam) {
+                valueHandlers.text.processor('innerHTML', item, target, clone, eleParam);
+            }
+        },
+        outerHTML: {
+            text: mapTitle['outerHTML'],
+            title: mapTitle['outerHTML'],
+            handle(item, target, clone, eleParam) {
+                if (!clone) {
+                    valueHandlers.text.processor('outerHTML', target, clone, eleParam);
+                    return
+                }
+                const el = templateHelper.createElement('div');
+                el.insertAdjacentElement('beforeend', target);
+                actionHelper.replaceString(item, el.innerHTML, v => el.innerHTML = v, eleParam.vars);
+                return el.children[0];
+            }
+        },
+
+        'remove element': {
+            text: mapTitle['remove element'],
+            title: mapTitle['remove element'],
+            handle(item, target) {
+                target.querySelectorAll(item.searchValue).forEach(el => el.remove());
+            }
+        },
+
+        parseTemplate: {
+            text: mapTitle['parseTemplate'],
+            title: mapTitle['parseTemplate'],
+            handle(item, target, clone = false, eleParam = {}) {
+                item.replaceValue = actionHelper.replaceVars2Format(eleParam.vars, item.replaceValue);
+                if (!item?.templateVar || !item.replaceValue) {
+                    return
+                }
+                item.templateVar = actionHelper.replaceVars2Format(eleParam.vars, item.templateVar);
+                actionHelper.replaceString(item, item.templateVar,
+                    actionHelper.isTextNode(target) ? r => target.value = r : r => target.innerHTML = r, eleParam.vars
+                );
+            },
+        },
+        simpleValueHandlers: {
+            text: mapTitle['simpleValueHandlers'],
+            title: mapTitle['simpleValueHandlers'],
+            handle: (item, target) => {
+                const name = item.searchValue;
+                const handler = valueHandlers.simpleValueHandlers.childrenHandlers?.[name];
+                if (!handler) {
+                    log(name, 'not exist');
+                    return;
+                }
+                const fn = typeof handler === 'function' ? handler : handler.fn;
+                if (actionHelper.isTextNode(target)) {
+                    target.value = fn(target.value);
+                    return;
+                }
+                target.innerHTML = fn(target.innerHTML);
+            },
+            options: [],
+            getOptions() {
+                if (this.options.length > 0) {
+                    return this.options;
+                }
+                return this.options = iterateObjByKey(valueHandlers.simpleValueHandlers.childrenHandlers, (name, handler) => {
+                    let text = mapTitle?.[name] ?? '', title = text;
+                    if (typeof handler === 'object') {
+                        text = handler.text;
+                        title = handler.title;
+                    }
+                    return [name, text, {title}]
+                });
+            },
+            renderHook(html, vars) {
+                const options = buildOption(this.getOptions(), vars?.searchValue ?? '', 0, 1, 2);
+                const searchInput = html.querySelector('.fetch-replacement-target');
+                searchInput.replaceWith(templateHelper.createElement('select', {
+                    innerHTML: options,
+                    className: searchInput.className,
+                    name: searchInput.name,
+                }));
+            },
+            childrenHandlers: {
+                toUpperCase: {
+                    text: mapTitle['toUpperCase'],
+                    title: mapTitle['toUpperCase'],
+                    fn: str => str.toUpperCase(),
+                },
+                toLowerCase: str => str.toLowerCase(),
+                escapeHTML: str => htmlSpecial(str),
+                unescapeHTML: str => decodeHtmlSpecial(str),
+            },
+        },
+    };
 
     const actionHelper = {
         ...superFetchHook.fetchActionHelper,
@@ -211,7 +328,7 @@
 
         handItems(items, varEle, param, clone = false) {
             items.forEach(rule => {
-                const r = this.replace({...rule}, varEle, clone, param);
+                const r = this.handleValue({...rule}, varEle, clone, param);
                 param.vars[param.rule['super-fetch-name']] = varEle.innerHTML;
                 if (!r) {
                     return
@@ -223,7 +340,7 @@
         extractValue(varEle, item, param = {}) {
             const type = item['fetch-data-type'], name = param.rule['super-fetch-name'];
             let returnFn, value;
-            if (!this.isTextNode(varEle)) {
+            if (!actionHelper.isTextNode(varEle)) {
                 param.vars[name] = value = type === 'text' ? varEle.innerHTML : varEle[type];
                 returnFn = () => {
                     const t = type === 'text' ? 'innerText' : type;
@@ -241,7 +358,7 @@
                 } else {
                     varEle = varEle.cloneNode(true);
                     let textNode = this.getDestEle(param.fetchParam);
-                    textNode = textNode ? this.isTextNode(textNode) : false;
+                    textNode = textNode ? actionHelper.isTextNode(textNode) : false;
                     if (type === 'text' && !textNode) {
                         varEle.innerHTML = varEle.innerText;
                         returnFn = () => varEle.innerHTML;
@@ -366,7 +483,7 @@
         },
 
         setValue(target, value, item) {
-            this.isTextNode(target) ? this.setInputOrTextarea(target, value, item) : this.setEle(target, value, item);
+            actionHelper.isTextNode(target) ? this.setInputOrTextarea(target, value, item) : this.setEle(target, value, item);
         },
 
         setEle(target, value, item) {
@@ -404,102 +521,26 @@
         },
 
 
-        replaceString(item, target, assign, vars = {}) {
-            if (!item['replace_regex_pattern']) {
+        replaceString(item, str, assign, vars = {}) {
+            if (!item?.replace_regex_pattern) {
                 item.searchValue = this.replaceVars2Format(vars, item.searchValue);
-                assign(target.replaceAll(item.searchValue, item.replaceValue));
+                assign(str.replaceAll(item.searchValue, item.replaceValue));
                 return;
             }
             //log(`'${target}'`,`'${target.replace(new RegExp(item['searchValue'],  item['replace_regex_pattern']), item['replaceValue'])}'`);
-            assign(target.replace(new RegExp(item['searchValue'],
-                    item['replace_regex_pattern'] === 'none' ? '' : item['replace_regex_pattern']),
-                item['replaceValue']));
+            const pattern = item.replace_regex_pattern === 'none' ? '' : item.replace_regex_pattern;
+            assign(str.replace(new RegExp(item.searchValue, pattern), item.replaceValue));
         },
 
         textNode: new Set(['INPUT', 'TEXTAREA']),
         valueNode: new Set(['INPUT', 'TEXTAREA', 'SELECT']),
-        accessEmpty: new Set(['toUpperCase', 'toLowerCase', 'escapeHTML', 'unescapeHTML']),
-        replaceFn: {
-            'toUpperCase': (item, target) => actionHelper.convertCase(target, 'toUpperCase'),
-            'toLowerCase': (item, target) => actionHelper.convertCase(target, 'toLowerCase'),
-            parseTemplate(item, target, clone = false, eleParam = {}) {
-                item.replaceValue = actionHelper.replaceVars2Format(eleParam.vars, item.replaceValue);
-                if (!item?.templateVar || !item.replaceValue) {
-                    return
-                }
-                item.templateVar = actionHelper.replaceVars2Format(eleParam.vars, item.templateVar);
-                actionHelper.replaceString(item, item.templateVar,
-                    actionHelper.isTextNode(target) ? r => target.value = r : r => target.innerHTML = r, eleParam.vars
-                );
-            },
+        accessEmpty: new Set([]),
+
+        handleValue(item, target, clone = false, eleParam = {}) {
+            const handleName = item['replace_target_type'];
+            return valueHandlers[handleName].handle(item, target, clone, eleParam);
         },
 
-        generalElementHandleFn: {
-            escapeHTML(item, target) {
-                target.innerHTML = htmlSpecial(target.innerHTML);
-            },
-            unescapeHTML(item, target) {
-                target.innerHTML = decodeHtmlSpecial(target.innerHTML);
-            }
-        },
-        inputHandleFn: {
-            escapeHTML(item, target) {
-                target.value = htmlSpecial(target.value);
-            },
-            unescapeHTML(item, target) {
-                target.value = decodeHtmlSpecial(target.value);
-            }
-        },
-
-        convertCase(target, op) {
-            if (this.isTextNode(target)) {
-                target.value = target.value[op]()
-                return
-            }
-            target.innerText = target.innerText[op]();
-        },
-        replace(item, target, clone = false, eleParam = {}) {
-            if (!item['searchValue'] && !this.accessEmpty.has(item['replace_target_type'])) {
-                return
-            }
-            if (this.replaceFn?.[item['replace_target_type']]) {
-                this.replaceFn[item['replace_target_type']](item, target, clone, eleParam);
-                return
-            }
-            return this.generallyReplace(item, target, clone, eleParam);
-        },
-
-        generallyReplace(item, target, clone = false, eleParam = {}) {
-            if (item['replace_target_type'] === 'remove element') {
-                target.querySelectorAll(item.searchValue).forEach(el => el.remove());
-                return;
-            }
-            item.replaceValue = this.replaceVars2Format(eleParam.vars, item.replaceValue);
-            if (this.isTextNode(target) && item['replace_target_type'] === 'text') {
-                this.replaceString(item, target.value, val => target.value = val, eleParam.vars);
-                return;
-            }
-            if (item.replace_target_type === 'text') {
-                this.replaceString(item, target.innerText, v => target.innerText = v, eleParam.vars);
-                return;
-            }
-            if (this.isTextNode(target) && this.inputHandleFn?.[item['replace_target_type']]) {
-                return this.inputHandleFn[item['replace_target_type']](item, target, clone, eleParam);
-            }
-            if (this.generalElementHandleFn?.[item['replace_target_type']]) {
-                return this.generalElementHandleFn[item['replace_target_type']](item, target, clone, eleParam);
-            }
-
-            if (clone && item['replace_target_type'] === 'outerHTML') {
-                const el = templateHelper.createElement('div');
-                el.insertAdjacentElement('beforeend', target);
-                this.replaceString(item, el.innerHTML, v => {
-                    el.innerHTML = v;
-                }, eleParam.vars);
-                return el.children[0];
-            }
-            this.replaceString(item, target[item['replace_target_type']], v => target[item['replace_target_type']] = v, eleParam.vars);
-        },
     };
 
 
@@ -550,18 +591,21 @@
                 },
                 // optional
                 form(el, data) {
+                    data['selector-items'] = [];
                     el.querySelectorAll('.selector-chain .selector-item').forEach(li => {
                         const item = formProcessor.getFormValue(li, {}, 'input');
-                        data?.['selector-items'] ? data['selector-items'].push(item) : data['selector-items'] = [item];
+                        data['selector-items'].push(item);
                     })
                     const items = el.querySelector('.super-fetch-items');
                     if (!items) {
                         return data;
                     }
+                    data['super-fetch-items'] = [];
                     el.querySelectorAll('.super-fetch-item')?.forEach(item => {
-                        const dat = formProcessor.getFormValue(item, {}, 'input:not(.fetch-replacement-item input),select:not(.fetch-replacement-item select)');
+                        const selector = ':where(input,select,textarea):not(.fetch-replacement-item :where(input,select,textarea))';
+                        const dat = formProcessor.getFormValue(item, {}, selector);
                         actions.handlers.replacement.form(item, dat);
-                        data?.['super-fetch-items'] ? data['super-fetch-items'].push(dat) : data['super-fetch-items'] = [dat];
+                        data['super-fetch-items'].push(dat);
                     });
                     return data;
                 },
@@ -570,7 +614,7 @@
                     data['handleOp'] = handleOp;
                     return data['super-fetch-item-html'] = (data?.['super-fetch-items'] ?? [{}]).map(item =>
                         templateHelper.buildTemplateHTML('fetch-item', {
-                            ...item, htmlType, opType, operations,
+                            ...item, htmlType, operations,
                             'replacement-item-html': eventFn.addTplFn.replacement(item),
                         })
                     );
@@ -633,7 +677,7 @@
             },
             replacement: {
                 action(param, target) {
-                    param['replacement-items'].forEach(item => actionHelper.replace(item, target));
+                    param['replacement-items'].forEach(item => actionHelper.handleValue(item, target));
                 },
                 text: mapTitle['replacement'],
                 desc: mapTitle['replacement'],
@@ -646,21 +690,30 @@
                     if (el.querySelector('.super-fetch-item')) {
                         return data;
                     }
-                    const selector = 'input,select';
-                    el.querySelectorAll('.fetch-replacement-item')
-                        .forEach(li => data?.['replacement-items'] ?
-                            data['replacement-items'].push(formProcessor.getFormValue(li, {}, selector)) :
-                            data['replacement-items'] = [formProcessor.getFormValue(li, {}, selector)]
-                        );
+                    const selector = 'input,textarea,select';
+                    data['replacement-items'] = [];
+                    el.querySelectorAll('.fetch-replacement-item').forEach(li => {
+                            const datum = formProcessor.getFormValue(li, {}, selector);
+                            valueHandlers?.[datum.replace_target_type]?.form?.(li, datum);
+                            data['replacement-items'].push(datum);
+                        }
+                    );
                     return data;
                 },
-                getReplacementItem(data) {
+                opType: [],
+                getHandlers() {
+                    if (this.opType.length > 0) {
+                        return this.opType;
+                    }
+                    return this.opType = iterateObjByKey(valueHandlers, (name, handler) => [name, handler.text, {title: handler.title}]);
+                },
+                getReplacementItem(data = {}) {
                     data['replacement-items'] = data?.['replacement-items'] ? data['replacement-items'] : [{}];
                     data['replacement-item-html'] = data['replacement-items']
                         .map(item =>
                             templateHelper.buildTemplateHTML('replacement-item', {
                                 ...item,
-                                opType,
+                                opType: actions.handlers.replacement.getHandlers(),
                             })
                         );
                     return data['replacement-item-html'];
@@ -766,22 +819,41 @@
         },
     };
 
-    PushExpandAnkiInputButton('fetch-fold', '', evt.fold)
+    PushExpandAnkiInputButton('fetch-fold', '', evt.fold);
 
 
     PushHookAnkiChange('.fetch-item-select', (ev, fn) => {
         fn?.(ev);
         evt.autoAddWidth();
-    })
+    });
+
+    PushHookAnkiChange('.replace_target_type', ev => {
+        const li = ev.target.parentElement;
+        const newLi = actions.handlers.replacement.getReplacementItem()[0];
+        newLi.querySelector('.replace_target_type').replaceWith(ev.target);
+        li.replaceWith(newLi);
+        const type = ev.target.value;
+        valueHandlers?.[type]?.renderHook?.(newLi, {}, ev);
+    });
+
 
     PushHookAnkiHtml(div => {
         setting = div.querySelector('.select-setting');
         setting.addEventListener('blur', ev => eventFn.autoAddWidths(ev), true);
     });
+
+    superFetchHook.buildChildrenHtmlFn.templateFnHook['replacement-item'] = (html, vars) => {
+        valueHandlers?.[vars.replace_target_type]?.renderHook?.(html, vars);
+        return html;
+    };
+
     const show = evt.showProcessor;
     evt.showProcessor = ev => {
         show(ev);
-        !ev.target.checked && evt.autoAddWidths(ev);
+        if (!ev.target.checked) {
+            return;
+        }
+        evt.autoAddWidth();
         const fns = [...setting.querySelectorAll('.fetch-replacement-items')].map(el => setEleDrag(el, 'li'));
         eventFn.dragEle['replaceItem'] = onOff => fns.forEach(fn => fn(onOff));
         eventFn.dragEle.replaceItem(true);
@@ -790,9 +862,10 @@
         eventFn.dragEle['super-fetch-item'] = setEleDrag(setting, '.super-fetch-item');
         eventFn.dragEle['super-fetch-item'](true);
     };
-
+    superFetchHook.valueHandlers = valueHandlers;
     superFetchHook.mergeMap(superFetchHook.fetchActionHelper, actionHelper);
     superFetchHook.mergeMap(superFetchHook.fetchActions, actions);
     superFetchHook.mergeMap(superFetchHook.eventHook, evt);
-
+    superFetchHook.findELeBySelector = findELeBySelector;
+    superFetchHook.findEleByNum = findEleByNum;
 })();

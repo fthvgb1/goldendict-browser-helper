@@ -146,10 +146,12 @@ input[name=parent-selector], input[name=child-selector] {
 .fetch-dd:has(option[value=htmlElement]:checked) ~ .fetch-dd,
 .fetch-dd:has(option[value=htmlElement]:checked) .default-value,
 .replace_target_type:has(option[value="remove element"]:checked) ~ :not(.fetch-replacement-target,button),
-.replace_target_type:has(option[value=toUpperCase]:checked) ~ :not(button),
-.replace_target_type:has(option[value=toLowerCase]:checked) ~ :not(button),
-.replace_target_type:has(option[value=escapeHTML]:checked) ~ :not(button),
-.replace_target_type:has(option[value=unescapeHTML]:checked) ~ :not(button) {
+.replace_target_type:has(option[value=simpleValueHandlers]:checked) ~ :not(.fetch-replacement-target,button) {
+    display: none;
+}
+
+
+.fetch-item:has(.operate-type>option[value=replacement]:checked) .replace_target_type > :where(option[value=parseTemplate]) {
     display: none;
 }
 
