@@ -191,7 +191,7 @@
     })();
 
 
-    const inputSelector = ['.field-name'];
+    const inputSelector = ['.field-name', '.autoSentenceField'];
 
     const clickFns = {
         'hammer': async (ev) => {
