@@ -75,8 +75,7 @@
                 }
                 const el = templateHelper.createElement('div');
                 el.insertAdjacentElement('beforeend', target);
-                el.innerHTML = actionHelper.replaceString(item, el.innerHTML, eleParam.vars);
-                return el.children[0];
+                return actionHelper.replaceString(item, el.innerHTML, eleParam.vars);
             }
         },
 
@@ -233,7 +232,7 @@
                             return;
                         }
                         const vars = this.getMultiVars(el, rules, item, cached);
-                        const format = item['fetch-format'] ? item['fetch-format'] : Object.keys(vars).map(k => `{${k}}`).join('');
+                        const format = item['fetch-format'] ? item['fetch-format'] : iterateObjByKey(vars, k => k.endsWith('-ele') ? false : `{${k}}`).join('');
                         const value = this.replaceVars2Format(vars, format);
                         this.setValue(target, value, item);
                     }));
@@ -334,30 +333,32 @@
                 }
                 const name = param.rule['super-fetch-name'];
                 let el = varEle;
-                if (this.valueNode.has(el)) {
-                    el = templateHelper.createElement('div', {innerHTML: varEle.value});
+                if (actionHelper.isTextNode(varEle)) {
+                    param.vars[name] = varEle.value
                 } else {
-                    el = varEle.cloneNode(true);
-                    let textNode = this.getDestEle(param.fetchParam);
-                    textNode = textNode ? actionHelper.isTextNode(textNode) : false;
-                    if (type === 'text' && !textNode) {
-                        el.innerHTML = varEle.innerText;
+                    param.vars[name] = type === 'text' ? el.innerText : el[type];
+                }
+                if (clone) {
+                    if (this.valueNode.has(el)) {
+                        el = templateHelper.createElement('div', {innerHTML: varEle.value});
                     } else {
-                        el.innerHTML = varEle[type];
+                        el = varEle.cloneNode(true);
+                        if ('text' === type) {
+                            el.innerHTML = param.vars[name];
+                        }
                     }
                 }
-                param.vars[name] = el.innerHTML;
 
                 items.forEach(rule => {
                     const r = this.handleValue({...rule}, el, clone, param);
-                    param.vars[name] = el.innerHTML;
-                    if (!r) {
+                    if (r === undefined) {
+                        param.vars[name] = el.innerHTML;
                         return
                     }
-                    el = r;
+                    el = templateHelper.createElement('div', {innerHTML: r}).children[0]
+                    param.vars[name] = r;
                 });
-                //actionHelper.isTextNode(varEle) ? varEle.value = el.innerHTML : varEle.innerHTML = el.innerHTML;
-                return el.innerHTML;
+                return param.vars[name];
             }
             if (typeof varEle === 'string') {
                 return varEle
