@@ -595,6 +595,9 @@
     }
 
     function getVarVal(vars, express, defaults = '') {
+        if (vars?.[express]) {
+            return vars[express];
+        }
         if (!express.includes('.')) {
             return vars?.[express] ?? defaults;
         }
@@ -732,7 +735,7 @@
             },
             dragend(e) {
                 currentItem.classList.remove('moving');
-                saveFetchItems();
+                //saveFetchItems();
             },
             dragover(e) {
                 e.preventDefault();

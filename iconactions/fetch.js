@@ -52,10 +52,10 @@
             processor(attr, item, target, clone, eleParam) {
                 item.replaceValue = actionHelper.replaceVars2Format(eleParam.vars, item.replaceValue);
                 if (actionHelper.isTextNode(target)) {
-                    actionHelper.replaceString(item, target.value, val => target.value = val, eleParam.vars);
+                    target.value = actionHelper.replaceString(item, target.value, eleParam.vars);
                     return;
                 }
-                actionHelper.replaceString(item, target[attr], val => target[attr] = val, eleParam.vars);
+                target[attr] = actionHelper.replaceString(item, target[attr], eleParam.vars);
             }
         },
         innerHTML: {
@@ -75,7 +75,7 @@
                 }
                 const el = templateHelper.createElement('div');
                 el.insertAdjacentElement('beforeend', target);
-                actionHelper.replaceString(item, el.innerHTML, v => el.innerHTML = v, eleParam.vars);
+                el.innerHTML = actionHelper.replaceString(item, el.innerHTML, eleParam.vars);
                 return el.children[0];
             }
         },
@@ -96,10 +96,9 @@
                 if (!item?.templateVar || !item.replaceValue) {
                     return
                 }
-                item.templateVar = actionHelper.replaceVars2Format(eleParam.vars, item.templateVar);
-                actionHelper.replaceString(item, item.templateVar,
-                    actionHelper.isTextNode(target) ? r => target.value = r : r => target.innerHTML = r, eleParam.vars
-                );
+                item.templateVar = actionHelper.replaceVars2Format(eleParam.vars, item.templateVar, true);
+                const r = actionHelper.replaceString(item, item.templateVar, eleParam.vars);
+                actionHelper.isTextNode(target) ? target.value = r : target.innerHTML = r;
             },
         },
         simpleValueHandlers: {
@@ -298,7 +297,7 @@
         fetchReplaceVarsRex: /\{(.*?)}/g,
         templateVarself: /\{\{(.*?)}}/g,
         tamperVar: /\{\$(.*?)}/g,
-        replaceVars2Format(vars, str) {
+        replaceVars2Format(vars, str, empty = false) {
             if (!str) {
                 return str;
             }
@@ -319,54 +318,54 @@
                     }
                     return vars?.[name] ?? '';
                 }
+                const d = empty ? '' : substring;
                 if (name.includes('.')) {
-                    return getVarVal(vars, name, substring);
+                    return getVarVal(vars, name, d);
                 }
-                return vars?.[name] ?? substring;
+                return vars?.[name] ?? d;
             });
         },
 
         handItems(items, varEle, param, clone = false) {
-            items.forEach(rule => {
-                const r = this.handleValue({...rule}, varEle, clone, param);
-                param.vars[param.rule['super-fetch-name']] = varEle.innerHTML;
-                if (!r) {
-                    return
+            const first = items?.[0], type = param.rule?.['fetch-data-type'];
+            if (first.searchValue || actionHelper.accessEmpty.has(first.replace_target_type)) {
+                if (typeof varEle === 'string') {
+                    varEle = templateHelper.createElement('div', {innerHTML: varEle});
                 }
-                varEle = r;
-            });
-            return varEle.innerHTML;
-        },
-        extractValue(varEle, item, param = {}) {
-            const type = item['fetch-data-type'], name = param.rule['super-fetch-name'];
-            let returnFn, value;
-            if (!actionHelper.isTextNode(varEle)) {
-                param.vars[name] = value = type === 'text' ? varEle.innerHTML : varEle[type];
-                returnFn = () => {
-                    const t = type === 'text' ? 'innerText' : type;
-                    return varEle?.[t] ?? '';
-                }
-            } else {
-                param.vars[name] = value = varEle.value;
-                returnFn = () => value;
-            }
-
-            const first = item['replacement-items']?.[0];
-            if (first && (first.searchValue || this.accessEmpty.has(first.replace_target_type))) {
-                if (this.valueNode.has(varEle.nodeName)) {
-                    varEle = templateHelper.createElement('div', {innerHTML: varEle.value});
+                const name = param.rule['super-fetch-name'];
+                let el = varEle;
+                if (this.valueNode.has(el)) {
+                    el = templateHelper.createElement('div', {innerHTML: varEle.value});
                 } else {
-                    varEle = varEle.cloneNode(true);
+                    el = varEle.cloneNode(true);
                     let textNode = this.getDestEle(param.fetchParam);
                     textNode = textNode ? actionHelper.isTextNode(textNode) : false;
                     if (type === 'text' && !textNode) {
-                        varEle.innerHTML = varEle.innerText;
-                        returnFn = () => varEle.innerHTML;
+                        el.innerHTML = varEle.innerText;
+                    } else {
+                        el.innerHTML = varEle[type];
                     }
                 }
-                varEle.innerHTML = value = this.handItems(item['replacement-items'], varEle, param, true);
+                param.vars[name] = el.innerHTML;
+
+                items.forEach(rule => {
+                    const r = this.handleValue({...rule}, el, clone, param);
+                    param.vars[name] = el.innerHTML;
+                    if (!r) {
+                        return
+                    }
+                    el = r;
+                });
+                //actionHelper.isTextNode(varEle) ? varEle.value = el.innerHTML : varEle.innerHTML = el.innerHTML;
+                return el.innerHTML;
             }
-            return returnFn();
+            if (typeof varEle === 'string') {
+                return varEle
+            }
+            if (actionHelper.isTextNode(varEle)) {
+                return varEle.value
+            }
+            return type === 'text' ? varEle.innerText : varEle[type];
         },
         defaultReg: /\{(.*?)}/,
         getDefVars(defaultVal, vars) {
@@ -406,8 +405,7 @@
             }
 
             if (defaultVal) {
-                let d = templateHelper.createElement('div', {innerHTML: defaultVal});
-                vars[name] = this.handItems(rule['replacement-items'], d, param, true);
+                vars[name] = this.handItems(rule['replacement-items'], defaultVal, param, true);
             }
             if (format) {
                 vars[name] = this.replaceVars2Format(vars, format);
@@ -420,7 +418,8 @@
                 fetchParam: fetchConf, vars, from
             };
             if (rule['fetch-data-type'] !== 'htmlElement') {
-                vars[name] = this.extractValue(el, rule, param);
+                vars[`${name}-ele`] = el;
+                vars[name] = this.handItems(rule?.['replacement-items'], el, param, true);
                 rule?.children?.forEach(item => children[item['super-fetch-name']] = this.getVars(el, item, fetchConf, from, vars, cached));
                 if (vars[name] && rule?.['fetch-format']) {
                     vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
@@ -521,15 +520,14 @@
         },
 
 
-        replaceString(item, str, assign, vars = {}) {
+        replaceString(item, str, vars = {}) {
             if (!item?.replace_regex_pattern) {
                 item.searchValue = this.replaceVars2Format(vars, item.searchValue);
-                assign(str.replaceAll(item.searchValue, item.replaceValue));
-                return;
+                return str.replaceAll(item.searchValue, item.replaceValue);
             }
             //log(`'${target}'`,`'${target.replace(new RegExp(item['searchValue'],  item['replace_regex_pattern']), item['replaceValue'])}'`);
             const pattern = item.replace_regex_pattern === 'none' ? '' : item.replace_regex_pattern;
-            assign(str.replace(new RegExp(item.searchValue, pattern), item.replaceValue));
+            return str.replace(new RegExp(item.searchValue, pattern), item.replaceValue);
         },
 
         textNode: new Set(['INPUT', 'TEXTAREA']),
