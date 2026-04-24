@@ -643,16 +643,23 @@
                         actionHelper.getMultiVars(from, rule, param, vars, vars);
                     }
                     handleItems.forEach(item => {
+                        const attr = item['fetch-data-type'] === 'text' ? 'innerText' : item['fetch-data-type'],
+                            name = item['super-fetch-name'];
                         target.querySelectorAll(item['value-selector']).forEach((ele, i) => {
                             vars['@i@'] = i;
-                            actionHelper.handItems(item['replacement-items'], ele, {
-                                vars, rule: param
+                            item['replacement-items'].forEach(item => {
+                                if (item.searchValue || actionHelper.accessEmpty.has(item.replace_target_type)) {
+                                    if (actions.handlers.handleElement.handlers?.[item.replace_target_type]) {
+                                        actions.handlers.handleElement.handlers?.[item.replace_target_type](item, ele);
+                                        return
+                                    }
+                                    ele[attr] = valueHandlers[item.replace_target_type].handle(item, ele[attr], {});
+                                }
+
                             });
                             if (!item?.['fetch-format']) {
                                 return
                             }
-                            item['fetch-data-type'] = item['fetch-data-type'] === 'text' ? 'innerText' : item['fetch-data-type'];
-                            const name = item['super-fetch-name'], attr = item['fetch-data-type'];
                             vars[name] = ele[attr];
                             ele[attr] = actionHelper.replaceVars2Format(vars, item['fetch-format']);
                         });
@@ -665,6 +672,9 @@
                 getTemplate: (data) => {
                     actions.handlers.fetch.getFetchItem(data);
                     return templateHelper.buildTemplateHTML('handleElement', data);
+                },
+                handlers: {
+                    'remove element': (item, target) => actions.handlers.replacement.handlers["remove element"].handle(item, target)
                 }
             },
             replacement: {
