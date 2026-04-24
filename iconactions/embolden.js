@@ -2,22 +2,22 @@
     superFetchHook.hookLang({
         'embolden': `加粗`,
         'bold': `{word}语法，悬念到选项上看对应模式说明`,
-        'specificValue': '具体值'
+        'specificValue': '具体值',
     });
 
     superFetchHook.valueHandlers.embolden = {
         text: superFetchHook.lang('embolden'),
         title: superFetchHook.lang('embolden'),
-        handle(item, target, clone = false, param = {}) {
-            if (!item['searchValue'] || superFetchHook.fetchActionHelper.isTextNode(target)) {
-                return
+        handle(item, value, param = {}) {
+            if (!item['searchValue'] || !value) {
+                return value;
             }
             const words = parseWords(item, param).replace(/&nbsp;/g, ' ');
             if (!words) {
-                return;
+                return value;
             }
             const format = item?.replaceValue ? item.replaceValue : '<b>{word}</b>';
-            embolden(target, words, format);
+            return embolden(value, words, format);
         },
         form(li, data) {
             //superFetchHook.log(li,data);
@@ -176,7 +176,7 @@
             return sentenceEle;
         }
         if (typeof sentenceEle === 'string') {
-            sentenceEle = document.createElement('div');
+            sentenceEle = superFetchHook.templateHelper.createElement('div', sentenceEle);
         }
         words = words.split(separator);
         [...words].forEach(word => {

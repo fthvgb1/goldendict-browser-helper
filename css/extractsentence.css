@@ -150,7 +150,7 @@ input[name=parent-selector], input[name=child-selector] {
     display: none;
 }
 
-
+select.fetch-replacement-target[data-fn-set] ~ :not(button),
 .fetch-item:has(.operate-type>option[value=replacement]:checked) .replace_target_type > :where(option[value=parseTemplate]) {
     display: none;
 }
@@ -178,4 +178,9 @@ input[name=parent-selector], input[name=child-selector] {
 
 .super-fetch-item[data-fold] .fetch-fold {
     display: inline;
+}
+
+.replace_target_type:has(option[value="remove element"]:checked), .fetch-replacement-item:has(option[value="remove element"]:checked) .fetch-replacement-target,
+.fetch-replacement-item:has(select.fetch-replacement-target[data-fn-set]) select.replace_target_type, select.fetch-replacement-target[data-fn-set] {
+    width: 8vw;
 }

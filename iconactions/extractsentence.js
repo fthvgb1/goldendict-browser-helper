@@ -185,21 +185,15 @@
         addTplFn: {
             tpl: name => templateHelper.buildTemplateHTML(name, {}),
 
-            tplFn: fn => eventFn.addTplFn?.[fn]({}),
+            tplFn: (fn, ev) => eventFn.addTplFn?.[fn]({}, ev),
 
-            replacement(data = {}) {
-                return actions.handlers.replacement.getReplacementItem(data);
-            },
-            fetch(data) {
-                return actions.handlers.fetch.getFetchItem(data);
-            }
         },
 
         add(ev) {
             const el = ev.target.dataset?.target ? findParent(ev.target, ev.target.dataset.target) : ev.target.parentElement;
             for (const name of ['tplFn', 'tpl']) {
                 if (ev.target.dataset?.[name]) {
-                    const t = this.addTplFn[name](ev.target.dataset?.[name]);
+                    const t = this.addTplFn[name](ev.target.dataset?.[name], ev);
                     el.insertAdjacentElement('afterend', t[0]);
                     return;
                 }
@@ -625,7 +619,11 @@
         replaceRex: /\{\{(.*?)}}/g,
         createElement(tag, attrs = {}) {
             const el = document.createElement(tag);
-            Object.keys(attrs).forEach(k => el[k] = attrs[k]);
+            if ('string' === typeof attrs) {
+                el.innerHTML = attrs;
+            } else {
+                Object.keys(attrs).forEach(k => el[k] = attrs[k]);
+            }
             return el;
         },
         buildTemplateHTML(template, vars = {}, ele = document.createElement('div')) {
@@ -921,7 +919,7 @@
             hookLang: lang => Object.keys(lang).forEach(k => mapTitle[k] = lang[k]),
             lang: name => allowFn.lang(name),
             allowFn, htmlType, handleOp, operations,
-            buildChildrenHtmlFn: templateHelper,
+            templateHelper,
         }
     }
 })();
