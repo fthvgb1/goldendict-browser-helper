@@ -346,7 +346,7 @@
         },
 
         handItems(items, value, param) {
-            const first = items?.[0], type = param.rule?.['fetch-data-type'];
+            const first = items?.[0];
             if (first.searchValue || actionHelper.accessEmpty.has(first.replace_target_type)) {
                 const name = param.rule['super-fetch-name'];
                 items.forEach(rule => {
