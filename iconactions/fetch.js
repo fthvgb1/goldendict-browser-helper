@@ -81,7 +81,7 @@
                 return [name, text, {title}]
             });
         },
-        execute(item, value, handlers) {
+        execute(item, value, handlers, param = {}) {
             const name = item.searchValue;
             const handler = handlers?.[name];
             if (!handler) {
@@ -89,7 +89,7 @@
                 return;
             }
             const fn = typeof handler === 'function' ? handler : handler.fn;
-            return fn(value);
+            return fn(value, item, param);
         },
         build(handlers) {
             let optionsArr = [];
@@ -103,8 +103,8 @@
                 renderHook(html, vars) {
                     simpleValueHandlerHelper.renderHooker(html, vars, getOptions());
                 },
-                handle(item, value) {
-                    return simpleValueHandlerHelper.execute(item, value, handlers);
+                handle(item, value, param = {}) {
+                    return simpleValueHandlerHelper.execute(item, value, handlers, param);
                 }
             }
         }
@@ -147,8 +147,8 @@
         simpleValueHandlers: {
             text: mapTitle['simpleValueHandlers'],
             title: mapTitle['simpleValueHandlers'],
-            handle: (item, value) => {
-                return simpleValueHandlerHelper.execute(item, value, valueHandlers.simpleValueHandlers.childrenHandlers);
+            handle: (item, value, param) => {
+                return simpleValueHandlerHelper.execute(item, value, valueHandlers.simpleValueHandlers.childrenHandlers, param);
             },
             options: [],
             getOptions(handlers) {
