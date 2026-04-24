@@ -14,6 +14,8 @@
         decodeURI: '解url转义',
         atob: 'base64解码',
         btoa: '进行base64编码',
+        'NBSPtoSpace': '将特殊空格转成普通空格',
+        'NBSPtoSpace-desc': '将特殊空格(char(160)NBSP)转成普通空格',
     });
 
     function findELeBySelector(t, sel, el, multiple = false) {
@@ -161,10 +163,11 @@
                 simpleValueHandlerHelper.renderHooker(html, vars, this.getOptions(this.childrenHandlers))
             },
             childrenHandlers: {
-                toUpperCase: {
-                    text: mapTitle['toUpperCase'],
-                    title: mapTitle['toUpperCase'],
-                    fn: str => str.toUpperCase(),
+                toUpperCase: str => str.toUpperCase(),
+                NBSPtoSpace: {
+                    text: mapTitle['NBSPtoSpace'],
+                    title: mapTitle['NBSPtoSpace-desc'],
+                    fn: s => s.replaceAll(' ', ' ')
                 },
                 toLowerCase: str => str.toLowerCase(),
                 escapeHTML: htmlSpecial,
