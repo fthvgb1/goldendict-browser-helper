@@ -1,6 +1,6 @@
 ;(() => {
     superFetchHook.hookLang({
-        'embolden': `加粗`,
+        'embolden': `加粗英文单词`,
         'bold': `{word}语法，悬念到选项上看对应模式说明`,
         'specificValue': '具体值',
     });

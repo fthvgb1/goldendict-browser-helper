@@ -744,14 +744,14 @@
                         text: mapTitle['innerHTML'],
                         title: mapTitle['innerHTML'],
                         handle(item, target) {
-                            actions.handlers.replacement.handlers.processor('innerHTML', item, target);
+                            actions.handlers.replacement.handlers.text.processor('innerHTML', item, target);
                         }
                     },
                     outerHTML: {
                         text: mapTitle['outerHTML'],
                         title: mapTitle['outerHTML'],
                         handle(item, target) {
-                            actions.handlers.replacement.handlers.processor('outerHTML', target);
+                            actions.handlers.replacement.handlers.text.processor('outerHTML', target);
                         }
                     },
                     'remove element': {
