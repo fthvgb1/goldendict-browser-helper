@@ -429,6 +429,7 @@
 
     const mapTitle = {
         'no file': '没有文件！',
+        'handleValue': '对值进行处理',
         'fold-or-unfold': '折叠或展开子项',
         'handleElement': '处理元素',
         'handleElement-desc': '只作用于富文本字段，处理指定选择器对应的元素',
@@ -915,9 +916,9 @@
             }, log,
             mapTitle, fetchActions: actions,
             fetchActionHelper: actionHelper,
-            mergeMap: (obj, kv) => Object.keys(kv).forEach(k => obj[k] = kv[k]),
-            hookLang: lang => Object.keys(lang).forEach(k => mapTitle[k] = lang[k]),
-            lang: name => allowFn.lang(name),
+            mergeMap: (obj, newObj) => iterateObjByKey(newObj, (k, v) => obj[k] = v, false),
+            hookLang: langKV => iterateObjByKey(langKV, (k, v) => mapTitle[k] = v, false),
+            lang: name => allowFn.lang(name) ?? name,
             allowFn, htmlType, handleOp, operations,
             templateHelper,
         }

@@ -7,6 +7,7 @@
 }
 
 .fetch-opera {
+    margin-left: 3vw;
     display: grid;
     justify-items: center
 }
@@ -41,7 +42,7 @@
 }
 
 .fetch-replacement-target, .fetch-replacement-value {
-    width: 6vw;
+    width: 7vw;
 }
 
 .fetch-replacement-items {
@@ -105,11 +106,11 @@ input:required {
 }
 
 .replace_target_type {
-    width: 4vw;
+    width: 5vw;
 }
 
 .fetch-format {
-    width: 15vw
+    width: 14vw
 }
 
 input[name=parent-selector], input[name=child-selector] {
@@ -143,15 +144,17 @@ input[name=parent-selector], input[name=child-selector] {
 
 .fetch-item:has(.operate-type>option[value=handleElement]:checked) .super-fetch-item:has(.operation>option[value=handle]:checked) :where(.value-selector ~ *,.parent-super-name,.default-value,.fetch-data-type>option[value=htmlElement]),
 .fetch-item:has(.operate-type>option[value=fetch]:checked) .operation,
-.fetch-dd:has(option[value=htmlElement]:checked) ~ .fetch-dd,
-.fetch-dd:has(option[value=htmlElement]:checked) .default-value,
+    /*.fetch-dd:has(option[value=htmlElement]:checked) ~ .fetch-dd,
+    .fetch-dd:has(option[value=htmlElement]:checked) .default-value,*/
 .replace_target_type:has(option[value="remove element"]:checked) ~ :not(.fetch-replacement-target,button),
 .replace_target_type:has(option[value=simpleValueHandlers]:checked) ~ :not(.fetch-replacement-target,button) {
     display: none;
 }
 
-select.fetch-replacement-target[data-fn-set] ~ :not(button),
-.fetch-item:has(.operate-type>option[value=replacement]:checked) .replace_target_type > :where(option[value=parseTemplate],option[value="remove element"]) {
+.super-fetch-item:has(.handleValue:not(:checked)) .fetch-replacement-items,
+.super-fetch-item:has(.operation>option[value=handle]:checked) .replace_target_type > :where(option[value=htmlFns]),
+select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAttribute],option[value=getComputedStyle]):checked)) ~ :not(button),
+.fetch-item:has(.operate-type>option[value=replacement]:checked) .replace_target_type > :where(option[value=parseTemplate],option[value="remove element"],option[value=htmlFns],option[value=embolden]) {
     display: none;
 }
 
@@ -180,7 +183,74 @@ select.fetch-replacement-target[data-fn-set] ~ :not(button),
     display: inline;
 }
 
+
 .replace_target_type:has(option[value="remove element"]:checked), .fetch-replacement-item:has(option[value="remove element"]:checked) .fetch-replacement-target,
-.fetch-replacement-item:has(select.fetch-replacement-target[data-fn-set]) select.replace_target_type, select.fetch-replacement-target[data-fn-set] {
-    width: 8vw;
+.fetch-replacement-item:has(select.fetch-replacement-target[data-fn-set]):not(:has(.fetch-replacement-target>:where(option[value=getAttribute],option[value=getComputedStyle]):checked)) select.replace_target_type, select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAttribute],option[value=getComputedStyle]):checked)) {
+    width: fit-content;
+    max-width: 14vw;
 }
+
+
+.fetch-opera, .fetch-dd {
+
+.beautiful_switch { /*  from cssscan so complex */
+    cursor: pointer;
+    appearance: none;
+    background-color: #dfe1e4;
+    border-radius: 72px;
+    border-style: none;
+    flex-shrink: 0;
+    height: 20px;
+    margin: 0 0 -3px;
+    position: relative;
+    width: 30px;
+}
+
+.beautiful_switch::before {
+    bottom: -6px;
+    content: "";
+    left: -6px;
+    position: absolute;
+    right: -6px;
+    top: -6px;
+}
+
+.beautiful_switch,
+.beautiful_switch::after {
+    transition: all 100ms ease-out;
+}
+
+.beautiful_switch::after {
+    background-color: #fff;
+    border-radius: 50%;
+    content: "";
+    height: 14px;
+    left: 3px;
+    position: absolute;
+    top: 3px;
+    width: 14px;
+}
+
+
+.beautiful_switch:hover {
+    background-color: #c9cbcd;
+    transition-duration: 0s;
+}
+
+.beautiful_switch:checked {
+    background-color: #6e79d6;
+}
+
+.beautiful_switch:checked::after {
+    background-color: #fff;
+    left: 13px;
+}
+
+
+.beautiful_switch:checked:hover {
+    background-color: #535db3;
+}
+
+}
+
+
