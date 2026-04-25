@@ -52,11 +52,9 @@
     superFetchHook.eventHook.addTplFn = {
         ...superFetchHook.eventHook.addTplFn,
         replacement(data, ev) {
-            data.from = findParent(ev.target, '.fetch-replacement-item').dataset.from;
             return actions.handlers.replacement.getReplacementItem(data);
         },
         fetch(data) {
-            data.from = 'fetch';
             return actions.handlers.fetch.getFetchItem(data);
         }
     };
@@ -119,7 +117,7 @@
             text: mapTitle['replacement'],
             title: mapTitle['replacement'],
             handle(item, value, eleParam) {
-                return actionHelper.replaceString(item, value, eleParam.vars)
+                return actionHelper.replaceString(item, value, eleParam?.vars)
             }
         },
 
@@ -602,15 +600,10 @@
                 // self helper
                 getFetchItem(data) {
                     data['handleOp'] = handleOp;
-                    data.from = 'fetch';
                     return data['super-fetch-item-html'] = (data?.['super-fetch-items'] ?? [{}]).map(item =>
                         templateHelper.buildTemplateHTML('fetch-item', {
                             ...item, htmlType, operations,
-                            from: data.from,
-                            'replacement-item-html': actions.handlers.replacement.getReplacementItem({
-                                ...item,
-                                from: data.from
-                            }),
+                            'replacement-item-html': actions.handlers.replacement.getReplacementItem(item),
                         })
                     );
                 }
@@ -648,25 +641,36 @@
                     handleItems.forEach(item => {
                         const attr = item['fetch-data-type'] === 'text' ? 'innerText' : item['fetch-data-type'],
                             name = item['super-fetch-name'];
+                        const selector = item['value-selector'];
+                        if ('spell' === selector) {
+                            item['replacement-items'].forEach(item => this.handlerHelper(item, target, attr, vars));
+                            if (item?.['fetch-format']) {
+                                target[attr] = actionHelper.replaceVars2Format(vars, item['fetch-format']);
+                                name && (vars[name] = target[attr]);
+                            }
+                            return
+                        }
+
                         target.querySelectorAll(item['value-selector']).forEach((ele, i) => {
                             vars['@i@'] = i;
-                            item['replacement-items'].forEach(item => {
-                                if (item.searchValue || actionHelper.accessEmpty.has(item.replace_target_type)) {
-                                    if (actions.handlers.handleElement.handlers?.[item.replace_target_type]) {
-                                        actions.handlers.handleElement.handlers?.[item.replace_target_type](item, ele);
-                                        return
-                                    }
-                                    ele[attr] = valueHandlers[item.replace_target_type].handle(item, ele[attr], {});
-                                }
-
-                            });
+                            item['replacement-items'].forEach(item => this.handlerHelper(item, ele, attr, vars));
                             if (!item?.['fetch-format']) {
                                 return
                             }
-                            vars[name] = ele[attr];
                             ele[attr] = actionHelper.replaceVars2Format(vars, item['fetch-format']);
+                            name && (vars[name] = ele[attr]);
                         });
+
                     });
+                },
+                handlerHelper(item, ele, attr, vars) {
+                    if (item.searchValue || actionHelper.accessEmpty.has(item.replace_target_type)) {
+                        if (this.handlers?.[item.replace_target_type]) {
+                            this.handlers?.[item.replace_target_type](item, ele);
+                            return
+                        }
+                        ele[attr] = valueHandlers[item.replace_target_type].handle(item, ele[attr], vars);
+                    }
                 },
                 scope: 'html',
                 text: mapTitle['handleElement'],
@@ -677,21 +681,22 @@
                     return templateHelper.buildTemplateHTML('handleElement', data);
                 },
                 handlers: {
-                    'remove element': (item, target) => actions.handlers.replacement.handlers["remove element"].handle(item, target)
+                    'remove element': (item, target) => {
+                        target.querySelectorAll(item.searchValue).forEach(el => el.remove());
+                    }
                 }
             },
             replacement: {
                 action(param, target) {
                     param['replacement-items'].forEach(item => {
                         const t = item.replace_target_type;
-                        this.handlers[t].handle(item, target);
+                        target.value = valueHandlers[t].handle(item, target.value, {});
                     });
                 },
                 text: mapTitle['replacement'],
                 desc: mapTitle['replacement'],
-                scope: 'all',
+                scope: 'text',
                 getTemplate(data) {
-                    data.from = 'replacement';
                     this.getReplacementItem(data);
                     return templateHelper.buildTemplateHTML('replacement', data);
                 },
@@ -709,72 +714,23 @@
                     );
                     return data;
                 },
-                opType: {},
-                getHandlers(from) {
-                    if (this.opType?.[from]?.length > 0) {
-                        return this.opType[from];
+                opType: [],
+                getHandlers() {
+                    if (this.opType?.length > 0) {
+                        return this.opType;
                     }
-                    const o = 'replacement' === from ? this.handlers : valueHandlers;
-                    return this.opType[from] = iterateObjByKey(o, (name, handler) => [name, handler.text, {title: handler.title}]);
+                    return this.opType = iterateObjByKey(valueHandlers, (name, handler) => [name, handler.text, {title: handler.title}]);
                 },
                 getReplacementItem(data = {}) {
                     data['replacement-items'] = data?.['replacement-items'] ? data['replacement-items'] : [{}];
                     data['replacement-item-html'] = data['replacement-items'].map(item =>
                         templateHelper.buildTemplateHTML('replacement-item', {
                             ...item,
-                            from: data.from,
-                            opType: actions.handlers.replacement.getHandlers(data.from),
+                            opType: actions.handlers.replacement.getHandlers(),
                         })
                     );
                     return data['replacement-item-html'];
                 },
-                handlers: {
-                    text: {
-                        text: mapTitle['text'],
-                        title: mapTitle['text'],
-                        handle(item, target) {
-                            this.processor('innerText', item, target);
-                        },
-                        processor(attr, item, target) {
-                            if (actionHelper.isTextNode(target)) {
-                                target.value = actionHelper.replaceString(item, target.value);
-                                return;
-                            }
-                            target[attr] = actionHelper.replaceString(item, target[attr],);
-                        }
-                    },
-                    innerHTML: {
-                        text: mapTitle['innerHTML'],
-                        title: mapTitle['innerHTML'],
-                        handle(item, target) {
-                            actions.handlers.replacement.handlers.text.processor('innerHTML', item, target);
-                        }
-                    },
-                    outerHTML: {
-                        text: mapTitle['outerHTML'],
-                        title: mapTitle['outerHTML'],
-                        handle(item, target) {
-                            actions.handlers.replacement.handlers.text.processor('outerHTML', target);
-                        }
-                    },
-                    'remove element': {
-                        ...{text, title} = {...valueHandlers['remove element']},
-                        handle(item, target) {
-                            target.querySelectorAll(item.searchValue).forEach(el => el.remove());
-                        }
-                    },
-                    simpleValueHandlers: {
-                        text: mapTitle['simpleValueHandlers'],
-                        title: mapTitle['simpleValueHandlers'],
-                        handle(item, target, handlers = valueHandlers.simpleValueHandlers.childrenHandlers) {
-                            if (actionHelper.isTextNode(target)) {
-                                target.value = simpleValueHandlerHelper.execute(item, target.value, handlers);
-                                return
-                            }
-                            target.innerHTML = simpleValueHandlerHelper.execute(item, target.innerHTML, handlers);
-                        }
-                    },
-                }
             }
         },
     };
@@ -885,8 +841,7 @@
 
     PushHookAnkiChange('.replace_target_type', ev => {
         const li = ev.target.parentElement;
-        const from = li.dataset.from;
-        const newLi = actions.handlers.replacement.getReplacementItem({from})[0];
+        const newLi = actions.handlers.replacement.getReplacementItem({})[0];
         newLi.querySelector('.replace_target_type').replaceWith(ev.target);
         li.replaceWith(newLi);
         const type = ev.target.value;
@@ -904,12 +859,6 @@
         title: mapTitle['codeRelate'],
         childrenHandlers: codeRelateHandlers,
         ...simpleValueHandlerHelper.build(codeRelateHandlers)
-    };
-    actions.handlers.replacement.handlers.codeRelate = {
-        ...{text, title} = {...valueHandlers.codeRelate},
-        handle(item, target) {
-            actions.handlers.replacement.handlers.simpleValueHandlers.handle(item, target, codeRelateHandlers);
-        },
     };
 
 

@@ -151,7 +151,7 @@ input[name=parent-selector], input[name=child-selector] {
 }
 
 select.fetch-replacement-target[data-fn-set] ~ :not(button),
-.fetch-item:has(.operate-type>option[value=replacement]:checked) .replace_target_type > :where(option[value=parseTemplate]) {
+.fetch-item:has(.operate-type>option[value=replacement]:checked) .replace_target_type > :where(option[value=parseTemplate],option[value="remove element"]) {
     display: none;
 }
 
