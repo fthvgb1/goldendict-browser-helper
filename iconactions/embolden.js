@@ -23,8 +23,8 @@
             //superFetchHook.log(li,data);
         },
         renderHook(html, vars) {
-            const input = html.querySelector('.replace_regex_pattern');
-            input.replaceWith(buildSelect(vars?.['replace_regex_pattern'] ?? ''))
+            const input = html.querySelector('.pattern');
+            input.replaceWith(buildSelect(vars?.['pattern'] ?? ''))
         }
     }
 
@@ -39,9 +39,9 @@
 
     function buildSelect(sel = '') {
         const select = document.createElement('select');
-        select.name = 'replace_regex_pattern';
+        select.name = 'pattern';
         select.title = superFetchHook.lang('bold');
-        select.className = 'replace_regex_pattern';
+        select.className = 'pattern';
         select.innerHTML = buildOption(
             Object.keys(modeFn).map(k => [k, title[k][0]]), sel, 0, 1, k => ` title="${title[k[0]][1]}" `
         );
@@ -74,7 +74,7 @@
     function parseWords(item, param) {
         const arr = item['searchValue'].split('@');
         const field = arr[0], selector = arr?.[1] ?? '';
-        const mode = item['replace_regex_pattern'] ? item['replace_regex_pattern'] : 'field';
+        const mode = item['pattern'] ? item['pattern'] : 'field';
         if (!modeFn?.[mode]) {
             return '';
         }

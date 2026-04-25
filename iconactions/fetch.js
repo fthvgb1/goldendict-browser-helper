@@ -345,10 +345,10 @@
 
         handItems(items, value, param) {
             const first = items?.[0];
-            if (param.rule.handleValue && (first.searchValue || actionHelper.accessEmpty.has(first.replace_target_type))) {
+            if (param.rule.handleValue && (first.searchValue || actionHelper.accessEmpty.has(first.handleType))) {
                 const name = param.rule['super-fetch-name'];
                 items.forEach(rule => {
-                    value = param.vars[name] = valueHandlers[rule.replace_target_type].handle({...rule}, value, param)
+                    value = param.vars[name] = valueHandlers[rule.handleType].handle({...rule}, value, param)
                 });
             }
             return value;
@@ -502,11 +502,11 @@
 
         replaceString(item, str, vars = {}) {
             item.replaceValue = this.replaceVars2Format(vars, item.replaceValue);
-            if (!item?.replace_regex_pattern) {
+            if (!item?.pattern) {
                 item.searchValue = this.replaceVars2Format(vars, item.searchValue);
                 return str.replaceAll(item.searchValue, item.replaceValue);
             }
-            const pattern = item.replace_regex_pattern === 'none' ? '' : item.replace_regex_pattern;
+            const pattern = item.pattern === 'none' ? '' : item.pattern;
             return str.replace(new RegExp(item.searchValue, pattern), item.replaceValue);
         },
 
@@ -648,12 +648,12 @@
                     });
                 },
                 handlerHelper(item, ele, attr, vars) {
-                    if (item.searchValue || actionHelper.accessEmpty.has(item.replace_target_type)) {
-                        if (this.handlers?.[item.replace_target_type]) {
-                            this.handlers?.[item.replace_target_type](item, ele);
+                    if (item.searchValue || actionHelper.accessEmpty.has(item.handleType)) {
+                        if (this.handlers?.[item.handleType]) {
+                            this.handlers?.[item.handleType](item, ele);
                             return
                         }
-                        ele[attr] = valueHandlers[item.replace_target_type].handle(item, ele[attr], vars);
+                        ele[attr] = valueHandlers[item.handleType].handle(item, ele[attr], vars);
                     }
                 },
                 scope: 'html',
@@ -673,7 +673,7 @@
             replacement: {
                 action(param, target) {
                     param['replacement-items'].forEach(item => {
-                        const t = item.replace_target_type;
+                        const t = item.handleType;
                         target.value = valueHandlers[t].handle(item, target.value, {});
                     });
                 },
@@ -692,8 +692,8 @@
                     data['replacement-items'] = [];
                     el.querySelectorAll('.fetch-replacement-item').forEach(li => {
                             const datum = formProcessor.getFormValue(li, {}, selector);
-                            valueHandlers?.[datum.replace_target_type]?.form?.(li, datum);
-                            data['replacement-items'].push(datum);
+                        valueHandlers?.[datum.handleType]?.form?.(li, datum);
+                        data['replacement-items'].push(datum);
                         }
                     );
                     return data;
@@ -823,10 +823,10 @@
         evt.autoAddWidth();
     });
 
-    PushHookAnkiChange('.replace_target_type', ev => {
+    PushHookAnkiChange('.handleType', ev => {
         const li = ev.target.parentElement;
         const newLi = actions.handlers.replacement.getReplacementItem({})[0];
-        newLi.querySelector('.replace_target_type').replaceWith(ev.target);
+        newLi.querySelector('.handleType').replaceWith(ev.target);
         li.replaceWith(newLi);
         const type = ev.target.value;
         valueHandlers?.[type]?.renderHook?.(newLi, ev);
@@ -853,7 +853,7 @@
 
     superFetchHook.simpleValueHandlerHelper = simpleValueHandlerHelper;
     superFetchHook.templateHelper.templateFnHook['replacement-item'] = (html, vars) => {
-        valueHandlers?.[vars.replace_target_type]?.renderHook?.(html, vars);
+        valueHandlers?.[vars.handleType]?.renderHook?.(html, vars);
         return html;
     };
 

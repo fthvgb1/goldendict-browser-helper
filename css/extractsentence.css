@@ -33,7 +33,7 @@
     width: 5vw;
 }
 
-.replace_regex_pattern {
+.pattern {
     width: 5vw;
 }
 
@@ -105,7 +105,7 @@ input:required {
     width: 19vw;
 }
 
-.replace_target_type {
+.handleType {
     width: 5vw;
 }
 
@@ -146,24 +146,24 @@ input[name=parent-selector], input[name=child-selector] {
 .fetch-item:has(.operate-type>option[value=fetch]:checked) .operation,
     /*.fetch-dd:has(option[value=htmlElement]:checked) ~ .fetch-dd,
     .fetch-dd:has(option[value=htmlElement]:checked) .default-value,*/
-.replace_target_type:has(option[value="remove element"]:checked) ~ :not(.fetch-replacement-target,button),
-.replace_target_type:has(option[value=simpleValueHandlers]:checked) ~ :not(.fetch-replacement-target,button) {
+.handleType:has(option[value="remove element"]:checked) ~ :not(.fetch-replacement-target,button),
+.handleType:has(option[value=simpleValueHandlers]:checked) ~ :not(.fetch-replacement-target,button) {
     display: none;
 }
 
 .super-fetch-item:has(.handleValue:not(:checked)) .fetch-replacement-items,
-.super-fetch-item:has(.operation>option[value=handle]:checked) .replace_target_type > :where(option[value=htmlFns]),
+.super-fetch-item:has(.operation>option[value=handle]:checked) .handleType > :where(option[value=htmlFns]),
 select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAttribute],option[value=getComputedStyle]):checked)) ~ :not(button),
-.fetch-item:has(.operate-type>option[value=replacement]:checked) .replace_target_type > :where(option[value=parseTemplate],option[value="remove element"],option[value=htmlFns],option[value=embolden]) {
+.fetch-item:has(.operate-type>option[value=replacement]:checked) .handleType > :where(option[value=parseTemplate],option[value="remove element"],option[value=htmlFns],option[value=embolden]) {
     display: none;
 }
 
-.replace_target_type:has(option[value=parseTemplate]:checked) + .templateVar {
+.handleType:has(option[value=parseTemplate]:checked) + .templateVar {
     display: inline;
     width: 3vw;
 }
 
-.replace_target_type:has(option[value=parseTemplate]:checked) ~ .replace_regex_pattern {
+.handleType:has(option[value=parseTemplate]:checked) ~ .pattern {
     width: 2vw;
 }
 
@@ -184,8 +184,8 @@ select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAtt
 }
 
 
-.replace_target_type:has(option[value="remove element"]:checked), .fetch-replacement-item:has(option[value="remove element"]:checked) .fetch-replacement-target,
-.fetch-replacement-item:has(select.fetch-replacement-target[data-fn-set]):not(:has(.fetch-replacement-target>:where(option[value=getAttribute],option[value=getComputedStyle]):checked)) select.replace_target_type, select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAttribute],option[value=getComputedStyle]):checked)) {
+.handleType:has(option[value="remove element"]:checked), .fetch-replacement-item:has(option[value="remove element"]:checked) .fetch-replacement-target,
+.fetch-replacement-item:has(select.fetch-replacement-target[data-fn-set]):not(:has(.fetch-replacement-target>:where(option[value=getAttribute],option[value=getComputedStyle]):checked)) select.handleType, select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAttribute],option[value=getComputedStyle]):checked)) {
     width: fit-content;
     max-width: 14vw;
 }

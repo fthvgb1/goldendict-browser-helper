@@ -24,14 +24,14 @@
                     return v
                 }
                 const call = v.bind(el);
-                const p = item.replace_regex_pattern ? item.replace_regex_pattern.split('|') : '';
+                const p = item.pattern ? item.pattern.split('|') : '';
                 return p ? call(...p) : v();
             }
         },
         getComputedStyle: {
             text: lang('getComputedStyle'),
             title: lang('getComputedStyle-desc'),
-            fn: (el, item) => superFetchHook.getVarVal(getComputedStyle(el, item.replace_regex_pattern ? item.replace_regex_pattern : null), item.replaceValue),
+            fn: (el, item) => superFetchHook.getVarVal(getComputedStyle(el, item.pattern ? item.pattern : null), item.replaceValue),
         },
     };
     superFetchHook.valueHandlers.htmlFns = {
