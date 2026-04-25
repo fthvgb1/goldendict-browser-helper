@@ -29,6 +29,14 @@
 
 
     const simpleValueHandlerHelper = {
+        addHandlers(name, handlers, text = '', title = '') {
+            valueHandlers[name] = {
+                text: text ? text : superFetchHook.lang(name),
+                title: title ? title : superFetchHook.lang(name),
+                childrenHandlers: handlers,
+                ...this.build(handlers),
+            }
+        },
         renderHooker(html, vars, options) {
             const searchInput = html.querySelector('.fetch-replacement-target');
             const select = templateHelper.createElement('select', {
@@ -692,8 +700,8 @@
                     data['replacement-items'] = [];
                     el.querySelectorAll('.fetch-replacement-item').forEach(li => {
                             const datum = formProcessor.getFormValue(li, {}, selector);
-                        valueHandlers?.[datum.handleType]?.form?.(li, datum);
-                        data['replacement-items'].push(datum);
+                            valueHandlers?.[datum.handleType]?.form?.(li, datum);
+                            data['replacement-items'].push(datum);
                         }
                     );
                     return data;

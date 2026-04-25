@@ -1,5 +1,5 @@
 ;(() => {
-
+    const lang = superFetchHook.lang;
     superFetchHook.hookLang({
         'capitalize': '首字母大写',
         'htmlFns': 'html相关',
@@ -9,11 +9,15 @@
         'getComputedStyle': '获取元素样式',
         'getComputedStyle-desc': '获取元素样式，此时替换为属性名，模式为伪类',
     });
+    superFetchHook.mergeMap(superFetchHook.valueHandlers.simpleValueHandlers.childrenHandlers, {
+        capitalize: s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(),
+    })
+    superFetchHook.mergeMap(superFetchHook.valueHandlers.codeRelate.childrenHandlers, {
+        jsonEncode: v => JSON.stringify(v),
+        jsonDecode: v => JSON.parse(v),
+    });
 
-    superFetchHook.valueHandlers.simpleValueHandlers.childrenHandlers.capitalize = s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-
-    const lang = superFetchHook.lang;
-    const htmlFns = {
+    superFetchHook.simpleValueHandlerHelper.addHandlers('htmlFns', {
         toElement: s => superFetchHook.templateHelper.createElement('div', s).children[0],
         getAttribute: {
             text: lang('getAttribute'),
@@ -33,11 +37,6 @@
             title: lang('getComputedStyle-desc'),
             fn: (el, item) => superFetchHook.getVarVal(getComputedStyle(el, item.pattern ? item.pattern : null), item.replaceValue),
         },
-    };
-    superFetchHook.valueHandlers.htmlFns = {
-        text: lang('htmlFns'),
-        title: lang('htmlFns'),
-        childrenHandlers: htmlFns,
-        ...superFetchHook.simpleValueHandlerHelper.build(htmlFns)
-    };
+    });
+
 })();
