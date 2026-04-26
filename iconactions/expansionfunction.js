@@ -9,7 +9,7 @@
         'getComputedStyle': '获取元素样式',
         'getComputedStyle-desc': '获取元素样式，此时替换为属性名，模式为伪类',
         'valueRelation': '值相关',
-        'setVal': '取值',
+        'setVal': '设置值',
         'setVal-desc': '替换项为同format语法',
         'str2Int': '字符转整数',
         'str2Float': '字符转浮点数',

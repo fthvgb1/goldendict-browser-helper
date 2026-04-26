@@ -753,7 +753,7 @@
         return (percent * w) / 100;
     }
 
-    const evt = {
+    const evtFn = {
         ...eventFn,
 
         autoAddWidth() {
@@ -766,7 +766,7 @@
                 rules?.forEach(rule => this.calculateWidth(el, rule, 0));
             });
             if (this.maxDeep > old) {
-                const offset = vw(evt.offsetWidth * this.maxDeep);
+                const offset = vw(evtFn.offsetWidth * this.maxDeep);
                 document.querySelectorAll(this.changedEleSelector).forEach(el => {
                     let w = parseFloat(getComputedStyle(el).width.replace('px', ''));
                     w += offset;
@@ -801,16 +801,16 @@
         offsetWidth: 1,// vw
         inputValueSelectors: new Set(['super-fetch-name', 'parent-super-name']),
         autoAddWidths: ev => {
-            if (!evt.inputValueSelectors.has(ev.target.className)) {
+            if (!evtFn.inputValueSelectors.has(ev.target.className)) {
                 return
             }
-            evt.autoAddWidth();
+            evtFn.autoAddWidth();
         },
         calculateWidth(el, rule, deep) {
             if (deep > 0) {
                 const ele = el.querySelector(`.super-fetch-item:has(input[value="${rule['super-fetch-name']}"])`);
                 if (ele) {
-                    ele.style.marginLeft = `${deep * evt.offsetWidth}vw`;
+                    ele.style.marginLeft = `${deep * evtFn.offsetWidth}vw`;
                 }
             }
             const item = el.querySelector(`.super-fetch-item:has(.super-fetch-name[value='${rule["super-fetch-name"]}'])`);
@@ -842,12 +842,12 @@
         },
     };
 
-    PushExpandAnkiInputButton('fetch-fold', '', evt.fold);
+    PushExpandAnkiInputButton('fetch-fold', '', evtFn.fold);
 
 
     PushHookAnkiChange('.fetch-item-select', (ev, fn) => {
         fn?.(ev);
-        evt.autoAddWidth();
+        evtFn.autoAddWidth();
     });
 
     PushHookAnkiChange('.handleType', ev => {
@@ -872,7 +872,7 @@
 
     PushHookAnkiHtml(div => {
         setting = div.querySelector('.select-setting');
-        setting.addEventListener('blur', ev => evt.autoAddWidths(ev), true);
+        setting.addEventListener('blur', ev => evtFn.autoAddWidths(ev), true);
     });
 
     superFetchHook.simpleValueHandlerHelper = simpleValueHandlerHelper;
@@ -881,23 +881,23 @@
         return html;
     };
 
-    const show = evt.showProcessor;
-    evt.showProcessor = ev => {
+    const show = evtFn.showProcessor;
+    evtFn.showProcessor = ev => {
         show(ev);
         if (!ev.target.checked) {
             return;
         }
-        evt.autoAddWidth();
+        evtFn.autoAddWidth();
         const fns = [...setting.querySelectorAll('.fetch-replacement-items')].map(el => setEleDrag(el, 'li'));
-        evt.dragEle['replaceItem'] = onOff => fns.forEach(fn => fn(onOff));
-        evt.dragEle.replaceItem(true);
-        evt.dragEle['fetch-item'] = setEleDrag(setting, '.fetch-item');
-        evt.dragEle['fetch-item'](true);
-        evt.dragEle['super-fetch-item'] = setEleDrag(setting, '.super-fetch-item');
-        evt.dragEle['super-fetch-item'](true);
+        evtFn.dragEle['replaceItem'] = onOff => fns.forEach(fn => fn(onOff));
+        evtFn.dragEle.replaceItem(true);
+        evtFn.dragEle['fetch-item'] = setEleDrag(setting, '.fetch-item');
+        evtFn.dragEle['fetch-item'](true);
+        evtFn.dragEle['super-fetch-item'] = setEleDrag(setting, '.super-fetch-item');
+        evtFn.dragEle['super-fetch-item'](true);
     };
     superFetchHook.valueHandlers = valueHandlers;
     superFetchHook.mergeMap(superFetchHook.fetchActionHelper, actionHelper);
     superFetchHook.mergeMap(superFetchHook.fetchActions, actions);
-    superFetchHook.mergeMap(superFetchHook.eventHook, evt);
+    superFetchHook.mergeMap(superFetchHook.eventHook, evtFn);
 })();
