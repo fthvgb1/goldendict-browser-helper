@@ -9,8 +9,8 @@
         'getComputedStyle': '获取元素样式',
         'getComputedStyle-desc': '获取元素样式，此时替换为属性名，模式为伪类',
         'valueRelation': '值相关',
-        'setVal': '设置值',
-        'setVal-desc': '替换项为同format语法',
+        'getVal': '取值',
+        'getVal-desc': '从符号表中取值，替换项为变量名，无需{}',
         'str2Int': '字符转整数',
         'str2Float': '字符转浮点数',
         'str2Array': '字符转数组',
@@ -43,14 +43,17 @@
     });
 
     superFetchHook.simpleValueHandlerHelper.addHandlers('valueRelation', {
-        setVal: {
-            fn: (val, item, param) => superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.replaceValue),
-            showInput: 'replaceValue',
+        getVal: {
+            fn: (val, item, param) => superFetchHook.getVarVal(param.vars, item.replaceValue),
+            showInput: 'replaceValue', // replaceValue|pattern
         },
         str2Int: parseInt,
         str2Float: parseFloat,
         str2Array: (s, item) => s.split(item.replaceValue),
-        array2str: (arr, item) => arr.join(item.item.replaceValue),
+        array2str: (arr, item) => arr.join(item.replaceValue),
     });
+
+
+    // todo add other sector function, like curl call local program, math and so on.
 
 })();

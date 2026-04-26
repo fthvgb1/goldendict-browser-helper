@@ -155,14 +155,14 @@
             },
             handlers: {
                 toUpperCase: str => str.toUpperCase(),
+                toLowerCase: str => str.toLowerCase(),
+                escapeHTML: htmlSpecial,
+                unescapeHTML: decodeHtmlSpecial,
                 NBSPtoSpace: {
                     text: mapTitle['NBSPtoSpace'],
                     title: mapTitle['NBSPtoSpace-desc'],
                     fn: s => s.replaceAll(' ', ' ')
                 },
-                toLowerCase: str => str.toLowerCase(),
-                escapeHTML: htmlSpecial,
-                unescapeHTML: decodeHtmlSpecial,
             },
         },
     };
@@ -399,27 +399,14 @@
             }
             return defaultVal;
         },
-        getDefaultValue(rule, vars, param) {
-            const format = rule['fetch-format'], selector = rule['value-selector'], name = rule['super-fetch-name'];
+        getDefaultValue(rule, vars) {
+            const format = rule['fetch-format'], name = rule['super-fetch-name'];
             let defaultVal = rule['default-value'];
             vars[name] = defaultVal;
-            if (format && !selector && !defaultVal) {
-                return vars[name] = this.replaceVars2Format(vars, format);
-            }
             if (defaultVal) {
                 vars[name] = defaultVal = this.getDefVars(defaultVal, vars);
             }
-            if (selector) {
-                if (format) {
-                    vars[name] = defaultVal = this.replaceVars2Format(vars, format);
-                }
-                return vars[name];
-            }
-
-            if (defaultVal) {
-                vars[name] = this.handItems(rule['replacement-items'], defaultVal, param, true);
-            }
-            if (format) {
+            if (format && vars[name]) {
                 vars[name] = this.replaceVars2Format(vars, format);
             }
             return vars[name];
@@ -446,20 +433,62 @@
             }
             return vars[name];
         },
+
+        handleVars(rule, name, vars, param) {
+            vars[name] = this.getDefVars(rule['default-value'], vars);
+            vars[name] = this.handItems(rule['replacement-items'], vars[name], param);
+            if (Array.isArray(vars[name]) && rule.multiple_child && rule?.children?.length > 0) {
+                const set = new Set();
+                vars[name] = vars[name].filterAndMapX(v => {
+                    const val = {...vars};
+                    rule.children.forEach(child => {
+                        val[name] = v;
+                        const p = {...param, vars: val};
+                        const childName = child['super-fetch-name'];
+                        val[childName] = this.handleVars(child, childName, val, p);
+                    });
+
+                    if (rule?.['fetch-format']) {
+                        val[name] = this.replaceVars2Format(val, (rule['fetch-format']));
+                    }
+                    if (!rule['fetch-repeat']) {
+                        return val[name];
+                    }
+                    if (set.has(val[name])) {
+                        return false;
+                    }
+                    set.add(val[name]);
+                    return val[name];
+                });
+                if (rule.concatenation) {
+                    vars[name] = vars[name].join(rule.separator);
+                }
+            } else {
+                if (rule['fetch-format']) {
+                    vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
+                }
+            }
+
+            return vars[name];
+        },
+
         // fetch vars
         getVars(ele, rule, fetchConf, from, vars = {}, cached = {}) {
-            const name = rule['super-fetch-name'];
+            const name = rule['super-fetch-name'], param = {
+                rule, beforeQueryEle: ele,
+                fetchParam: fetchConf, vars, from
+            };
             if (rule.cached && cached.hasOwnProperty(name)) {
                 vars[name] = cached[name];
                 return vars[name];
             }
             rule['value-selector'] = this.replaceVars2Format(vars, rule['value-selector']);
+            if (!rule['value-selector']) {
+                return vars[name] = this.handleVars(rule, name, vars, param);
+            }
             const el = this.anchor2Ele(rule, ele, fetchConf, from);
             if (!el || el?.length < 1) {
-                vars[name] = this.getDefaultValue(rule, vars, {
-                    rule, beforeQueryEle: ele, afterQueryEle: el,
-                    fetchParam: fetchConf, vars, from
-                });
+                vars[name] = this.getDefaultValue(rule, vars);
                 log("query rule's value-selector fail", ele, rule['value-selector'], rule);
             } else if (el instanceof NodeList && el.length > 0) {
                 const s = new Set();
@@ -790,7 +819,7 @@
             evt.target.innerText = fold === '➕' ? '➖' : '➕';
             const name = evt.target.parentElement.querySelector('.super-fetch-name').value;
             const items = findParent(evt.target, '.super-fetch-items');
-            evt.foldHidden(items, name, fold);
+            evtFn.foldHidden(items, name, fold);
             if (fold === '➕') {
                 evt.target.parentElement.scrollIntoView({
                     behavior: 'smooth'
