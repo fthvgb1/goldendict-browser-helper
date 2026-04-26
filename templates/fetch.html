@@ -12,7 +12,7 @@
                type="text" value="{{fetch-format|htmlSpecial}}">
         <input class="fetch-num" min="0" name="fetch-num" placeholder="{{fetch-num|lang}}" step="1"
                title="{{fetch-num|lang}}"
-               type="number" value="{{fetch-num}}">
+               type="number" value="{{fetch-num?0}}">
         <select class="fetch-data-handle" name="fetch-data-handle" title="{{fetch-data-handle|lang}}">
             {{handleOp|buildOption(fetch-data-handle)}}
         </select>

@@ -638,9 +638,12 @@
             }
             t = t.replace(this.replaceRex, (substring, name) => {
                 const names = name.split('|');
-                let val = getVarVal(vars, names[0]);
+                let val;
                 if (names.length < 2) {
-                    return val;
+                    const v = names[0].split('?');
+                    return v.length > 1 ? getVarVal(vars, v[0], v[1]) : getVarVal(vars, v[0]);
+                } else {
+                    val = getVarVal(vars, names[0]);
                 }
                 for (let fn of names.splice(1)) {
                     if (fn === 'lang') {

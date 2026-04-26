@@ -420,6 +420,7 @@
             } else {
                 value = 'text' === type ? el.innerText : el[type];
             }
+            vars[name] = value;
             vars[name] = this.handItems(rule?.['replacement-items'], value, param);
             rule?.children?.forEach(item => children[item['super-fetch-name']] = this.getVars(el, item, fetchConf, from, vars, cached));
             if (vars[name] && rule?.['fetch-format']) {
