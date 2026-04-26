@@ -186,9 +186,14 @@ select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAtt
 
 
 .handleType:has(option[value="remove element"]:checked), .fetch-replacement-item:has(option[value="remove element"]:checked) .fetch-replacement-target,
-.fetch-replacement-item:has(select.fetch-replacement-target[data-fn-set]):not(:has(.fetch-replacement-target>:where(option[value=getAttribute],option[value=getComputedStyle]):checked)) select.handleType, select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAttribute],option[value=getComputedStyle]):checked)) {
+.fetch-replacement-item:has(select.fetch-replacement-target[data-fn-set]):not(:has(.fetch-replacement-target>:where(option[value=getAttribute],option[value=getComputedStyle]):checked)):not(:has(.fetch-replacement-target[data-fn-set] ~ input.show)) select.handleType,
+select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAttribute],option[value=getComputedStyle]):checked)):not(.fetch-replacement-item:has(.fetch-replacement-target[data-fn-set] ~ input.show) .fetch-replacement-target) {
     width: fit-content;
     max-width: 14vw;
+}
+
+.fetch-dd > .fetch-replacement-items[data-batch] > .fetch-replacement-item:has(.handleType) > .fetch-replacement-target[data-fn-set] ~ input.show {
+    display: initial;
 }
 
 

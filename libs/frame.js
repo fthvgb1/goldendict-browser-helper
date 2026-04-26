@@ -434,7 +434,7 @@
         'function': (fn, k) => fn(k),
         'object': attr => Object.keys(attr).map(k => `${k}="${attr[k]}"`).join(' '),
         'string': (s, v) => v && !isNaN(parseInt(s)) ? op.object(v[s]) : s,
-        'number': (i, v) => v?.[i] ? op.object(v[i]) : ''
+        'number': (i, v) => v?.[i] ? op[typeof v[i]](v[i]) : '',
     }
 
     /**
@@ -541,7 +541,11 @@
         if (filterMap) {
             return arr.filterAndMapX(k => fn(k, obj[k]));
         }
-        arr.forEach(k => fn(k, obj[k]));
+        for (const k of arr) {
+            if (!fn(k, obj[k])) {
+                break;
+            }
+        }
     }
 
     return {

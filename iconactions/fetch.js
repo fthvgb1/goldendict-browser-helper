@@ -33,7 +33,7 @@
             valueHandlers[name] = {
                 text: text ? text : superFetchHook.lang(name),
                 title: title ? title : superFetchHook.lang(name),
-                childrenHandlers: handlers,
+                handlers: handlers,
                 ...this.build(handlers),
             }
         },
@@ -49,10 +49,10 @@
         },
         buildOptions(handlers) {
             return iterateObjByKey(handlers, (name, handler) => {
-                let text = mapTitle?.[name] ?? name, title = text;
+                let text = mapTitle?.[name] ?? name, title = mapTitle?.[`${name}-desc`] ?? text;
                 if (typeof handler === 'object') {
-                    text = handler.text;
-                    title = handler.title;
+                    text = handler.text ?? text;
+                    title = handler.title ?? title;
                 }
                 return [name, text, {title}]
             });
@@ -75,9 +75,27 @@
                 }
                 return optionsArr = simpleValueHandlerHelper.buildOptions(handlers);
             }
+
+            let change = false;
+            iterateObjByKey(handlers, (k, handler) => ((handler?.show || handler?.showInput) ? (change = true, false) : true), false);
             return {
                 renderHook(html, vars) {
                     simpleValueHandlerHelper.renderHooker(html, vars, getOptions());
+                    if (change) {
+                        const select = html.querySelector('.fetch-replacement-target');
+                        let handle = select.value;
+                        handlers?.[handle]?.show?.(html);
+                        const inputs = html.querySelectorAll('input[name=replaceValue],input[name=pattern]'),
+                            forEach = inputs.forEach;
+                        handlers?.[handle]?.showInput && forEach
+                            .bind(inputs)(el => handlers[handle].showInput.includes(el.name) && el.classList.add('show'));
+                        select.addEventListener('change', () => {
+                            handle = select.value;
+                            forEach.bind(inputs)(el => handlers[handle]?.showInput?.includes?.(el.name) ?
+                                el.classList.add('show') : el.classList.remove('show'));
+                            handlers?.[handle]?.show?.(html);
+                        });
+                    }
                 },
                 handle(item, value, param = {}) {
                     return simpleValueHandlerHelper.execute(item, value, handlers, param);
@@ -123,7 +141,7 @@
             text: mapTitle['simpleValueHandlers'],
             title: mapTitle['simpleValueHandlers'],
             handle: (item, value, param) => {
-                return simpleValueHandlerHelper.execute(item, value, valueHandlers.simpleValueHandlers.childrenHandlers, param);
+                return simpleValueHandlerHelper.execute(item, value, valueHandlers.simpleValueHandlers.handlers, param);
             },
             options: [],
             getOptions(handlers) {
@@ -133,9 +151,9 @@
                 return this.options = simpleValueHandlerHelper.buildOptions(handlers)
             },
             renderHook(html, vars) {
-                simpleValueHandlerHelper.renderHooker(html, vars, this.getOptions(this.childrenHandlers))
+                simpleValueHandlerHelper.renderHooker(html, vars, this.getOptions(this.handlers))
             },
-            childrenHandlers: {
+            handlers: {
                 toUpperCase: str => str.toUpperCase(),
                 NBSPtoSpace: {
                     text: mapTitle['NBSPtoSpace'],
@@ -748,7 +766,7 @@
                 rules?.forEach(rule => this.calculateWidth(el, rule, 0));
             });
             if (this.maxDeep > old) {
-                const offset = vw(eventFn.offsetWidth * this.maxDeep);
+                const offset = vw(evt.offsetWidth * this.maxDeep);
                 document.querySelectorAll(this.changedEleSelector).forEach(el => {
                     let w = parseFloat(getComputedStyle(el).width.replace('px', ''));
                     w += offset;
@@ -772,7 +790,7 @@
             evt.target.innerText = fold === '➕' ? '➖' : '➕';
             const name = evt.target.parentElement.querySelector('.super-fetch-name').value;
             const items = findParent(evt.target, '.super-fetch-items');
-            eventFn.foldHidden(items, name, fold);
+            evt.foldHidden(items, name, fold);
             if (fold === '➕') {
                 evt.target.parentElement.scrollIntoView({
                     behavior: 'smooth'
@@ -782,17 +800,17 @@
         maxDeep: 0,
         offsetWidth: 1,// vw
         inputValueSelectors: new Set(['super-fetch-name', 'parent-super-name']),
-        autoAddWidths: evt => {
-            if (!eventFn.inputValueSelectors.has(evt.target.className)) {
+        autoAddWidths: ev => {
+            if (!evt.inputValueSelectors.has(ev.target.className)) {
                 return
             }
-            eventFn.autoAddWidth();
+            evt.autoAddWidth();
         },
         calculateWidth(el, rule, deep) {
             if (deep > 0) {
                 const ele = el.querySelector(`.super-fetch-item:has(input[value="${rule['super-fetch-name']}"])`);
                 if (ele) {
-                    ele.style.marginLeft = `${deep * eventFn.offsetWidth}vw`;
+                    ele.style.marginLeft = `${deep * evt.offsetWidth}vw`;
                 }
             }
             const item = el.querySelector(`.super-fetch-item:has(.super-fetch-name[value='${rule["super-fetch-name"]}'])`);
@@ -838,26 +856,23 @@
         newLi.querySelector('.handleType').replaceWith(ev.target);
         li.replaceWith(newLi);
         const type = ev.target.value;
-        valueHandlers?.[type]?.renderHook?.(newLi, ev);
+        valueHandlers?.[type]?.renderHook?.(newLi, formProcessor.getFormValue(newLi, {}, 'input,select,textarea'), ev);
     });
 
     const codeRelateHandlers = {
-        encodeURI,
-        decodeURI,
-        atob,
-        btoa,
+        encodeURI, decodeURI, decodeURIComponent, encodeURIComponent, atob, btoa,
     };
     valueHandlers['codeRelate'] = {
         text: mapTitle['codeRelate'],
         title: mapTitle['codeRelate'],
-        childrenHandlers: codeRelateHandlers,
+        handlers: codeRelateHandlers,
         ...simpleValueHandlerHelper.build(codeRelateHandlers)
     };
 
 
     PushHookAnkiHtml(div => {
         setting = div.querySelector('.select-setting');
-        setting.addEventListener('blur', ev => eventFn.autoAddWidths(ev), true);
+        setting.addEventListener('blur', ev => evt.autoAddWidths(ev), true);
     });
 
     superFetchHook.simpleValueHandlerHelper = simpleValueHandlerHelper;
@@ -874,12 +889,12 @@
         }
         evt.autoAddWidth();
         const fns = [...setting.querySelectorAll('.fetch-replacement-items')].map(el => setEleDrag(el, 'li'));
-        eventFn.dragEle['replaceItem'] = onOff => fns.forEach(fn => fn(onOff));
-        eventFn.dragEle.replaceItem(true);
-        eventFn.dragEle['fetch-item'] = setEleDrag(setting, '.fetch-item');
-        eventFn.dragEle['fetch-item'](true);
-        eventFn.dragEle['super-fetch-item'] = setEleDrag(setting, '.super-fetch-item');
-        eventFn.dragEle['super-fetch-item'](true);
+        evt.dragEle['replaceItem'] = onOff => fns.forEach(fn => fn(onOff));
+        evt.dragEle.replaceItem(true);
+        evt.dragEle['fetch-item'] = setEleDrag(setting, '.fetch-item');
+        evt.dragEle['fetch-item'](true);
+        evt.dragEle['super-fetch-item'] = setEleDrag(setting, '.super-fetch-item');
+        evt.dragEle['super-fetch-item'](true);
     };
     superFetchHook.valueHandlers = valueHandlers;
     superFetchHook.mergeMap(superFetchHook.fetchActionHelper, actionHelper);
