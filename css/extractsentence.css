@@ -153,7 +153,6 @@ input[name=parent-selector], input[name=child-selector] {
 
 
 .super-fetch-item:has(.handleValue:not(:checked)) .fetch-replacement-items,
-.super-fetch-item:has(.operation>option[value=handle]:checked) .handleType > :where(option[value=htmlFns]),
 select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAttribute],option[value=getComputedStyle]):checked)) ~ :not(.fetch-replacement-target:has(:where(option[value=str2Array],option[value=array2str]):checked) + .fetch-replacement-value ,button),
 .fetch-item:has(.operate-type>option[value=replacement]:checked) .handleType > :where(option[value=parseTemplate],option[value="remove element"],option[value=htmlFns],option[value=embolden]) {
     display: none;

@@ -25,7 +25,8 @@
         renderHook(html, vars) {
             const input = html.querySelector('.pattern');
             input.replaceWith(buildSelect(vars?.['pattern'] ?? ''))
-        }
+        },
+        scope: 'fetch',
     }
 
 

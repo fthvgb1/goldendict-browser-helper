@@ -1,5 +1,4 @@
 ;(() => {
-    const lang = superFetchHook.lang;
     superFetchHook.hookLang({
         'capitalize': '首字母大写',
         'htmlFns': 'html相关',
@@ -40,7 +39,7 @@
         getComputedStyle(el, item) {
             return superFetchHook.getVarVal(getComputedStyle(el, item.pattern ? item.pattern : null), item.replaceValue)
         },
-    });
+    }, {scope: {fetch: {fetch: '*', handle: 'getAttribute'}}});
 
     superFetchHook.simpleValueHandlerHelper.addHandlers('valueRelation', {
         getVal: {
@@ -51,9 +50,10 @@
         str2Float: parseFloat,
         str2Array: (s, item) => s.split(item.replaceValue),
         array2str: (arr, item) => arr.join(item.replaceValue),
-    });
+    }, {scope: {fetch: {fetch: '*', handle: 'getVal'}}});
 
 
-    // todo add other sector function, like curl call local program, math and so on.
+    // todo add if branch, add other sector function, like http, call local program, math and so on.
+    //  add unlimited possibilities......
 
 })();
