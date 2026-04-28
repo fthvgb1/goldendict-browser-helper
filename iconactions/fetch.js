@@ -20,7 +20,7 @@
     superFetchHook.eventHook.addTplFn = {
         ...superFetchHook.eventHook.addTplFn,
         replacement(data, ev) {
-            data.from = 'replacement';
+            data.from = ev.target.parentElement.dataset.from;
             return actions.handlers.replacement.getReplacementItem(data);
         },
         fetch(data) {
@@ -94,7 +94,7 @@
             iterateObjByKey(handlers, (k, handler) => ((handler?.show || handler?.showInput) ? (change = true, false) : true), false);
             return {
                 renderHook(html, vars) {
-                    const act = html.querySelector('select').value;
+                    const act = html.querySelector('select.handleType').value;
                     simpleValueHandlerHelper.renderHooker(html, vars, scopeMap?.[act]?.[vars.from] ?? getOptions());
                     if (change) {
                         const select = html.querySelector('.fetch-replacement-target');
@@ -950,6 +950,13 @@
         ...simpleValueHandlerHelper.build(codeRelateHandlers)
     };
 
+    PushHookAnkiChange('.operation', ev => {
+        const el = findParent(ev.target, '.super-fetch-item').querySelector('.fetch-replacement-items');
+        const data = actions.handlers.replacement.form(el, {});
+        data.from = 'fetch-' + ev.target.value;
+        const lis = actions.handlers.replacement.getReplacementItem(data);
+        [...el.children].forEach((child, i) => child.replaceWith(lis[i]))
+    });
 
     PushHookAnkiHtml(div => {
         setting = div.querySelector('.select-setting');

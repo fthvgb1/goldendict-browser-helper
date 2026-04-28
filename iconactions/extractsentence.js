@@ -920,7 +920,7 @@
             mapTitle, fetchActions: actions,
             fetchActionHelper: actionHelper,
             mergeMap: (obj, newObj) => iterateObjByKey(newObj, (k, v) => obj[k] = v, false),
-            hookLang: langKV => iterateObjByKey(langKV, (k, v) => mapTitle[k] = v, false),
+            hookLang: langKV => iterateObjByKey(langKV, (k, v) => mapTitle[k] = htmlSpecial(v), false),
             lang: name => allowFn.lang(name) ?? name,
             allowFn, htmlType, handleOp, operations,
             templateHelper,

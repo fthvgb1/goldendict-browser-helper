@@ -16,6 +16,9 @@
         'str2Array-desc': '此时替换值项为分隔符',
         'array2str': '数组转字符串',
         'array2str-desc': '此时替换值项为分隔符',
+        'executeCmd': '执行命令',
+        'haveReturn': '有结果值返回调用',
+        'haveReturn-desc': '替换值项为程序路径，模式项为参数,[arg1,arg2],{}使用变量',
     });
     superFetchHook.mergeMap(superFetchHook.valueHandlers.simpleValueHandlers.handlers, {
         capitalize: s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(),
@@ -39,7 +42,29 @@
         getComputedStyle(el, item) {
             return superFetchHook.getVarVal(getComputedStyle(el, item.pattern ? item.pattern : null), item.replaceValue)
         },
-    }, {scope: {fetch: {fetch: '*', handle: 'getAttribute'}}});
+    }, {scope: {fetch: {fetch: '*', handle: 'getAttribute,getComputedStyle'}}});
+
+
+    /*    function req(data,path) {
+            return new Promise((resolve)=>{
+                request(data,path,res=>{
+                    resolve(res)
+                });
+            })
+        }
+
+        superFetchHook.simpleValueHandlerHelper.addHandlers('executeCmd',{
+            haveReturn:{
+                fn:async (value,item,param)=>{
+                    item.pattern=superFetchHook.fetchActionHelper.replaceVars2Format(param.vars,item.pattern);
+                    //const args = JSON.parse(item.pattern)
+                    const r = await req({cmd:item.replaceValue,args:item.pattern},'cmd');
+                    console.log(r.response);
+                    return r.response;
+                },
+                showInput: 'replaceValue,pattern',
+            },
+        },{scope:{fetch:{fetch:'*'}}});*/
 
     superFetchHook.simpleValueHandlerHelper.addHandlers('valueRelation', {
         getVal: {
