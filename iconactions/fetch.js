@@ -961,6 +961,8 @@
         setting.addEventListener('blur', ev => evtFn.autoAddWidths(ev), true);
     });
 
+    PushHookAnkiClose(() => evtFn.maxDeep = 0);
+
     superFetchHook.simpleValueHandlerHelper = simpleValueHandlerHelper;
     superFetchHook.templateHelper.templateFnHook['replacement-item'] = (html, vars) => {
         valueHandlers?.[vars.handleType]?.renderHook?.(html, vars);
