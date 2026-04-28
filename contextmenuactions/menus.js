@@ -54,7 +54,13 @@
                 });
             },
             key: 'm'
-        }
+        },
+        {
+            title: 'run actions',
+            action: () => {
+                superFetchHook.executeActions(...GM_getValue('action', '').split(','))
+            }
+        },
         /*{
             title: "sh",
             action: {

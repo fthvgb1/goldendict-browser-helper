@@ -539,7 +539,9 @@
 
         setValue(target, value, item) {
             actionHelper.isTextNode(target) ? this.setInputOrTextarea(target, value, item) : this.setEle(target, value, item);
-        },//处理
+        },
+
+        log: console.log,
 
         handleResult(value, diff, setValue, item) {
             const t = item['fetch-data-handle'];
@@ -547,7 +549,7 @@
                 return;
             }
             if (t === 'log') {
-                console.log(value);
+                this.log(value);
                 return;
             }
             if (t === 'cover') {

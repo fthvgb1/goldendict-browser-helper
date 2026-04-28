@@ -515,6 +515,10 @@
 
 
     function executeActions(...names) {
+        names = names.filterAndMapX(name => name ? name : false);
+        if (names.length < 1) {
+            return;
+        }
         const rules = {};
         getAnkiFetchParams().forEach(rule => rules[rule['fetch-name']] = rule);
         names.forEach(name => rules?.[name] && actionHelper.executeAction(rules[name]));
