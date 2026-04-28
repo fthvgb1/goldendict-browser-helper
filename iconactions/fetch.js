@@ -539,40 +539,36 @@
 
         setValue(target, value, item) {
             actionHelper.isTextNode(target) ? this.setInputOrTextarea(target, value, item) : this.setEle(target, value, item);
+        },//处理
+
+        handleResult(value, diff, setValue, item) {
+            const t = item['fetch-data-handle'];
+            if (t === 'none') {
+                return;
+            }
+            if (t === 'log') {
+                console.log(value);
+                return;
+            }
+            if (t === 'cover') {
+                setValue(value);
+                return
+            }
+            if (item['fetch-repeat'] && diff()) {
+                return;
+            }
+            setValue(value);
         },
 
         setEle(target, value, item) {
-            const t = item['fetch-data-handle'];
-            if (t === 'none') {
-                return;
-            }
-            if (t === 'cover') {
-                target.innerHTML = value;
-                return
-            }
-            if (item['fetch-repeat']) {
-                const el = document.createElement('div');
-                el.innerHTML = value;
-                if (target.innerHTML.includes(el.innerHTML)) {
-                    return;
-                }
-            }
-            target.insertAdjacentHTML('beforeend', value);
+            this.handleResult(value, () => {
+                const el = templateHelper.createElement('div', value);
+                return target.innerHTML.includes(el.innerHTML)
+            }, v => target.insertAdjacentHTML('beforeend', v), item)
         },
 
         setInputOrTextarea(input, value, item) {
-            const t = item['fetch-data-handle'];
-            if (t === 'none') {
-                return;
-            }
-            if (t === 'cover') {
-                input.value = value;
-                return
-            }
-            if (item['fetch-repeat'] && input.value.includes(value)) {
-                return;
-            }
-            input.value += value;
+            this.handleResult(value, () => input.value.includes(value), v => input.value += v, item);
         },
 
 

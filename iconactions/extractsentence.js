@@ -332,7 +332,7 @@
 
 
     function getFetchItemEles() {
-        return [...setting.children].slice(1);
+        return setting ? [...setting.children].slice(1) : [];
     }
 
 
@@ -428,6 +428,7 @@
 
 
     const mapTitle = {
+        'log': '打印到控制台',
         'no file': '没有文件！',
         'handleValue': '对值进行处理',
         'fold-or-unfold': '折叠或展开子项',
@@ -510,6 +511,13 @@
             return
         }
         log(param);
+    }
+
+
+    function executeActions(...names) {
+        const rules = {};
+        getAnkiFetchParams().forEach(rule => rules[rule['fetch-name']] = rule);
+        names.forEach(name => rules?.[name] && actionHelper.executeAction(rules[name]));
     }
 
     function getAnkiFetchParams(targetField = '', activeFilter = true) {
@@ -606,7 +614,12 @@
     }
 
 
-    const handleOp = {'append': mapTitle['append'], 'cover': mapTitle['cover'], 'none': mapTitle['none']};
+    const handleOp = {
+        'append': mapTitle['append'],
+        'cover': mapTitle['cover'],
+        'log': mapTitle['log'],
+        'none': mapTitle['none']
+    };
     const operations = {fetch: mapTitle['fetch'], handle: mapTitle['handle']};
     const htmlType = {
         'text': mapTitle['text'],
@@ -813,6 +826,9 @@
         },
 
         getFieldElement(name) {
+            if ('$doc' === name) {
+                return document
+            }
             let from = document.querySelector(`:where(.field-name)[value='${name}']`);
             return findParent(from, '.form-item,.sentence_setting')?.querySelector('.spell-content,.field-value') ?? null;
         },
@@ -911,6 +927,7 @@
         arrayDiff: diff,
         setEleDrag,
         superFetchHook: {
+            executeActions,
             eventHook: eventFn, getVarVal,
             formProcessor, anchorFn: {
                 p: el => el.parentElement,
