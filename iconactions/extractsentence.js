@@ -405,8 +405,8 @@
             [...form.querySelectorAll(selector)].forEach(el => {
                 const k = el.name;
                 let v = el.value;
-                if (el.type === 'number' && !el.dataset?.float) {
-                    v = parseInt(v);
+                if (el.type === 'number') {
+                    v = Number(v);
                 }
                 if (el.type === 'checkbox') {
                     v = el.checked;
@@ -515,13 +515,19 @@
 
 
     function executeActions(...names) {
-        names = names.filterAndMapX(name => name ? name : false);
+        names = names.filter(name => name);
         if (names.length < 1) {
             return;
         }
         const rules = {};
         getAnkiFetchParams().forEach(rule => rules[rule['fetch-name']] = rule);
-        names.forEach(name => rules?.[name] && actionHelper.executeAction(rules[name]));
+        names.forEach(name => {
+            try {
+                rules?.[name] && actionHelper.executeAction(rules[name])
+            } catch (e) {
+                console.log('execute action', name, 'error:', e);
+            }
+        });
     }
 
     function getAnkiFetchParams(targetField = '', activeFilter = true) {

@@ -90,25 +90,26 @@
                 return optionsArr = simpleValueHandlerHelper.buildOptions(handlers);
             }
 
-            let change = false;
-            iterateObjByKey(handlers, (k, handler) => ((handler?.show || handler?.showInput) ? (change = true, false) : true), false);
+            let showHook = false;
+            iterateObjByKey(handlers, (k, handler) => ((handler?.show || handler?.showInput) ? (showHook = true, false) : true), false);
             return {
                 renderHook(html, vars) {
                     const act = html.querySelector('select.handleType').value;
                     simpleValueHandlerHelper.renderHooker(html, vars, scopeMap?.[act]?.[vars.from] ?? getOptions());
-                    if (change) {
+                    if (showHook) {
                         const select = html.querySelector('.fetch-replacement-target');
                         let handle = select.value;
-                        handlers?.[handle]?.show?.(html);
+                        handlers?.[handle]?.show?.(html, vars);
                         const inputs = html.querySelectorAll('input[name=replaceValue],input[name=pattern]'),
                             forEach = inputs.forEach;
                         handlers?.[handle]?.showInput && forEach
                             .bind(inputs)(el => handlers[handle].showInput.includes(el.name) && el.classList.add('show'));
-                        select.addEventListener('change', () => {
+
+                        select.addEventListener('change', ev => {
                             handle = select.value;
                             forEach.bind(inputs)(el => handlers[handle]?.showInput?.includes?.(el.name) ?
                                 el.classList.add('show') : el.classList.remove('show'));
-                            handlers?.[handle]?.show?.(html);
+                            handlers?.[handle]?.show?.(ev.target.parentElement, vars);
                         });
                     }
                 },
@@ -484,6 +485,11 @@
                     vars[name] = vars[name].join(rule.separator);
                 }
             } else {
+                rule?.children?.forEach(child => {
+                    const childName = child['super-fetch-name'];
+                    vars[childName] = this.handleVars(child, childName, vars, param);
+                });
+
                 if (rule['fetch-format']) {
                     vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
                 }

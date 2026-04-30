@@ -55,12 +55,12 @@
             },
             key: 'm'
         },
-        {
-            title: 'run actions',
-            action: () => {
-                superFetchHook.executeActions(...GM_getValue('action', '').split(','))
+        ...(() => GM_getValue('action', '').split(',').filterAndMapX(name => {
+            if (!name) {
+                return false;
             }
-        },
+            return {title: name, action: () => superFetchHook.executeActions(name)}
+        }))(),
         /*{
             title: "sh",
             action: {
