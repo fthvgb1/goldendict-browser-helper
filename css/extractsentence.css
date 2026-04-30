@@ -147,24 +147,23 @@ input[name=parent-selector], input[name=child-selector] {
     /*.fetch-dd:has(option[value=htmlElement]:checked) ~ .fetch-dd,
     .fetch-dd:has(option[value=htmlElement]:checked) .default-value,*/
 .handleType:has(option[value="remove element"]:checked) ~ :not(.fetch-replacement-target,button),
-.handleType:has(option[value=simpleValueHandlers]:checked) ~ :not(.fetch-replacement-target,button) {
+.handleType:has(option:where([value=simpleValueHandlers],[value=codeRelate]):checked) ~ :not(.fetch-replacement-target,button) {
     display: none;
 }
 
-
 .super-fetch-item:has(.handleValue:not(:checked)) .fetch-replacement-items,
-select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAttribute],option[value=getComputedStyle]):checked)) ~ :not(.fetch-replacement-target:has(:where(option[value=str2Array],option[value=array2str]):checked) + .fetch-replacement-value ,button),
+select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAttribute],option[value=getComputedStyle]):checked)) ~ :not(button),
 .fetch-item:has(.operate-type>option[value=replacement]:checked) .handleType > :where(option[value=parseTemplate],option[value="remove element"],option[value=htmlFns],option[value=embolden]) {
     display: none;
 }
 
 .handleType:has(option[value=parseTemplate]:checked) + .templateVar {
     display: inline;
-    width: 3vw;
+    width: 5vw;
 }
 
 .handleType:has(option[value=parseTemplate]:checked) ~ .pattern {
-    width: 2vw;
+    display: none;
 }
 
 .fetch-fold {
@@ -191,8 +190,29 @@ select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAtt
     max-width: 14vw;
 }
 
-.fetch-dd > .fetch-replacement-items[data-batch] > .fetch-replacement-item:has(.handleType) > .fetch-replacement-target[data-fn-set] ~ input.show {
+.fetch-dd > .fetch-replacement-items[data-batch] > .fetch-replacement-item:has(.handleType) > .fetch-replacement-target[data-fn-set] ~ .show {
     display: initial;
+}
+
+.fetch-replacement-item:has(input:where([name=v1],[name=v2])) :where(.fetch-replacement-target, .fetch-replacement-value) {
+    width: 4vw;
+}
+
+.fetch-replacement-item :where([name=compareType],[name=valueType]) {
+    width: 3vw;
+}
+
+.fetch-replacement-item input:where([name=v1],[name=v2]) {
+    width: 4.3vw;
+}
+
+.fetch-replacement-item:has(.fetch-replacement-target>option:is([value=setValue],[value=pushArrayValue]):checked) :where(.fetch-replacement-target, .fetch-replacement-value) {
+    width: 4.7vw;
+}
+
+.fetch-dd > .fetch-replacement-items[data-batch] > .fetch-replacement-item:has(.show[name=compareType]>option:is([value=isTrue],[value=isFalse],[value=completeTrue],[value=completeFalse]):checked) :is(.show[name=v2],.show[name=valueType]),
+.fetch-dd > .fetch-replacement-items[data-batch] > .fetch-replacement-item:has(.show[name=compareType]>option[value=include]:checked) .show[name=valueType] {
+    display: none;
 }
 
 

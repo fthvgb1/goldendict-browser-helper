@@ -542,7 +542,8 @@
             return arr.filterAndMapX(k => fn(k, obj[k]));
         }
         for (const k of arr) {
-            if (!fn(k, obj[k])) {
+            const r = fn(k, obj[k]);
+            if (r !== undefined && !fn(k, obj[k])) {
                 break;
             }
         }

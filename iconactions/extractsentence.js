@@ -607,6 +607,16 @@
         return rightTrim(leftTrim(s, symbol), symbol);
     }
 
+    const varReg = /\{.*}/;
+
+    function getVariable(vars, express, defaults = '', bracket = false) {
+        if (bracket && !varReg.test(express)) {
+            return express;
+        }
+        express = trims(express, '{}');
+        return getVarVal(vars, express, defaults);
+    }
+
     function getVarVal(vars, express, defaults = '') {
         if (vars?.[express]) {
             return vars[express];
@@ -938,7 +948,7 @@
         setEleDrag,
         superFetchHook: {
             executeActions,
-            eventHook: eventFn, getVarVal,
+            eventHook: eventFn, getVarVal, getVariable,
             formProcessor, anchorFn: {
                 p: el => el.parentElement,
                 ns: el => el.nextElementSibling,

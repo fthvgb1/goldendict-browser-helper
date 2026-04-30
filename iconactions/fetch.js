@@ -90,8 +90,11 @@
                 return optionsArr = simpleValueHandlerHelper.buildOptions(handlers);
             }
 
-            let showHook = false;
-            iterateObjByKey(handlers, (k, handler) => ((handler?.show || handler?.showInput) ? (showHook = true, false) : true), false);
+            let showHook = false, extraInput = '';
+            iterateObjByKey(handlers, (k, handler) => {
+                (handler?.show || handler?.showInput) && (showHook = true);
+                handler?.extraShowInput && (extraInput += ',' + handler.extraShowInput);
+            }, false);
             return {
                 renderHook(html, vars) {
                     const act = html.querySelector('select.handleType').value;
@@ -100,12 +103,14 @@
                         const select = html.querySelector('.fetch-replacement-target');
                         let handle = select.value;
                         handlers?.[handle]?.show?.(html, vars);
-                        const inputs = html.querySelectorAll('input[name=replaceValue],input[name=pattern]'),
-                            forEach = inputs.forEach;
+                        const selector = 'input[name=replaceValue],input[name=pattern]' + extraInput;
+                        let inputs = html.querySelectorAll(selector);
+                        const forEach = inputs.forEach;
                         handlers?.[handle]?.showInput && forEach
                             .bind(inputs)(el => handlers[handle].showInput.includes(el.name) && el.classList.add('show'));
 
                         select.addEventListener('change', ev => {
+                            inputs = ev.target.parentElement.querySelectorAll(selector);
                             handle = select.value;
                             forEach.bind(inputs)(el => handlers[handle]?.showInput?.includes?.(el.name) ?
                                 el.classList.add('show') : el.classList.remove('show'));
@@ -432,10 +437,10 @@
             }
             return vars[name];
         },
-        parseVar(vars, name, el, rule, ele, fetchConf, from, cached) {
+        parseVar(vars, name, el, rule, ele, fetchConf, from, cached, globalVars = vars) {
             const children = {}, param = {
                 rule, beforeQueryEle: ele, afterQueryEle: el,
-                fetchParam: fetchConf, vars, from
+                fetchParam: fetchConf, vars, from, globalVars
             }, type = rule['fetch-data-type'];
             vars[`${name}-ele`] = el;
             let value = '';
@@ -499,10 +504,10 @@
         },
 
         // fetch vars
-        getVars(ele, rule, fetchConf, from, vars = {}, cached = {}) {
+        getVars(ele, rule, fetchConf, from, vars = {}, cached = {}, globalVars = vars) {
             const name = rule['super-fetch-name'], param = {
                 rule, beforeQueryEle: ele,
-                fetchParam: fetchConf, vars, from
+                fetchParam: fetchConf, vars, from, globalVars
             };
             if (rule.cached && cached.hasOwnProperty(name)) {
                 vars[name] = cached[name];
@@ -521,7 +526,7 @@
                 vars[name] = [...el].filterAndMapX((ell, i) => {
                     const v = {...vars};
                     v['@i@'] = i;
-                    const r = this.parseVar(v, name, ell, rule, ele, fetchConf, from, cached);
+                    const r = this.parseVar(v, name, ell, rule, ele, fetchConf, from, cached, vars);
                     if (!rule?.['fetch-repeat']) {
                         return r;
                     }
