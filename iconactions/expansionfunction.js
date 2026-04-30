@@ -42,6 +42,7 @@
         'object': '对象',
         'variable': '变量',
         'pushArrayValue': '向数组末尾添加一个值',
+        'func': '固有函数',
     });
     const lang = superFetchHook.lang, getValue = superFetchHook.getVariable;
     superFetchHook.mergeMap(superFetchHook.valueHandlers.simpleValueHandlers.handlers, {
@@ -237,6 +238,18 @@
         valueType: {
             variable: (value, vars) => getValue(vars, value),
             ...superFetchHook.valueHandlers.ifBranch.valueType,
+            func: (v, vars) => {
+                let [fn, param] = v.split('|');
+                const f = fn.split('.');
+                const val = getValue(vars, f[0], f[0], true);
+                const n = f.slice(1).join('.');
+                fn = getValue(val, n, n).bind(val)
+                let args;
+                if (param) {
+                    args = param.split(',').map(a => getValue(vars, a, a, true))
+                }
+                return args ? fn(...args) : fn();
+            },
             array: (v, vars) => {
                 if (!v) {
                     return []

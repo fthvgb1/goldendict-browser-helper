@@ -117,7 +117,7 @@ input[name=parent-selector], input[name=child-selector] {
     width: 9vw;
 }
 
-.default-value, .parent-super-name {
+.default-value, .parent-super-name, .variableType {
     width: 5vw;
 }
 
