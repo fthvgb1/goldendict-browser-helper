@@ -90,15 +90,20 @@
                 return optionsArr = simpleValueHandlerHelper.buildOptions(handlers);
             }
 
-            let showHook = false, extraInput = '';
-            iterateObjByKey(handlers, (k, handler) => {
-                (handler?.show || handler?.showInput) && (showHook = true);
-                handler?.extraShowInput && (extraInput += ',' + handler.extraShowInput);
-            }, false);
+            let showHook, extraInput = '';
+            const fn = () => {
+                log(handlers)
+                iterateObjByKey(handlers, (k, handler) => {
+                    (handler?.show || handler?.showInput) && (showHook = true);
+                    handler?.extraShowInput && (extraInput += ',' + handler.extraShowInput);
+                }, false);
+                showHook = Boolean(showHook);
+            };
             return {
                 renderHook(html, vars) {
                     const act = html.querySelector('select.handleType').value;
                     simpleValueHandlerHelper.renderHooker(html, vars, scopeMap?.[act]?.[vars.from] ?? getOptions());
+                    showHook === undefined && fn();
                     if (showHook) {
                         const select = html.querySelector('.fetch-replacement-target');
                         let handle = select.value;
