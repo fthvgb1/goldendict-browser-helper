@@ -92,7 +92,6 @@
 
             let showHook, extraInput = '';
             const fn = () => {
-                log(handlers)
                 iterateObjByKey(handlers, (k, handler) => {
                     (handler?.show || handler?.showInput) && (showHook = true);
                     handler?.extraShowInput && (extraInput += ',' + handler.extraShowInput);
