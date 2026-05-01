@@ -189,6 +189,9 @@
                 const v = superFetchHook.valueHandlers.valueRelation.buildValue(item, param);
                 const [name, g] = item.replaceValue.split('|');
                 const vars = g === 'g' ? param.globalVars : param.vars;
+                if (!name) {
+                    return v;
+                }
                 vars[name] = v;
                 return _;
             },
@@ -241,9 +244,10 @@
             func: (v, vars) => {
                 let [fn, param] = v.split('|');
                 const f = fn.split('.');
-                const val = getValue(vars, f[0], f[0], true);
-                const n = f.slice(1).join('.');
-                fn = getValue(val, n, n).bind(val)
+                const value = f.slice(0, f.length - 1).join('.');
+                const val = getValue(vars, value, value, true);
+                const fnName = f[f.length - 1];
+                fn = getValue(val, fnName, fnName).bind(val)
                 let args;
                 if (param) {
                     args = param.split(',').map(a => getValue(vars, a, a, true))
