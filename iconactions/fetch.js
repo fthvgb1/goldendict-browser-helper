@@ -58,6 +58,49 @@
             return iterateObjByKey(handlers, (name, handler) => this.handleOptions(name, handler))
         },
 
+        buildElement(field, value, attr, pre) {
+            const placeholder = superFetchHook.mapTitle[field] ?? field;
+            const title = superFetchHook.mapTitle[`${field}-desc`] ?? placeholder;
+            attr.attrs = {
+                placeholder, title, className: field + ' show', ...attr?.attrs,
+            };
+            let type = attr.type;
+            if ('select' === attr.type) {
+                value = attr.getOptions?.(value);
+            } else {
+                'textarea' !== attr.type && (type = 'input');
+                attr.attrs.type = attr.type;
+            }
+            const ele = templateHelper.buildFormElement[type](field, value, attr.attrs);
+            attr?.width && (ele.style.width = attr.width);
+            attr?.hook && (attr.hook(ele, value, attr, pre));
+            return ele;
+        },
+
+        buildFieldRender(param) {
+            if (!param) {
+                return null;
+            }
+            const fn = iterateObjByKey(param.fields, (field, attr) => {
+                return (pre, html, vars) => {
+                    const value = vars[field] ?? '';
+                    const diff = attr?.diff ?? (el => el.nextElementSibling.matches(attr?.diffSelector ?? `[name=${field}]`));
+                    if (diff(pre.nextElementSibling)) {
+                        pre.nextElementSibling.value = value;
+                        return pre.nextElementSibling;
+                    }
+                    const ele = superFetchHook.simpleValueHandlerHelper.buildElement(field, value, attr, pre);
+                    attr?.width && (ele.style.width = attr.width);
+                    pre.nextElementSibling.matches('.replacement-add') ? pre.insertAdjacentElement('afterend', ele) : pre.nextElementSibling.replaceWith(ele);
+                    return ele;
+                };
+            });
+            return (html, vars) => {
+                const el = html.querySelector(param.mountElementSelector);
+                fn.reduce((pre, cur) => cur(pre, html, vars), el);
+            };
+        },
+
         renderHooker(html, vars, options) {
             const searchInput = html.querySelector('.fetch-replacement-target');
             const select = templateHelper.createElement('select', {
@@ -90,12 +133,14 @@
                 return optionsArr = simpleValueHandlerHelper.buildOptions(handlers);
             }
 
-            let showHook, extraInput = '';
+            let showHook, extraInput = '', show = {};
             const fn = () => {
                 iterateObjByKey(handlers, (k, handler) => {
-                    (handler?.show || handler?.showInput) && (showHook = true);
+                    (handler?.show || handler?.showInput || handler?.param) && (showHook = true);
                     handler?.extraShowInput && (extraInput += ',' + handler.extraShowInput);
+                    handler?.param && (show[k] = simpleValueHandlerHelper.buildFieldRender(handler.param));
                 }, false);
+
                 showHook = Boolean(showHook);
             };
             return {
@@ -107,6 +152,7 @@
                         const select = html.querySelector('.fetch-replacement-target');
                         let handle = select.value;
                         handlers?.[handle]?.show?.(html, vars);
+                        show?.[handle]?.(html, vars);
                         const selector = 'input[name=replaceValue],input[name=pattern]' + extraInput;
                         let inputs = html.querySelectorAll(selector);
                         const forEach = inputs.forEach;
@@ -119,6 +165,7 @@
                             forEach.bind(inputs)(el => handlers[handle]?.showInput?.includes?.(el.name) ?
                                 el.classList.add('show') : el.classList.remove('show'));
                             handlers?.[handle]?.show?.(ev.target.parentElement, vars);
+                            show?.[handle]?.(ev.target.parentElement, vars);
                         });
                     }
                 },
@@ -271,8 +318,8 @@
                         if (!el) {
                             return;
                         }
-                        const vars = this.getMultiVars(el, rules, item, cached);
-                        const format = item['fetch-format'] ? item['fetch-format'] : iterateObjByKey(vars, k => k.endsWith('-ele') ? false : `{${k}}`).join('');
+                        const vars = this.getMultiVars(el, rules, item, cached, {'$window': window});
+                        const format = item['fetch-format'] ? item['fetch-format'] : iterateObjByKey(vars, k => (k.endsWith('-ele') || k === '$window') ? false : `{${k}}`).join('');
                         const value = this.replaceVars2Format(vars, format);
                         this.setValue(target, value, item);
                     }));
@@ -401,9 +448,9 @@
             if (param.rule.handleValue && (first.searchValue || actionHelper.accessEmpty.has(first.handleType))) {
                 const name = param.rule['super-fetch-name'];
                 for (const item of items) {
-                    const rule = {...item};
-                    value = param.vars[name] = valueHandlers[rule.handleType].handle(rule, value, param);
-                    if (rule?.break) {
+                    const handler = {currVarName: name, ...item};
+                    value = param.vars[name] = valueHandlers[handler.handleType].handle(handler, value, param);
+                    if (handler?.break) {
                         break;
                     }
                 }
@@ -706,7 +753,7 @@
             },
             handleElement: {
                 action(param, from, target) {
-                    const fetchItems = [], handleItems = [], vars = {};
+                    const fetchItems = [], handleItems = [], vars = {'$window': window};
                     param['super-fetch-items'].forEach(item => item?.operation === 'handle' ? handleItems.push(item) : fetchItems.push(item));
                     const rule = actionHelper.parseFetchRule(fetchItems);
                     if (rule) {

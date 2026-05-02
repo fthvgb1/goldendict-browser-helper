@@ -496,8 +496,6 @@
     };
 
 
-
-
     function ankiFetchData(param, target = null, from = null) {
         if (!target) {
             target = actionHelper.getDestEle(param);
@@ -728,7 +726,25 @@
             return ele.children.length > 1 ? ele : ele.children[0];
         },
 
-
+        buildFormElement: {
+            input(name, value, attr = {}) {
+                const input = templateHelper.createElement('input', {name, className: name, ...attr});
+                'text' === attr.type && (value = htmlSpecial(value));
+                'number' === attr.type && (value = value ? value : 0);
+                input.value = value;
+                return input
+            },
+            select(name, options, attr = {}) {
+                return templateHelper.createElement('select', {
+                    name, className: name,
+                    innerHTML: options,
+                    ...attr
+                });
+            },
+            textarea(name, value, attr = {}) {
+                return templateHelper.createElement('textarea', {name, className: name, value, ...attr})
+            }
+        }
     };
 
     function setEleDrag(ele, selector, config = {}) {
@@ -799,7 +815,6 @@
             turnDrag(false);
         }
     }
-
 
 
     PushExpandAnkiRichButton('action-switch-text', '', (evt, fn) => {
@@ -882,6 +897,10 @@
             let valid = false;
             rule[''] = {};
             arr.forEach(item => {
+                if (!item['super-fetch-name']) {
+                    log('name can not be empty', item);
+                    return;
+                }
                 rule[item['super-fetch-name']] = item;
                 if (!item['value-selector'] && !item['default-value'] && !item['fetch-format']) {
                     log('value-selector or default value emptied', item);

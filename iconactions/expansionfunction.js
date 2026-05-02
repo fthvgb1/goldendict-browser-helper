@@ -245,9 +245,9 @@
                 let [fn, param] = v.split('|');
                 const f = fn.split('.');
                 const value = f.slice(0, f.length - 1).join('.');
-                const val = getValue(vars, value, value, true);
+                const o = getValue(vars, value, value, true);
                 const fnName = f[f.length - 1];
-                fn = getValue(val, fnName, fnName).bind(val)
+                fn = getValue(o, fnName, fnName).bind(o)
                 let args;
                 if (param) {
                     args = param.split(',').map(a => getValue(vars, a, a, true))
@@ -280,6 +280,73 @@
                 return o;
             }
         }
+    });
+
+
+    superFetchHook.hookLang({
+        'simpleCalculator': '简单计算器',
+        'addx': '➕',
+        'subtract': '➖',
+        'multiply': '✖',
+        'divide': '➗',
+        'arithmetic': '四则运算',
+        'complementation': '%',
+    });
+
+
+    superFetchHook.simpleValueHandlerHelper.addHandlers('simpleCalculator', {
+        calculator: {
+            fn(value, item, param) {
+                const num = 'variable' === item.operatedTarget ? superFetchHook.getVariable(param.vars, item.operatedNumber, 0) : Number(item.operatedNumber);
+                return superFetchHook.valueHandlers.simpleCalculator.arithmetic[item.operator](Number(value), num)
+            },
+            text: lang('arithmetic'),
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    operator: {
+                        width: '4vw',
+                        type: 'select',
+                        getOptions(val) {
+                            const o = Object.keys(superFetchHook.valueHandlers.simpleCalculator.arithmetic)
+                                .map(k => [k, lang(k)]);
+                            return buildOption(o, val, 0, 1)
+                        },
+                        diffSelector: '[name=operator]:has(option[name=adds])',
+                    },
+                    operatedTarget: {
+                        type: 'select',
+                        getOptions(val) {
+                            return buildOption({number: lang('number'), variable: lang('variable')}, val);
+                        },
+                        attrs: {
+                            onchange: evt => superFetchHook.valueHandlers.simpleCalculator.change[evt.target.value](evt.target.nextElementSibling),
+                        }
+                    },
+                    operatedNumber: {
+                        type: 'number',
+                        width: '5vw',
+                        hook(input, value, attr, previousElementSibling) {
+                            input.type = previousElementSibling.value === 'number' ? 'number' : 'text';
+                            input.value = value;
+                        }
+                    },
+                },
+            },
+        }
+    }, {
+        change: {
+            number: el => (el.type = 'number', el.value = 0),
+            variable: el => (el.type = 'text', el.value = ''),
+        },
+        arithmetic: {
+            addx: (num1, num2) => num1 + num2,
+            subtract: (num1, num2) => num1 - num2,
+            multiply: (num1, num2) => num1 * num2,
+            divide: (num1, num2) => num1 / num2,
+            complementation: (num1, num2) => num1 % num2,
+        },
+        scope: {fetch: {fetch: '*'}}
     });
 
 

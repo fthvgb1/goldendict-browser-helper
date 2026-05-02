@@ -2,7 +2,7 @@
 // @name         goldenDict-browser-helper
 // @namespace    https://github.com/fthvgb1
 // @homepage     https://github.com/fthvgb1/goldendict-browser-helper
-// @version      2.35
+// @version      2.36
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1
 // @match        http://*/*
@@ -43,6 +43,7 @@
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/embolden.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/expansionfunction.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/imagesize.js
+// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/othersExtensions.js
 
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/contextmenuactions/menus.js
 
