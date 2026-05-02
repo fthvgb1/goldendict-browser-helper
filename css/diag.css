@@ -131,7 +131,8 @@ ol .form-item:has( .sentence_setting) .field-operate input {
 }
 
 span.select2.select2-container {
-    margin-left: 1vw;
+    margin-left: 1.6vw;
+    margin-top: 1vw;
 }
 
 .select2-dropdown {
@@ -139,5 +140,5 @@ span.select2.select2-container {
 }
 
 .select2-container .select2-search--inline .select2-search__field {
-    height: 1.5vw;
+    height: 2vw;
 }
