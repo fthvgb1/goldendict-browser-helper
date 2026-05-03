@@ -827,7 +827,7 @@
                 async action(param, target) {
                     const p = {vars: {value: target.value}};
                     for (const item of param['replacement-items']) {
-                        p.vars.value = await valueHandlers[item.handleType].handle(item, target.value, p);
+                        p.vars.value = await valueHandlers[item.handleType].handle(item, p.vars.value, p);
                     }
                     target.value = p.vars.value;
                 },
