@@ -210,9 +210,14 @@ select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAtt
     width: 4.7vw;
 }
 
-.fetch-dd > .fetch-replacement-items[data-batch] > .fetch-replacement-item:has(.show[name=compareType]>option:is([value=isTrue],[value=isFalse],[value=completeTrue],[value=completeFalse]):checked) :is(.show[name=v2],.show[name=valueType]),
-.fetch-dd > .fetch-replacement-items[data-batch] > .fetch-replacement-item:has(.show[name=compareType]>option[value=include]:checked) .show[name=valueType] {
+.fetch-dd > .fetch-replacement-items[data-batch] > .fetch-replacement-item:has(.show[name=compareType]>option:is([value=isTrue],[value=isFalse],[value=completeTrue],[value=completeFalse],[value=strRegexTest]):checked) :is(.show[name=v2]:not(select:has(option[value=strRegexTest]:checked) +[name=v2]),.show[name=valueType]),
+.fetch-dd > .fetch-replacement-items[data-batch] > .fetch-replacement-item:has(.show[name=compareType]>option[value=include]:checked) .show[name=valueType],
+.fetch-dd > .fetch-replacement-items[data-batch] > .fetch-replacement-item:not(:has(.show[name=compareType]>option[value=strRegexTest]:checked)) .show[name=regPattern] {
     display: none;
+}
+
+[name=regPattern] {
+    width: 2vw;
 }
 
 

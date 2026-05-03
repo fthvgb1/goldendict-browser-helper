@@ -734,6 +734,8 @@
 
         buildFormElement: {
             input(name, value, attr = {}) {
+                attr.title = attr?.title ?? mapTitle[`${name}-desc`] ?? mapTitle[name] ?? name;
+                attr.placeholder = attr.title;
                 const input = templateHelper.createElement('input', {name, className: name, ...attr});
                 'text' === attr.type && (value = htmlSpecial(value));
                 'number' === attr.type && (value = value ? value : 0);
@@ -741,6 +743,7 @@
                 return input
             },
             select(name, options, attr = {}) {
+                attr.title = attr?.title ?? mapTitle[`${name}-desc`] ?? mapTitle[name] ?? name;
                 return templateHelper.createElement('select', {
                     name, className: name,
                     innerHTML: options,
@@ -748,6 +751,7 @@
                 });
             },
             textarea(name, value, attr = {}) {
+                attr.placeholder = attr?.placeholder ?? mapTitle[`${name}-desc`] ?? mapTitle[name] ?? name;
                 return templateHelper.createElement('textarea', {name, className: name, value, ...attr})
             }
         }

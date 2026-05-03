@@ -883,9 +883,9 @@
                                 }
                             }
                         }
-
-
-                        return [k, handler.text, {title: handler.title}];
+                        const text = handler.text ?? mapTitle[k] ?? k;
+                        const title = handler.title ?? mapTitle[`${k}-desc`] ?? text;
+                        return [k, text, {title: title}];
                     });
                 },
                 getReplacementItem(data = {}) {

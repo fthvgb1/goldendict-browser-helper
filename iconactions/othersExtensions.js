@@ -3,6 +3,8 @@
         'displacement': '位运算',
         'leftDisplacement': '<<',
         'rightDisplacement': '>>',
+        'log': '打印到控制台',
+        'log-desc': '可使用{变量},{$vars}为所有变量，为空打印当前变量',
     });
     const lang = superFetchHook.lang;
     const calculator = superFetchHook.valueHandlers.simpleCalculator;
@@ -33,4 +35,34 @@
             },
         },
     };
+
+
+    superFetchHook.valueHandlers.log = {
+        reg: /\{(.*?)}/g,
+        handle(item, value, eleParam) {
+            const express = item.searchValue;
+            if (!express) {
+                console.log(value);
+                return value
+            }
+            const arr = [];
+            let r, i = 0;
+            while ((r = this.reg.exec(express)) !== null) {
+                arr.push(express.slice(i, r.index));
+                i = r.index + r[0].length;
+                const v = '$vars' === r[1] ? eleParam.vars : superFetchHook.getVariable(eleParam.vars, r[1], r[0]);
+                arr.push(v);
+            }
+            i < express.length && arr.push(express.slice(i));
+            console.log(...arr);
+            return value;
+        },
+        renderHook(li) {
+            li.querySelectorAll('[name=searchValue] ~:not(button)').forEach(el => el.classList.add('hidden'));
+            const input = li.querySelector('[name=searchValue]');
+            input.style.width = '20vw';
+            input.title = lang('log-title');
+        }
+    }
+
 })();

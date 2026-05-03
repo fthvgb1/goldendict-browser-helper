@@ -24,6 +24,9 @@
         'ifBranch': '简单的if分支',
         'break': '中断',
         'include': '包含',
+        'strRegexTest': '字符串正则测试',
+        'v1': '值1,可为变量',
+        'v2': '值2,可为变量',
         'eq': '=',
         'gt': '>',
         'gte': '>=',
@@ -76,7 +79,10 @@
                 const o = superFetchHook.valueHandlers['ifBranch'];
                 const v1 = superFetchHook.fetchActionHelper.getDefVars(item['v1'], param.vars);
                 const compareType = item.compareType, compareFn = o.compareFn[compareType];
-                const v2 = superFetchHook.fetchActionHelper.getDefVars(item['v2'], param.vars)
+                let v2 = superFetchHook.fetchActionHelper.getDefVars(item['v2'], param.vars);
+                if ('strRegexTest' === compareType) {
+                    v2 = new RegExp(v2, item.regPattern);
+                }
                 const valFn = o.valueType[item.valueType];
                 const r = o.noType.has(compareType) ? compareFn(v1, v2) : compareFn(valFn(v1), valFn(v2));
                 if ((item.isBreak && r) || (!item.isBreak && !r)) {
@@ -107,7 +113,9 @@
                     className: 'show',
                     innerHTML: buildOption(Object.keys(o.valueType).map(v => [v, lang(v)]), vars?.valueType, 0, 1),
                 });
-                [v2, valueType, breaks].reduce((pre, cur) => pre.insertAdjacentElement('afterend', cur), compare);
+                const pattern = superFetchHook.templateHelper.buildFormElement.input('regPattern', vars?.pattern ?? '', {className: 'show'});
+
+                [v2, pattern, valueType, breaks].reduce((pre, cur) => pre.insertAdjacentElement('afterend', cur), compare);
             }
         },
         break: {
@@ -125,8 +133,9 @@
     }, {
         scope: {fetch: {fetch: '*'}},
         createInput(name, attr = {}) {
+            const title = superFetchHook.mapTitle[`${name}-desc`] ?? superFetchHook.mapTitle[name] ?? name;
             return superFetchHook.templateHelper.createElement('input', {
-                name: name, placeholder: lang(name), title: lang(name),
+                name: name, placeholder: title, title: title,
                 type: 'text', className: 'show', ...attr
             });
         },
@@ -134,10 +143,10 @@
             string: String,
             number: Number,
         },
-        noType: new Set(['include', 'isTrue', 'isFalse', 'completeTrue', 'completeFalse']),
+        noType: new Set(['include', 'strRegexTest', 'isTrue', 'isFalse', 'completeTrue', 'completeFalse']),
         compareFn: {
             include: (v1, v2) => v1?.includes ? v1.includes(v2) : v1.hasOwnProperty(v2),
-            //strRegexTest:(v1,v2)=>v2.test(v1),
+            strRegexTest: (v1, v2) => v2.test(v1),
             eq: (v1, v2) => v1 === v2,
             gt: (v1, v2) => v1 > v2,
             gte: (v1, v2) => v1 >= v2,
