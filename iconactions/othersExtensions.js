@@ -5,6 +5,7 @@
         'rightDisplacement': '>>',
         'log': '打印到控制台',
         'log-desc': '可使用{变量},{$vars}为所有变量，为空打印当前变量',
+        'trim': '去除两边看不见字符',
     });
     const lang = superFetchHook.lang;
     const calculator = superFetchHook.valueHandlers.simpleCalculator;
@@ -64,5 +65,8 @@
             input.title = lang('log-title');
         }
     }
+
+    superFetchHook.valueHandlers.simpleValueHandlers.handlers.trim = s => s.trim();
+
 
 })();
