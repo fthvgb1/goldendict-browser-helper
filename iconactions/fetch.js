@@ -58,7 +58,7 @@
             return iterateObjByKey(handlers, (name, handler) => this.handleOptions(name, handler))
         },
 
-        buildElement(field, value, attr, pre) {
+        buildElement(field, value, vars, attr, pre) {
             const placeholder = superFetchHook.mapTitle[field] ?? field;
             const title = superFetchHook.mapTitle[`${field}-desc`] ?? placeholder;
             attr.attrs = {
@@ -73,7 +73,7 @@
             }
             const ele = templateHelper.buildFormElement[type](field, value, attr.attrs);
             attr?.width && (ele.style.width = attr.width);
-            attr?.hook && (attr.hook(ele, value, attr, pre));
+            attr?.hook && (attr.hook(ele, value, vars, attr, pre));
             return ele;
         },
 
@@ -89,7 +89,7 @@
                         pre.nextElementSibling.value = value;
                         return pre.nextElementSibling;
                     }
-                    const ele = superFetchHook.simpleValueHandlerHelper.buildElement(field, value, attr, pre);
+                    const ele = superFetchHook.simpleValueHandlerHelper.buildElement(field, value, vars, attr, pre);
                     attr?.width && (ele.style.width = attr.width);
                     pre.nextElementSibling.matches('.replacement-add') ? pre.insertAdjacentElement('afterend', ele) : pre.nextElementSibling.replaceWith(ele);
                     return ele;
@@ -97,7 +97,14 @@
             });
             return (html, vars) => {
                 const el = html.querySelector(param.mountElementSelector);
-                fn.reduce((pre, cur) => cur(pre, html, vars), el);
+                const endEl = fn.reduce((pre, cur) => cur(pre, html, vars), el);
+                while (true) {
+                    const next = endEl.nextElementSibling;
+                    if (!next || next.matches(param?.endEleSelector ?? '.replacement-add')) {
+                        break
+                    }
+                    next.remove();
+                }
             };
         },
 
@@ -310,23 +317,26 @@
             return [el];
         },
 
-        fetchItem(ele, target, item, rules) {
+        async fetchItem(ele, target, item, rules) {
             const cached = {};
-            ele.forEach(
-                ell => ell.splice(0, item['fetch-num'] < 1 ? ell.length : item['fetch-num'])
-                    .forEach(el => {
-                        if (!el) {
-                            return;
-                        }
-                        const vars = this.getMultiVars(el, rules, item, cached, {'$window': window});
-                        const format = item['fetch-format'] ? item['fetch-format'] : iterateObjByKey(vars, k => (k.endsWith('-ele') || k === '$window') ? false : `{${k}}`).join('');
-                        const value = this.replaceVars2Format(vars, format);
-                        this.setValue(target, value, item);
-                    }));
+            for (const ell of ele ?? []) {
+                const els = ell.splice(0, item['fetch-num'] < 1 ? ell.length : item['fetch-num']);
+                for (const el of els ?? []) {
+                    if (!el) {
+                        continue;
+                    }
+                    const vars = await this.getMultiVars(el, rules, item, cached, {'$window': window});
+                    const format = item['fetch-format'] ? item['fetch-format'] : iterateObjByKey(vars, k => (k.endsWith('-ele') || k === '$window') ? false : `{${k}}`).join('');
+                    const value = this.replaceVars2Format(vars, format);
+                    this.setValue(target, value, item);
+                }
+            }
         },
 
-        getMultiVars(el, rules, fetchConf, cached, vars = {}) {
-            rules.forEach(item => this.getVars(el, item, fetchConf, el, vars, cached));
+        async getMultiVars(el, rules, fetchConf, cached, vars = {}) {
+            for (const item of rules) {
+                await this.getVars(el, item, fetchConf, el, vars, cached);
+            }
             return vars
         },
 
@@ -443,13 +453,13 @@
             });
         },
 
-        handItems(items, value, param) {
+        async handItems(items, value, param) {
             const first = items?.[0];
             if (param.rule.handleValue && (first.searchValue || actionHelper.accessEmpty.has(first.handleType))) {
                 const name = param.rule['super-fetch-name'];
                 for (const item of items) {
                     const handler = {currVarName: name, ...item};
-                    value = param.vars[name] = valueHandlers[handler.handleType].handle(handler, value, param);
+                    value = param.vars[name] = await valueHandlers[handler.handleType].handle(handler, value, param);
                     if (handler?.break) {
                         break;
                     }
@@ -488,7 +498,7 @@
             }
             return vars[name];
         },
-        parseVar(vars, name, el, rule, ele, fetchConf, from, cached, globalVars = vars) {
+        async parseVar(vars, name, el, rule, ele, fetchConf, from, cached, globalVars = vars) {
             const children = {}, param = {
                 rule, beforeQueryEle: ele, afterQueryEle: el,
                 fetchParam: fetchConf, vars, from, globalVars
@@ -503,48 +513,50 @@
                 value = 'text' === type ? el.innerText : el[type];
             }
             vars[name] = value;
-            vars[name] = this.handItems(rule?.['replacement-items'], value, param);
-            rule?.children?.forEach(item => children[item['super-fetch-name']] = this.getVars(el, item, fetchConf, from, vars, cached));
+            vars[name] = await this.handItems(rule?.['replacement-items'], value, param);
+            for (const item of rule?.children ?? []) {
+                children[item['super-fetch-name']] = await this.getVars(el, item, fetchConf, from, vars, cached)
+            }
             if (vars[name] && rule?.['fetch-format']) {
                 vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
             }
             return vars[name];
         },
 
-        handleVars(rule, name, vars, param) {
+        async handleVars(rule, name, vars, param) {
             vars[name] = this.getDefVars(rule['default-value'], vars);
-            vars[name] = this.handItems(rule['replacement-items'], vars[name], param);
+            vars[name] = await this.handItems(rule['replacement-items'], vars[name], param);
             if (Array.isArray(vars[name]) && rule.multiple_child && rule?.children?.length > 0) {
-                const set = new Set();
-                vars[name] = vars[name].filterAndMapX(v => {
+                const set = new Set(), arr = [];
+                for (const v of vars[name]) {
                     const val = {...vars};
-                    rule.children.forEach(child => {
+                    let i = -1;
+                    for (const child of rule.children) {
+                        ++i;
+                        val['@i@'] = i;
                         val[name] = v;
                         const p = {...param, vars: val};
                         const childName = child['super-fetch-name'];
-                        val[childName] = this.handleVars(child, childName, val, p);
-                    });
-
+                        val[childName] = await this.handleVars(child, childName, val, p);
+                    }
                     if (rule?.['fetch-format']) {
                         val[name] = this.replaceVars2Format(val, (rule['fetch-format']));
                     }
-                    if (!rule['fetch-repeat']) {
-                        return val[name];
-                    }
-                    if (set.has(val[name])) {
-                        return false;
+                    if (rule['fetch-repeat'] && set.has(val[name])) {
+                        continue
                     }
                     set.add(val[name]);
-                    return val[name];
-                });
+                    arr.push(val[name]);
+                }
+                vars[name] = arr;
                 if (rule.concatenation) {
                     vars[name] = vars[name].join(rule.separator);
                 }
             } else {
-                rule?.children?.forEach(child => {
+                for (const child of rule?.children ?? []) {
                     const childName = child['super-fetch-name'];
-                    vars[childName] = this.handleVars(child, childName, vars, param);
-                });
+                    vars[childName] = await this.handleVars(child, childName, vars, param);
+                }
 
                 if (rule['fetch-format']) {
                     vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
@@ -555,7 +567,7 @@
         },
 
         // fetch vars
-        getVars(ele, rule, fetchConf, from, vars = {}, cached = {}, globalVars = vars) {
+        async getVars(ele, rule, fetchConf, from, vars = {}, cached = {}, globalVars = vars) {
             const name = rule['super-fetch-name'], param = {
                 rule, beforeQueryEle: ele,
                 fetchParam: fetchConf, vars, from, globalVars
@@ -566,7 +578,7 @@
             }
             rule['value-selector'] = this.replaceVars2Format(vars, rule['value-selector']);
             if (!rule['value-selector']) {
-                return vars[name] = this.handleVars(rule, name, vars, param);
+                return vars[name] = await this.handleVars(rule, name, vars, param);
             }
             const el = this.anchor2Ele(rule, ele, fetchConf, from);
             if (!el || el?.length < 1) {
@@ -574,24 +586,24 @@
                 log("query rule's value-selector fail", ele, rule['value-selector'], rule);
             } else if (el instanceof NodeList && el.length > 0) {
                 const s = new Set();
-                vars[name] = [...el].filterAndMapX((ell, i) => {
+                let i = -1;
+                vars[name] = [];
+                for (const ell of el) {
+                    ++i;
                     const v = {...vars};
                     v['@i@'] = i;
-                    const r = this.parseVar(v, name, ell, rule, ele, fetchConf, from, cached, vars);
-                    if (!rule?.['fetch-repeat']) {
-                        return r;
-                    }
-                    if (s.has(r)) {
-                        return false;
+                    const r = await this.parseVar(v, name, ell, rule, ele, fetchConf, from, cached, vars);
+                    if (rule?.['fetch-repeat'] && s.has(r)) {
+                        continue;
                     }
                     s.add(r);
-                    return r;
-                });
+                    vars[name].push(r);
+                }
                 if (rule['concatenation']) {
                     vars[name] = vars[name].join(rule.separator)
                 }
             } else {
-                this.parseVar(vars, name, el, rule, ele, fetchConf, from, cached);
+                await this.parseVar(vars, name, el, rule, ele, fetchConf, from, cached);
             }
             if (rule.cached) {
                 cached[name] = vars[name];
@@ -656,7 +668,7 @@
 
         handlers: {
             fetch: {
-                action(param, from, target) {
+                async action(param, from, target) {
                     if (param['selector-items'].length < 1 || param?.['super-fetch-items']?.length < 1) {
                         log('not have valid fetch rule!', param)
                         return;
@@ -672,7 +684,7 @@
                         i++;
                         const selectorItem = selectorItems.splice(0, 1)?.[0];
                         if (!selectorItem?.['fetch-selector']) {
-                            i === 1 && actionHelper.fetchItem([[from]], target, param, rule);
+                            i === 1 && await actionHelper.fetchItem([[from]], target, param, rule);
                             return;
                         }
                         const last = selectorItems.length < 1;
@@ -684,7 +696,7 @@
                             break
                         }
                     }
-                    actionHelper.fetchItem(ele, target, param, rule);
+                    await actionHelper.fetchItem(ele, target, param, rule);
                 },
                 text: mapTitle['fetch'], // option innerText
                 scope: 'all', // all html text;
@@ -752,45 +764,49 @@
                 }
             },
             handleElement: {
-                action(param, from, target) {
+                async action(param, from, target) {
                     const fetchItems = [], handleItems = [], vars = {'$window': window};
                     param['super-fetch-items'].forEach(item => item?.operation === 'handle' ? handleItems.push(item) : fetchItems.push(item));
                     const rule = actionHelper.parseFetchRule(fetchItems);
                     if (rule) {
-                        actionHelper.getMultiVars(from, rule, param, vars, vars);
+                        await actionHelper.getMultiVars(from, rule, param, vars, vars);
                     }
-                    handleItems.forEach(item => {
+                    for (const item of handleItems) {
                         const attr = item['fetch-data-type'] === 'text' ? 'innerText' : item['fetch-data-type'],
                             name = item['super-fetch-name'];
                         const selector = item['value-selector'];
                         if ('spell' === selector) {
-                            item['replacement-items'].forEach(item => this.handlerHelper(item, target, attr, vars));
+                            for (const it of item['replacement-items'] ?? []) {
+                                await this.handlerHelper(it, target, attr, vars)
+                            }
                             if (item?.['fetch-format']) {
                                 target[attr] = actionHelper.replaceVars2Format(vars, item['fetch-format']);
                                 name && (vars[name] = target[attr]);
                             }
-                            return
+                            continue
                         }
-
-                        target.querySelectorAll(item['value-selector']).forEach((ele, i) => {
+                        let i = -1;
+                        for (const ele of target.querySelectorAll(item['value-selector'])) {
+                            ++i;
                             vars['@i@'] = i;
-                            item['replacement-items'].forEach(item => this.handlerHelper(item, ele, attr, vars));
+                            for (const it of item['replacement-items'] ?? []) {
+                                await this.handlerHelper(it, ele, attr, vars);
+                            }
                             if (!item?.['fetch-format']) {
-                                return
+                                continue;
                             }
                             ele[attr] = actionHelper.replaceVars2Format(vars, item['fetch-format']);
                             name && (vars[name] = ele[attr]);
-                        });
-
-                    });
+                        }
+                    }
                 },
-                handlerHelper(item, ele, attr, vars) {
+                async handlerHelper(item, ele, attr, vars) {
                     if (item.searchValue || actionHelper.accessEmpty.has(item.handleType)) {
                         if (this.handlers?.[item.handleType]) {
                             this.handlers?.[item.handleType](item, ele);
                             return
                         }
-                        ele[attr] = valueHandlers[item.handleType].handle(item, ele[attr], vars);
+                        ele[attr] = await valueHandlers[item.handleType].handle(item, ele[attr], vars);
                     }
                 },
                 scope: 'html',
@@ -808,11 +824,11 @@
                 }
             },
             replacement: {
-                action(param, target) {
-                    param['replacement-items'].forEach(item => {
+                async action(param, target) {
+                    for (const item of param['replacement-items']) {
                         const t = item.handleType;
-                        target.value = valueHandlers[t].handle(item, target.value, {});
-                    });
+                        target.value = await valueHandlers[t].handle(item, target.value, {});
+                    }
                 },
                 text: mapTitle['replacement'],
                 desc: mapTitle['replacement'],

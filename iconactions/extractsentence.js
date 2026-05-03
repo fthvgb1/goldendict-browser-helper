@@ -94,9 +94,9 @@
             });
             opts.unshift(['', '选择一个操作']);
             sel.innerHTML = buildOption(opts, '', 0, 1);
-            const fn = (ev) => {
+            const fn = async (ev) => {
                 if (sel.value) {
-                    actionHelper.executeAction(map[sel.value], actionHelper.getFromEle(map[sel.value], targetEle), targetEle);
+                    await actionHelper.executeAction(map[sel.value], actionHelper.getFromEle(map[sel.value], targetEle), targetEle);
                 }
                 const evt = ev.type === 'click' ? 'change' : 'blur';
                 sel.removeEventListener(evt, fn);
@@ -238,8 +238,8 @@
         item.insertAdjacentElement('afterend', copyItem);
     });
 
-    PushExpandAnkiInputButton('fetch-sentence-field', '', (ev) => {
-        ankiFetchClickFn(ev.target);
+    PushExpandAnkiInputButton('fetch-sentence-field', '', async (ev) => {
+        await ankiFetchClickFn(ev.target);
     }, '', evt => eventFn.contextMenuAction(evt));
 
 
@@ -512,20 +512,20 @@
     }
 
 
-    function executeActions(...names) {
+    async function executeActions(...names) {
         names = names.filter(name => name);
         if (names.length < 1) {
             return;
         }
         const rules = {};
         getAnkiFetchParams().forEach(rule => rules[rule['fetch-name']] = rule);
-        names.forEach(name => {
+        for (const name of names) {
             try {
-                rules?.[name] && actionHelper.executeAction(rules[name])
+                rules?.[name] && await actionHelper.executeAction(rules[name])
             } catch (e) {
                 console.log('execute action', name, 'error:', e);
             }
-        });
+        }
     }
 
     function getAnkiFetchParams(targetField = '', activeFilter = true) {
@@ -545,7 +545,7 @@
         });
     }
 
-    function ankiFetchClickFn(button) {
+    async function ankiFetchClickFn(button) {
         const triggerField = button.parentElement.parentElement.querySelector('.field-name').value.trim();
         const param = getAnkiFetchParams(triggerField, true);
         if (param.length < 1) {
@@ -553,7 +553,9 @@
         }
         const sequence = GM_getValue('sequentially-fetch', false);
         if (!sequence) {
-            param.forEach(item => actionHelper.executeAction(item));
+            for (const item of param) {
+                await actionHelper.executeAction(item);
+            }
             return;
         }
         const fetchItems = param.filterAndMapX(item => item['operate-type'] === 'fetch' ? item : false);
@@ -561,7 +563,11 @@
             return;
         }
         const from = actionHelper.getFieldElement(fetchItems[0]['fetch-field']);
-        [...from.children].forEach(el => fetchItems.forEach(item => actionHelper.executeAction(item, el)));
+        for (const child of from.children) {
+            for (const item of fetchItems) {
+                await actionHelper.executeAction(item, child)
+            }
+        }
     }
 
     const allowFn = {
@@ -825,17 +831,17 @@
 
     const actions = {
         // execute action
-        dispatchAction(param, from = null, target = null) {
-            this.handlers?.[param?.['operate-type']]?.action?.(param, from, target);
+        async dispatchAction(param, from = null, target = null) {
+            await this.handlers?.[param?.['operate-type']]?.action?.(param, from, target);
         },
 
     };
     const actionHelper = {
 
-        executeAction(param, from = null, target = null) {
+        async executeAction(param, from = null, target = null) {
             from = from ? from : this.getFromEle(param);
             target = target ? target : this.getDestEle(param);
-            actions.dispatchAction(param, from, target);
+            await actions.dispatchAction(param, from, target);
         },
 
         elementCache: {},

@@ -137,6 +137,7 @@
         noType: new Set(['include', 'isTrue', 'isFalse', 'completeTrue', 'completeFalse']),
         compareFn: {
             include: (v1, v2) => v1?.includes ? v1.includes(v2) : v1.hasOwnProperty(v2),
+            //strRegexTest:(v1,v2)=>v2.test(v1),
             eq: (v1, v2) => v1 === v2,
             gt: (v1, v2) => v1 > v2,
             gte: (v1, v2) => v1 >= v2,
@@ -159,16 +160,16 @@
     }
 
     superFetchHook.simpleValueHandlerHelper.addHandlers('executeCmd', {
-        /*haveReturn:{
-            fn:async (value,item,param)=>{
-                item.pattern=superFetchHook.fetchActionHelper.replaceVars2Format(param.vars,item.pattern);
+        haveReturn: {
+            fn: async (value, item, param) => {
+                item.pattern = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.pattern);
                 //const args = JSON.parse(item.pattern)
-                const r = await req({cmd:item.replaceValue,args:item.pattern},'cmd');
-                console.log(r.response);
+                const r = await req({cmd: item.replaceValue, args: item.pattern}, 'cmd');
+                //console.log(r.response);
                 return r.response;
             },
             showInput: 'replaceValue,pattern',
-        },*/
+        },
         cmdNoReturn: {
             fn(value, item, param) {
                 item.pattern = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.pattern);
@@ -326,8 +327,8 @@
                     operatedNumber: {
                         type: 'number',
                         width: '5vw',
-                        hook(input, value, attr, previousElementSibling) {
-                            input.type = previousElementSibling.value === 'number' ? 'number' : 'text';
+                        hook(input, value, vars) {
+                            input.type = 'number' === vars.operatedTarget ? 'number' : 'text';
                             input.value = value;
                         }
                     },
