@@ -825,10 +825,11 @@
             },
             replacement: {
                 async action(param, target) {
-                    const p = {vars: {value: target.value}}
+                    const p = {vars: {value: target.value}};
                     for (const item of param['replacement-items']) {
-                        p.vars.value = target.value = await valueHandlers[item.handleType].handle(item, target.value, p);
+                        p.vars.value = await valueHandlers[item.handleType].handle(item, target.value, p);
                     }
+                    target.value = p.vars.value;
                 },
                 text: mapTitle['replacement'],
                 desc: mapTitle['replacement'],
