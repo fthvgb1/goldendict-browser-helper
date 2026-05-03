@@ -46,12 +46,16 @@
                 console.log(value);
                 return value
             }
+            const vars = eleParam?.vars ?? {};
+            if (Object.keys(vars).length < 1) {
+                vars['value'] = value;
+            }
             const arr = [];
             let r, i = 0;
             while ((r = this.reg.exec(express)) !== null) {
                 arr.push(express.slice(i, r.index));
                 i = r.index + r[0].length;
-                const v = '$vars' === r[1] ? eleParam.vars : superFetchHook.getVariable(eleParam.vars, r[1], r[0]);
+                const v = '$vars' === r[1] ? vars : superFetchHook.getVariable(vars, r[1], r[0]);
                 arr.push(v);
             }
             i < express.length && arr.push(express.slice(i));
@@ -62,7 +66,7 @@
             li.querySelectorAll('[name=searchValue] ~:not(button)').forEach(el => el.classList.add('hidden'));
             const input = li.querySelector('[name=searchValue]');
             input.style.width = '20vw';
-            input.title = lang('log-title');
+            input.title = lang('log-desc');
         }
     }
 

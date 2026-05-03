@@ -825,9 +825,9 @@
             },
             replacement: {
                 async action(param, target) {
+                    const p = {vars: {value: target.value}}
                     for (const item of param['replacement-items']) {
-                        const t = item.handleType;
-                        target.value = await valueHandlers[t].handle(item, target.value, {});
+                        p.vars.value = target.value = await valueHandlers[item.handleType].handle(item, target.value, p);
                     }
                 },
                 text: mapTitle['replacement'],
@@ -867,16 +867,27 @@
                                 if (!handler.scope?.[name]) {
                                     return false;
                                 }
-                                if (!handler.scope[name]?.[handle]) {
+                                if ('fetch' === name && !handler.scope[name]?.[handle]) {
                                     return false
                                 }
                             }
-                            if (handler?.handlers && handler.scope[name]?.[handle]) { // second menu
-                                const key = [k, from].join('.');
-                                if ('*' === handler.scope[name][handle]) {
+                            const key = [k, from].join('.');
+                            if ('fetch' === name) { // second menu
+                                if (handler?.handlers && handler.scope[name]?.[handle]) {
+                                    if ('*' === handler.scope[name][handle]) {
+                                        setMapVal(key, simpleValueHandlerHelper.getHandlerOptions(handler.handlers), scopeMap);
+                                    } else {
+                                        const ops = handler.scope[name][handle].split(',').map(kk => {
+                                            return simpleValueHandlerHelper.handleOptions(kk, handler.handlers[kk])
+                                        });
+                                        setMapVal(key, ops, scopeMap);
+                                    }
+                                }
+                            } else {
+                                if ('*' === handler.scope[name]) {
                                     setMapVal(key, simpleValueHandlerHelper.getHandlerOptions(handler.handlers), scopeMap);
                                 } else {
-                                    const ops = handler.scope[name][handle].split(',').map(kk => {
+                                    const ops = handler.scope[name].split(',').map(kk => {
                                         return simpleValueHandlerHelper.handleOptions(kk, handler.handlers[kk])
                                     });
                                     setMapVal(key, ops, scopeMap);

@@ -10,6 +10,7 @@
         'valueRelation': '值相关',
         'getVal': '取值',
         'setValue': '设置值',
+        'setValue-desc': '此时替换项为要设置的变量名，为空表示设置当前值，正则项为设置的值或变量，当用函数时语法为{变量}.函数名|参数1,参数2...',
         'getVal-desc': '从符号表中取值，替换项为变量名，无需{}',
         'toNumber': '转为数字',
         'o2Array': '转为数组',
@@ -242,7 +243,7 @@
         o2Array: arr => [...arr],
         array2str: (arr, item) => arr.join(item.replaceValue),
     }, {
-        scope: {fetch: {fetch: '*', handle: 'getVal'}},
+        scope: {fetch: {fetch: '*', handle: 'getVal'}, replacement: 'setValue'},
         buildValue(item, param) {
             const value = item.pattern;
             return this.valueType[item.variableType](value, param.vars);
