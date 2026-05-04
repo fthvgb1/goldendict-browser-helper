@@ -912,7 +912,7 @@
                     return;
                 }
                 rule[item['super-fetch-name']] = item;
-                if (!item['value-selector'] && !item['default-value'] && !item['fetch-format']) {
+                if (!item['value-selector'] && !item['default-value'] && !item['fetch-format'] && !item?.handleValue) {
                     log('value-selector or default value emptied', item);
                     return;
                 }

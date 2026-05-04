@@ -19,6 +19,7 @@
         'array2str': '数组转字符串',
         'array2str-desc': '此时替换值项为分隔符',
         'executeCmd': '执行命令',
+        'executeCmd-desc': '替换项为程序路径，模式项为参数，可使用{变量名}，会解析替换成变量值',
         'haveReturn': '有结果值返回调用',
         'haveReturn-desc': '替换值项为程序路径，模式项为参数,[arg1,arg2],{}使用变量',
         'cmdNoReturn': '无需返回值',
@@ -160,21 +161,13 @@
             completeFalse: v => v === false,
         },
     });
-
-    function req(data, path) {
-        return new Promise((resolve) => {
-            request(data, path, res => {
-                resolve(res)
-            });
-        })
-    }
-
     superFetchHook.simpleValueHandlerHelper.addHandlers('executeCmd', {
         haveReturn: {
             fn: async (value, item, param) => {
+                const req = superFetchHook.valueHandlers.executeCmd.req;
                 item.pattern = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.pattern);
                 //const args = JSON.parse(item.pattern)
-                const r = await req({cmd: item.replaceValue, args: item.pattern}, 'cmd');
+                const r = await req({cmd: item.replaceValue, args: shellQuote.parse(item.pattern)}, 'cmd');
                 //console.log(r.response);
                 return r.response;
             },
@@ -182,13 +175,26 @@
         },
         cmdNoReturn: {
             fn(value, item, param) {
+                const req = superFetchHook.valueHandlers.executeCmd.req;
                 item.pattern = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.pattern);
-                req({cmd: item.replaceValue, args: item.pattern}, 'cmd').then(r => console.log(r.response));
+                req({
+                    cmd: item.replaceValue,
+                    args: shellQuote.parse(item.pattern)
+                }, 'cmd').then(r => console.log(r.response));
                 return value;
             },
             showInput: 'replaceValue,pattern',
         }
-    }, {scope: {fetch: {fetch: '*'}}});
+    }, {
+        scope: {fetch: {fetch: '*'}},
+        async req(data, path) {
+            return new Promise((resolve) => {
+                request(data, path, res => {
+                    resolve(res)
+                });
+            })
+        }
+    });
 
     superFetchHook.simpleValueHandlerHelper.addHandlers('valueRelation', {
         getVal: {
