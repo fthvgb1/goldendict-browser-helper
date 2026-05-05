@@ -81,12 +81,9 @@
                 const o = superFetchHook.valueHandlers['ifBranch'];
                 const v1 = superFetchHook.fetchActionHelper.getDefVars(item['v1'], param.vars);
                 const compareType = item.compareType, compareFn = o.compareFn[compareType];
-                let v2 = superFetchHook.fetchActionHelper.getDefVars(item['v2'], param.vars);
-                if ('strRegexTest' === compareType) {
-                    v2 = new RegExp(v2, item.regPattern);
-                }
+                const v2 = superFetchHook.fetchActionHelper.getDefVars(item['v2'], param.vars);
                 const valFn = o.valueType[item.valueType];
-                const r = o.noType.has(compareType) ? compareFn(v1, v2) : compareFn(valFn(v1), valFn(v2));
+                const r = o.noType.has(compareType) ? compareFn(v1, v2, item) : compareFn(valFn(v1), valFn(v2), item);
                 if ((item.isBreak && r) || (!item.isBreak && !r)) {
                     item.break = true;
                     return value;
@@ -148,7 +145,10 @@
         noType: new Set(['include', 'strRegexTest', 'isTrue', 'isFalse', 'completeTrue', 'completeFalse']),
         compareFn: {
             include: (v1, v2) => v1?.includes ? v1.includes(v2) : v1.hasOwnProperty(v2),
-            strRegexTest: (v1, v2) => v2.test(v1),
+            strRegexTest: (v1, v2, item) => {
+                v2 = new RegExp(v2, item?.regPattern ?? '');
+                return v2.test(v1)
+            },
             eq: (v1, v2) => v1 === v2,
             gt: (v1, v2) => v1 > v2,
             gte: (v1, v2) => v1 >= v2,
@@ -205,11 +205,12 @@
             fn(_, item, param) {
                 const v = superFetchHook.valueHandlers.valueRelation.buildValue(item, param);
                 const [name, g] = item.replaceValue.split('|');
-                const vars = g === 'g' ? param.globalVars : param.vars;
+                const m = {g: param.globalVars, p: param.parentVars};
+                const vars = m?.[g] ?? param.vars;
                 if (!name) {
                     return v;
                 }
-                vars[name] = v;
+                setMapVal(name, v, vars);
                 return _;
             },
             show(li, vars) {

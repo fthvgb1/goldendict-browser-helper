@@ -1,1 +1,501 @@
-!function(e,t){"object"==typeof exports&&"object"==typeof module?module.exports=t():"function"==typeof define&&define.amd?define([],t):"object"==typeof exports?exports.shellQuote=t():e.shellQuote=t()}(self,()=>(()=>{var e={571(e,t,r){"use strict";r.r(t),r.d(t,{parse:()=>n.parse});var n=r(192)},691(e,t,r){var n=r(571),o=r(160);void 0===o.franc&&(o.franc=n),e.exports=n},160(e,t,r){"use strict";e.exports=function(){if("object"==typeof globalThis)return globalThis;var e;try{e=this||new Function("return this")()}catch(e){if("object"==typeof window)return window;if("object"==typeof self)return self;if(void 0!==r.g)return r.g}return e}()},192(e,t,r){"use strict";r(940),t.parse=r(563)},563(e){"use strict";for(var t="(?:"+["\\|\\|","\\&\\&",";;","\\|\\&","\\<\\(","\\<\\<\\<",">>",">\\&","<\\&","[&;()|<>]"].join("|")+")",r=new RegExp("^"+t+"$"),n="|&;()<> \\t",o=/^#$/,i="",s=0;s<4;s++)i+=(4294967296*Math.random()).toString(16);var c=new RegExp("^"+i);e.exports=function(e,s,f){var u=function(e,s,c){c||(c={});var f=c.escape||"\\",u=new RegExp(["("+t+")","((\\"+f+"['\""+n+"]|[^\\s'\""+n+"])+|\"((\\\\\"|[^\"])*?)\"|'((\\\\'|[^'])*?)')+"].join("|"),"g"),a=function(e,t){for(var r,n=t.lastIndex,o=[];r=t.exec(e);)o.push(r),t.lastIndex===r.index&&(t.lastIndex+=1);return t.lastIndex=n,o}(e,u);if(0===a.length)return[];s||(s={});var p=!1;return a.map(function(t){var n=t[0];if(n&&!p){if(r.test(n))return{op:n};var c,u=!1,a=!1,l="",d=!1;for(c=0;c<n.length;c++){var g=n.charAt(c);if(d=d||!u&&("*"===g||"?"===g),a)l+=g,a=!1;else if(u)g===u?u=!1:"'"==u?l+=g:g===f?(c+=1,l+='"'===(g=n.charAt(c))||g===f||"$"===g?g:f+g):l+="$"===g?h():g;else if('"'===g||"'"===g)u=g;else{if(r.test(g))return{op:n};if(o.test(g)){p=!0;var v={comment:e.slice(t.index+c+1)};return l.length?[l,v]:[v]}g===f?a=!0:l+="$"===g?h():g}}return d?{op:"glob",pattern:l}:l}function h(){var e,t;c+=1;var r=n.charAt(c);if("{"===r){if(c+=1,"}"===n.charAt(c))throw new Error("Bad substitution: "+n.slice(c-2,c+1));if((e=n.indexOf("}",c))<0)throw new Error("Bad substitution: "+n.slice(c));t=n.slice(c,e),c=e}else if(/[*@#?$!_-]/.test(r))t=r,c+=1;else{var o=n.slice(c);(e=o.match(/[^\w\d_]/))?(t=o.slice(0,e.index),c+=e.index-1):(t=o,c=n.length)}return function(e,t,r){var n="function"==typeof e?e(r):e[r];return void 0===n&&""!=r?n="":void 0===n&&(n="$"),"object"==typeof n?""+i+JSON.stringify(n)+i:""+n}(s,0,t)}}).reduce(function(e,t){return void 0===t?e:e.concat(t)},[])}(e,s,f);return"function"!=typeof s?u:u.reduce(function(e,t){if("object"==typeof t)return e.concat(t);var r=t.split(RegExp("("+i+".*?"+i+")","g"));return 1===r.length?e.concat(r[0]):e.concat(r.filter(Boolean).map(function(e){return c.test(e)?JSON.parse(e.split(i)[1]):e}))},[])}},940(e){"use strict";e.exports=function(e){return e.map(function(e){return""===e?"''":e&&"object"==typeof e?e.op.replace(/(.)/g,"\\$1"):/["\s\\]/.test(e)&&!/'/.test(e)?"'"+e.replace(/(['])/g,"\\$1")+"'":/["'\s]/.test(e)?'"'+e.replace(/(["\\$`!])/g,"\\$1")+'"':String(e).replace(/([A-Za-z]:)?([#!"$&'()*,:;<=>?@[\\\]^`{|}])/g,"$1\\$2")}).join(" ")}}},t={};function r(n){var o=t[n];if(void 0!==o)return o.exports;var i=t[n]={exports:{}};return e[n](i,i.exports,r),i.exports}return r.d=(e,t)=>{for(var n in t)r.o(t,n)&&!r.o(e,n)&&Object.defineProperty(e,n,{enumerable:!0,get:t[n]})},r.g=function(){if("object"==typeof globalThis)return globalThis;try{return this||new Function("return this")()}catch(e){if("object"==typeof window)return window}}(),r.o=(e,t)=>Object.prototype.hasOwnProperty.call(e,t),r.r=e=>{"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(e,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(e,"__esModule",{value:!0})},r(691)})());
+/******/
+(() => { // webpackBootstrap
+    /******/
+    var __webpack_modules__ = ({
+
+        /***/ "./node_modules/babel-loader/lib/index.js??ruleSet[1].rules[1].use!./src/index.js"
+        /*!****************************************************************************************!*\
+          !*** ./node_modules/babel-loader/lib/index.js??ruleSet[1].rules[1].use!./src/index.js ***!
+          \****************************************************************************************/
+            (__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+            "use strict";
+            __webpack_require__.r(__webpack_exports__);
+            /* harmony export */
+            __webpack_require__.d(__webpack_exports__, {
+                /* harmony export */   parse: () => (/* reexport safe */ shell_quote__WEBPACK_IMPORTED_MODULE_0__.parse)
+                /* harmony export */
+            });
+            /* harmony import */
+            var shell_quote__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! shell-quote */ "./node_modules/shell-quote/index.js");
+
+
+            /***/
+        },
+
+        /***/ "./src/index-exposed.js"
+        /*!******************************!*\
+          !*** ./src/index-exposed.js ***!
+          \******************************/
+            (module, __unused_webpack_exports, __webpack_require__) {
+
+            var ___EXPOSE_LOADER_IMPORT___ = __webpack_require__(/*! -!../node_modules/babel-loader/lib/index.js??ruleSet[1].rules[1].use!./index.js */ "./node_modules/babel-loader/lib/index.js??ruleSet[1].rules[1].use!./src/index.js");
+            var ___EXPOSE_LOADER_GET_GLOBAL_THIS___ = __webpack_require__(/*! ../node_modules/expose-loader/dist/runtime/getGlobalThis.js */ "./node_modules/expose-loader/dist/runtime/getGlobalThis.js");
+            var ___EXPOSE_LOADER_GLOBAL_THIS___ = ___EXPOSE_LOADER_GET_GLOBAL_THIS___;
+            if (typeof ___EXPOSE_LOADER_GLOBAL_THIS___["shellQuote"] === 'undefined') ___EXPOSE_LOADER_GLOBAL_THIS___["shellQuote"] = ___EXPOSE_LOADER_IMPORT___;
+            else throw new Error('[exposes-loader] The "shellQuote" value exists in the global scope, it may not be safe to overwrite it, use the "override" option')
+            module.exports = ___EXPOSE_LOADER_IMPORT___;
+
+
+            /***/
+        },
+
+        /***/ "./node_modules/expose-loader/dist/runtime/getGlobalThis.js"
+        /*!******************************************************************!*\
+          !*** ./node_modules/expose-loader/dist/runtime/getGlobalThis.js ***!
+          \******************************************************************/
+            (module, __unused_webpack_exports, __webpack_require__) {
+
+            "use strict";
+
+
+// eslint-disable-next-line func-names
+            module.exports = function () {
+                if (typeof globalThis === "object") {
+                    return globalThis;
+                }
+                var g;
+                try {
+                    // This works if eval is allowed (see CSP)
+                    // eslint-disable-next-line no-new-func
+                    g = this || new Function("return this")();
+                } catch (e) {
+                    // This works if the window reference is available
+                    if (typeof window === "object") {
+                        return window;
+                    }
+
+                    // This works if the self reference is available
+                    if (typeof self === "object") {
+                        return self;
+                    }
+
+                    // This works if the global reference is available
+                    if (typeof __webpack_require__.g !== "undefined") {
+                        return __webpack_require__.g;
+                    }
+                }
+                return g;
+            }();
+
+            /***/
+        },
+
+        /***/ "./node_modules/shell-quote/index.js"
+        /*!*******************************************!*\
+          !*** ./node_modules/shell-quote/index.js ***!
+          \*******************************************/
+            (__unused_webpack_module, exports, __webpack_require__) {
+
+            "use strict";
+
+
+            exports.quote = __webpack_require__(/*! ./quote */ "./node_modules/shell-quote/quote.js");
+            exports.parse = __webpack_require__(/*! ./parse */ "./node_modules/shell-quote/parse.js");
+
+
+            /***/
+        },
+
+        /***/ "./node_modules/shell-quote/parse.js"
+        /*!*******************************************!*\
+          !*** ./node_modules/shell-quote/parse.js ***!
+          \*******************************************/
+            (module) {
+
+            "use strict";
+
+
+// '<(' is process substitution operator and
+// can be parsed the same as control operator
+            var CONTROL = '(?:' + [
+                '\\|\\|',
+                '\\&\\&',
+                ';;',
+                '\\|\\&',
+                '\\<\\(',
+                '\\<\\<\\<',
+                '>>',
+                '>\\&',
+                '<\\&',
+                '[&;()|<>]'
+            ].join('|') + ')';
+            var controlRE = new RegExp('^' + CONTROL + '$');
+            var META = '|&;()<> \\t';
+            var SINGLE_QUOTE = '"((\\\\"|[^"])*?)"';
+            var DOUBLE_QUOTE = '\'((\\\\\'|[^\'])*?)\'';
+            var hash = /^#$/;
+
+            var SQ = "'";
+            var DQ = '"';
+            var DS = '$';
+
+            var TOKEN = '';
+            var mult = 0x100000000; // Math.pow(16, 8);
+            for (var i = 0; i < 4; i++) {
+                TOKEN += (mult * Math.random()).toString(16);
+            }
+            var startsWithToken = new RegExp('^' + TOKEN);
+
+            function matchAll(s, r) {
+                var origIndex = r.lastIndex;
+
+                var matches = [];
+                var matchObj;
+
+                while ((matchObj = r.exec(s))) {
+                    matches.push(matchObj);
+                    if (r.lastIndex === matchObj.index) {
+                        r.lastIndex += 1;
+                    }
+                }
+
+                r.lastIndex = origIndex;
+
+                return matches;
+            }
+
+            function getVar(env, pre, key) {
+                var r = typeof env === 'function' ? env(key) : env[key];
+                if (typeof r === 'undefined' && key != '') {
+                    r = '';
+                } else if (typeof r === 'undefined') {
+                    r = '$';
+                }
+
+                if (typeof r === 'object') {
+                    return pre + TOKEN + JSON.stringify(r) + TOKEN;
+                }
+                return pre + r;
+            }
+
+            function parseInternal(string, env, opts) {
+                if (!opts) {
+                    opts = {};
+                }
+                var BS = opts.escape || '\\';
+                var BAREWORD = '(\\' + BS + '[\'"' + META + ']|[^\\s\'"' + META + '])+';
+
+                var chunker = new RegExp([
+                    '(' + CONTROL + ')', // control chars
+                    '(' + BAREWORD + '|' + SINGLE_QUOTE + '|' + DOUBLE_QUOTE + ')+'
+                ].join('|'), 'g');
+
+                var matches = matchAll(string, chunker);
+
+                if (matches.length === 0) {
+                    return [];
+                }
+                if (!env) {
+                    env = {};
+                }
+
+                var commented = false;
+
+                return matches.map(function (match) {
+                    var s = match[0];
+                    if (!s || commented) {
+                        return void undefined;
+                    }
+                    if (controlRE.test(s)) {
+                        return {op: s};
+                    }
+
+                    // Hand-written scanner/parser for Bash quoting rules:
+                    //
+                    // 1. inside single quotes, all characters are printed literally.
+                    // 2. inside double quotes, all characters are printed literally
+                    //    except variables prefixed by '$' and backslashes followed by
+                    //    either a double quote or another backslash.
+                    // 3. outside of any quotes, backslashes are treated as escape
+                    //    characters and not printed (unless they are themselves escaped)
+                    // 4. quote context can switch mid-token if there is no whitespace
+                    //     between the two quote contexts (e.g. all'one'"token" parses as
+                    //     "allonetoken")
+                    var quote = false;
+                    var esc = false;
+                    var out = '';
+                    var isGlob = false;
+                    var i;
+
+                    function parseEnvVar() {
+                        i += 1;
+                        var varend;
+                        var varname;
+                        var char = s.charAt(i);
+
+                        if (char === '{') {
+                            i += 1;
+                            if (s.charAt(i) === '}') {
+                                throw new Error('Bad substitution: ' + s.slice(i - 2, i + 1));
+                            }
+                            varend = s.indexOf('}', i);
+                            if (varend < 0) {
+                                throw new Error('Bad substitution: ' + s.slice(i));
+                            }
+                            varname = s.slice(i, varend);
+                            i = varend;
+                        } else if ((/[*@#?$!_-]/).test(char)) {
+                            varname = char;
+                            i += 1;
+                        } else {
+                            var slicedFromI = s.slice(i);
+                            varend = slicedFromI.match(/[^\w\d_]/);
+                            if (!varend) {
+                                varname = slicedFromI;
+                                i = s.length;
+                            } else {
+                                varname = slicedFromI.slice(0, varend.index);
+                                i += varend.index - 1;
+                            }
+                        }
+                        return getVar(env, '', varname);
+                    }
+
+                    for (i = 0; i < s.length; i++) {
+                        var c = s.charAt(i);
+                        isGlob = isGlob || (!quote && (c === '*' || c === '?'));
+                        if (esc) {
+                            out += c;
+                            esc = false;
+                        } else if (quote) {
+                            if (c === quote) {
+                                quote = false;
+                            } else if (quote == SQ) {
+                                out += c;
+                            } else { // Double quote
+                                if (c === BS) {
+                                    i += 1;
+                                    c = s.charAt(i);
+                                    if (c === DQ || c === BS || c === DS) {
+                                        out += c;
+                                    } else {
+                                        out += BS + c;
+                                    }
+                                } else if (c === DS) {
+                                    out += parseEnvVar();
+                                } else {
+                                    out += c;
+                                }
+                            }
+                        } else if (c === DQ || c === SQ) {
+                            quote = c;
+                        } else if (controlRE.test(c)) {
+                            return {op: s};
+                        } else if (hash.test(c)) {
+                            commented = true;
+                            var commentObj = {comment: string.slice(match.index + i + 1)};
+                            if (out.length) {
+                                return [out, commentObj];
+                            }
+                            return [commentObj];
+                        } else if (c === BS) {
+                            esc = true;
+                        } else if (c === DS) {
+                            out += parseEnvVar();
+                        } else {
+                            out += c;
+                        }
+                    }
+
+                    if (isGlob) {
+                        return {op: 'glob', pattern: out};
+                    }
+
+                    return out;
+                }).reduce(function (prev, arg) { // finalize parsed arguments
+                    // TODO: replace this whole reduce with a concat
+                    return typeof arg === 'undefined' ? prev : prev.concat(arg);
+                }, []);
+            }
+
+            module.exports = function parse(s, env, opts) {
+                var mapped = parseInternal(s, env, opts);
+                if (typeof env !== 'function') {
+                    return mapped;
+                }
+                return mapped.reduce(function (acc, s) {
+                    if (typeof s === 'object') {
+                        return acc.concat(s);
+                    }
+                    var xs = s.split(RegExp('(' + TOKEN + '.*?' + TOKEN + ')', 'g'));
+                    if (xs.length === 1) {
+                        return acc.concat(xs[0]);
+                    }
+                    return acc.concat(xs.filter(Boolean).map(function (x) {
+                        if (startsWithToken.test(x)) {
+                            return JSON.parse(x.split(TOKEN)[1]);
+                        }
+                        return x;
+                    }));
+                }, []);
+            };
+
+
+            /***/
+        },
+
+        /***/ "./node_modules/shell-quote/quote.js"
+        /*!*******************************************!*\
+          !*** ./node_modules/shell-quote/quote.js ***!
+          \*******************************************/
+            (module) {
+
+            "use strict";
+
+
+            module.exports = function quote(xs) {
+                return xs.map(function (s) {
+                    if (s === '') {
+                        return '\'\'';
+                    }
+                    if (s && typeof s === 'object') {
+                        return s.op.replace(/(.)/g, '\\$1');
+                    }
+                    if ((/["\s\\]/).test(s) && !(/'/).test(s)) {
+                        return "'" + s.replace(/(['])/g, '\\$1') + "'";
+                    }
+                    if ((/["'\s]/).test(s)) {
+                        return '"' + s.replace(/(["\\$`!])/g, '\\$1') + '"';
+                    }
+                    return String(s).replace(/([A-Za-z]:)?([#!"$&'()*,:;<=>?@[\\\]^`{|}])/g, '$1\\$2');
+                }).join(' ');
+            };
+
+
+            /***/
+        }
+
+        /******/
+    });
+    /************************************************************************/
+    /******/ 	// The module cache
+    /******/
+    var __webpack_module_cache__ = {};
+    /******/
+    /******/ 	// The require function
+    /******/
+    function __webpack_require__(moduleId) {
+        /******/ 		// Check if module is in cache
+        /******/
+        var cachedModule = __webpack_module_cache__[moduleId];
+        /******/
+        if (cachedModule !== undefined) {
+            /******/
+            return cachedModule.exports;
+            /******/
+        }
+        /******/ 		// Create a new module (and put it into the cache)
+        /******/
+        var module = __webpack_module_cache__[moduleId] = {
+            /******/ 			// no module.id needed
+            /******/ 			// no module.loaded needed
+            /******/            exports: {}
+            /******/
+        };
+        /******/
+        /******/ 		// Execute the module function
+        /******/
+        if (!(moduleId in __webpack_modules__)) {
+            /******/
+            delete __webpack_module_cache__[moduleId];
+            /******/
+            var e = new Error("Cannot find module '" + moduleId + "'");
+            /******/
+            e.code = 'MODULE_NOT_FOUND';
+            /******/
+            throw e;
+            /******/
+        }
+        /******/
+        __webpack_modules__[moduleId](module, module.exports, __webpack_require__);
+        /******/
+        /******/ 		// Return the exports of the module
+        /******/
+        return module.exports;
+        /******/
+    }
+
+    /******/
+    /************************************************************************/
+    /******/ 	/* webpack/runtime/define property getters */
+    /******/
+    (() => {
+        /******/ 		// define getter functions for harmony exports
+        /******/
+        __webpack_require__.d = (exports, definition) => {
+            /******/
+            for (var key in definition) {
+                /******/
+                if (__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+                    /******/
+                    Object.defineProperty(exports, key, {enumerable: true, get: definition[key]});
+                    /******/
+                }
+                /******/
+            }
+            /******/
+        };
+        /******/
+    })();
+    /******/
+    /******/ 	/* webpack/runtime/global */
+    /******/
+    (() => {
+        /******/
+        __webpack_require__.g = (function () {
+            /******/
+            if (typeof globalThis === 'object') return globalThis;
+            /******/
+            try {
+                /******/
+                return this || new Function('return this')();
+                /******/
+            } catch (e) {
+                /******/
+                if (typeof window === 'object') return window;
+                /******/
+            }
+            /******/
+        })();
+        /******/
+    })();
+    /******/
+    /******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+    /******/
+    (() => {
+        /******/
+        __webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+        /******/
+    })();
+    /******/
+    /******/ 	/* webpack/runtime/make namespace object */
+    /******/
+    (() => {
+        /******/ 		// define __esModule on exports
+        /******/
+        __webpack_require__.r = (exports) => {
+            /******/
+            if (typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+                /******/
+                Object.defineProperty(exports, Symbol.toStringTag, {value: 'Module'});
+                /******/
+            }
+            /******/
+            Object.defineProperty(exports, '__esModule', {value: true});
+            /******/
+        };
+        /******/
+    })();
+    /******/
+    /************************************************************************/
+    /******/
+    /******/ 	// startup
+    /******/ 	// Load entry module and return exports
+    /******/ 	// This entry module is referenced by other modules so it can't be inlined
+    /******/
+    var __webpack_exports__ = __webpack_require__("./src/index-exposed.js");
+    /******/
+    /******/
+})()
+;

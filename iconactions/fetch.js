@@ -151,6 +151,10 @@
                 showHook = Boolean(showHook);
             };
             return {
+                /* seem not necessary
+                form(el,vars){
+                    handlers?.[vars?.searchValue]?.form?.(el,vars);
+                },*/
                 renderHook(html, vars) {
                     const act = html.querySelector('select.handleType').value;
                     simpleValueHandlerHelper.renderHooker(html, vars, scopeMap?.[act]?.[vars.from] ?? getOptions());
@@ -498,11 +502,8 @@
             }
             return vars[name];
         },
-        async parseVar(vars, name, el, rule, ele, fetchConf, from, cached, globalVars = vars) {
-            const children = {}, param = {
-                rule, beforeQueryEle: ele, afterQueryEle: el,
-                fetchParam: fetchConf, vars, from, globalVars
-            }, type = rule['fetch-data-type'];
+        async parseVar(vars, name, el, rule, param) {
+            const children = {}, type = rule['fetch-data-type'];
             vars[`${name}-ele`] = el;
             let value = '';
             if ('htmlElement' === type) {
@@ -514,11 +515,15 @@
             }
             vars[name] = value;
             vars[name] = await this.handItems(rule?.['replacement-items'], value, param);
-            for (const item of rule?.children ?? []) {
-                children[item['super-fetch-name']] = await this.getVars(el, item, fetchConf, from, vars, cached)
+            let symbolTable = vars;
+            if (rule?.children?.length > 0) {
+                symbolTable = rule.childUseIndependentSymbol ? {...vars} : vars;
+                for (const item of rule?.children ?? []) {
+                    children[item['super-fetch-name']] = await this.getVars(el, item, param.fetchParam, param.from, symbolTable, param.globalVars, vars);
+                }
             }
             if (vars[name] && rule?.['fetch-format']) {
-                vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
+                vars[name] = this.replaceVars2Format(symbolTable, rule['fetch-format']);
             }
             return vars[name];
         },
@@ -535,9 +540,10 @@
                         ++i;
                         val['@i@'] = i;
                         val[name] = v;
-                        const p = {...param, vars: val};
                         const childName = child['super-fetch-name'];
-                        val[childName] = await this.handleVars(child, childName, val, p);
+                        val[childName] = await this.handleVars(child, childName, val, {
+                            ...param, vars: val, rule: child, parentVars: vars,
+                        });
                     }
                     if (rule?.['fetch-format']) {
                         val[name] = this.replaceVars2Format(val, (rule['fetch-format']));
@@ -553,13 +559,21 @@
                     vars[name] = vars[name].join(rule.separator);
                 }
             } else {
-                for (const child of rule?.children ?? []) {
-                    const childName = child['super-fetch-name'];
-                    vars[childName] = await this.handleVars(child, childName, vars, param);
+                let symbolTable = vars;
+                if (rule?.children?.length > 0) {
+                    symbolTable = rule.childUseIndependentSymbol ? {...vars} : vars;
+                    for (const child of rule.children) {
+                        const childName = child['super-fetch-name'];
+                        vars[childName] = await this.handleVars(child, childName, symbolTable, {
+                            ...param,
+                            vars: symbolTable,
+                            parentVars: vars,
+                            rule: child
+                        });
+                    }
                 }
-
                 if (rule['fetch-format']) {
-                    vars[name] = this.replaceVars2Format(vars, rule['fetch-format']);
+                    vars[name] = this.replaceVars2Format(symbolTable, rule['fetch-format']);
                 }
             }
 
@@ -567,13 +581,13 @@
         },
 
         // fetch vars
-        async getVars(ele, rule, fetchConf, from, vars = {}, cached = {}, globalVars = vars) {
+        async getVars(ele, rule, fetchConf, from, vars = {}, globalVars = vars, parentVars = vars) {
             const name = rule['super-fetch-name'], param = {
                 rule, beforeQueryEle: ele,
-                fetchParam: fetchConf, vars, from, globalVars
+                fetchParam: fetchConf, vars, from, globalVars, parentVars
             };
-            if (rule.cached && cached.hasOwnProperty(name)) {
-                vars[name] = cached[name];
+            if (rule.cached && globalVars.hasOwnProperty(name)) {
+                vars[name] = globalVars[name];
                 return vars[name];
             }
             rule['value-selector'] = this.replaceVars2Format(vars, rule['value-selector']);
@@ -592,7 +606,9 @@
                     ++i;
                     const v = {...vars};
                     v['@i@'] = i;
-                    const r = await this.parseVar(v, name, ell, rule, ele, fetchConf, from, cached, vars);
+                    const r = await this.parseVar(v, name, ell, rule, {
+                        ...param, vars: v, parentVars: vars
+                    });
                     if (rule?.['fetch-repeat'] && s.has(r)) {
                         continue;
                     }
@@ -603,10 +619,10 @@
                     vars[name] = vars[name].join(rule.separator)
                 }
             } else {
-                await this.parseVar(vars, name, el, rule, ele, fetchConf, from, cached);
+                await this.parseVar(vars, name, el, rule, {...param, parentVars: vars});
             }
             if (rule.cached) {
-                cached[name] = vars[name];
+                globalVars[name] = vars[name];
             }
             return vars[name];
         },
