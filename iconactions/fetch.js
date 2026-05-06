@@ -321,6 +321,15 @@
             return [el];
         },
 
+        global: {
+            '$window': window,
+            '$eval': new Proxy({}, {
+                get(target, p) {
+                    return eval(createScript(p));
+                }
+            })
+        },
+
         async fetchItem(ele, target, item, rules) {
             const cached = {};
             for (const ell of ele ?? []) {
@@ -329,8 +338,8 @@
                     if (!el) {
                         continue;
                     }
-                    const vars = await this.getMultiVars(el, rules, item, cached, {'$window': window});
-                    const format = item['fetch-format'] ? item['fetch-format'] : iterateObjByKey(vars, k => (k.endsWith('-ele') || k === '$window') ? false : `{${k}}`).join('');
+                    const vars = await this.getMultiVars(el, rules, item, cached, {...this.global});
+                    const format = item['fetch-format'] ? item['fetch-format'] : iterateObjByKey(vars, k => (k.endsWith('-ele') || this.global[k]) ? false : `{${k}}`).join('');
                     const value = this.replaceVars2Format(vars, format);
                     this.setValue(target, value, item);
                 }
@@ -643,24 +652,24 @@
                 return;
             }
             if (t === 'cover') {
-                setValue(value);
+                setValue(value, t);
                 return
             }
             if (item['fetch-repeat'] && diff()) {
                 return;
             }
-            setValue(value);
+            setValue(value, t);
         },
 
         setEle(target, value, item) {
             this.handleResult(value, () => {
                 const el = templateHelper.createElement('div', value);
                 return target.innerHTML.includes(el.innerHTML)
-            }, v => target.insertAdjacentHTML('beforeend', v), item)
+            }, (v, t) => 'cover' === t ? target.innerHTML = v : target.insertAdjacentHTML('beforeend', v), item)
         },
 
         setInputOrTextarea(input, value, item) {
-            this.handleResult(value, () => input.value.includes(value), v => input.value += v, item);
+            this.handleResult(value, () => input.value.includes(value), (v, t) => 'cover' === t ? input.value = v : input.value += v, item);
         },
 
 
@@ -677,6 +686,18 @@
         textNode: new Set(['INPUT', 'TEXTAREA']),
         valueNode: new Set(['INPUT', 'TEXTAREA', 'SELECT']),
         accessEmpty: new Set([]),
+        tagForAnki(tagNames) {
+            const tags = $('#anki-tags');
+            const hadSelected = tags.val(), newTags = [];
+            tagNames.split(',').forEach(name => {
+                !hadSelected.includes(name) && newTags.push(name);
+            });
+            if (newTags.length > 0) {
+                hadSelected.push(...newTags);
+                addNewTags(tags, hadSelected);
+                tags.val(hadSelected).trigger('change');
+            }
+        }
     };
 
 
@@ -763,13 +784,7 @@
                         return
                     }
                     if (from.querySelectorAll(param['tag-selector']).length > 0) {
-                        const tags = $('#anki-tags');
-                        const hadSelected = tags.val();
-                        if (hadSelected.indexOf(param['fetch-tag']) < 0) {
-                            hadSelected.push(param['fetch-tag']);
-                            addNewTags(tags, hadSelected);
-                            tags.val(hadSelected).trigger('change');
-                        }
+                        actionHelper.tagForAnki(param['fetch-tag']);
                     }
                 },
                 text: mapTitle['tag'],
@@ -781,7 +796,7 @@
             },
             handleElement: {
                 async action(param, from, target) {
-                    const fetchItems = [], handleItems = [], vars = {'$window': window};
+                    const fetchItems = [], handleItems = [], vars = {...actionHelper.global};
                     param['super-fetch-items'].forEach(item => item?.operation === 'handle' ? handleItems.push(item) : fetchItems.push(item));
                     const rule = actionHelper.parseFetchRule(fetchItems);
                     if (rule) {
