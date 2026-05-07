@@ -265,7 +265,7 @@
                 const value = f.slice(0, f.length - 1).join('.');
                 const o = getValue(vars, value, value, true);
                 const fnName = f[f.length - 1];
-                fn = getValue(o, fnName, fnName).bind(o)
+                fn = '$fn$' === fnName ? o : getValue(o, fnName, fnName).bind(o)
                 let args;
                 if (param) {
                     args = param.split(',').map(a => getValue(vars, a, a, true))
