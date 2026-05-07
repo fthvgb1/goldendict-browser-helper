@@ -261,11 +261,25 @@
             ...superFetchHook.valueHandlers.ifBranch.valueType,
             func: (v, vars) => {
                 let [fn, param] = v.split('|');
-                const f = fn.split('.');
-                const value = f.slice(0, f.length - 1).join('.');
-                const o = getValue(vars, value, value, true);
-                const fnName = f[f.length - 1];
-                fn = '$fn$' === fnName ? o : getValue(o, fnName, fnName).bind(o)
+                if (superFetchHook.fetchActionHelper.reg.test(v)) {
+                    const f = fn.split('.');
+                    const value = f.slice(0, f.length - 1).join('.');
+                    const o = getValue(vars, value, value, true);
+                    const fnName = f[f.length - 1];
+                    fn = getValue(o, fnName, fnName).bind(o)
+                } else {
+                    if (fn.includes('.')) {
+                        const f = fn.split('.');
+                        const value = f.slice(0, f.length - 1).join('.');
+                        const o = getValue(superFetchHook.fetchActionHelper.global.$eval, value);
+                        fn = o[f[f.length - 1]].bind(o);
+                    } else {
+                        fn = superFetchHook.fetchActionHelper.global.$eval[fn]
+                        if ('function' !== typeof fn) {
+                            return fn;
+                        }
+                    }
+                }
                 let args;
                 if (param) {
                     args = param.split(',').map(a => getValue(vars, a, a, true))
