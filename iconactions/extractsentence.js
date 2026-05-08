@@ -77,6 +77,13 @@
     }
 
     const eventFn = {
+        cacheSwitchData(ev) {
+            if ('operate-type' !== ev.target.className) {
+                return
+            }
+            const o = actionHelper.initSwitch(ev.target);
+            o[ev.target.value] = actionHelper.getSwitchData(ev.target);
+        },
         contextMenuAction(ev) {
             const button = ev.target, input = button.parentElement.parentElement.querySelector('.field-name');
             const targetField = input.value.trim(), isText = actionHelper.isTextNode(input.nextElementSibling);
@@ -119,7 +126,7 @@
         selector: '.fetch-import,.fetch-export',
         showProcessor(ev) {
             if (!ev.target.checked) {
-                actionHelper.switchData = {};
+                actionHelper.switchData = new WeakMap();
                 saveFetchItems();
                 freshBtns();
                 setting.children[0].classList.add('fetch-hidden');
@@ -899,10 +906,24 @@
             return this.textNode.has(ele.nodeName)
         },
 
+        initSwitch(select) {
+            if (!actionHelper.switchData.has(select)) {
+                actionHelper.switchData.set(select, {});
+            }
+            return actionHelper.switchData.get(select);
+        },
+
+        getSwitchData(select) {
+            return formProcessor.convertFetchParam(findParent(select, '.fetch-item'))
+        },
+
         switchAction(e) {
-            const data = actionHelper.switchData?.[e.target.previousElementSibling.value] ?? {};
+            const o = this.initSwitch(e.target);
             const v = e.target.value;
-            findParent(e.target, '.fetch-item').querySelector('.fetch-action-container').replaceWith(actions.handlers[v].getTemplate(data));
+            const data = o?.[v] ?? {};
+            o[v] = this.getSwitchData(e.target);
+            const container = findParent(e.target, '.fetch-item').querySelector('.fetch-action-container');
+            container.replaceWith(actions.handlers[v].getTemplate(data));
         },
 
         parseFetchRule(arr, rule = {}) {
@@ -935,14 +956,13 @@
             return rule['']?.children ?? null;
         },
 
-        switchData: {},
+        switchData: new WeakMap(),
 
         buildFetchItem(data = {}) {
             data['operate-type'] = data['operate-type'] ?? 'fetch';
             const handler = actions.handlers[data['operate-type']];
             data['op'] = Object.keys(actions.handlers).map(k => [k, actions.handlers[k].text, {title: actions.handlers[k].desc}]);
             data['fetch-operator'] = handler.getTemplate(data);
-            this.switchData[data['fetch-name']] = data;
             return templateHelper.buildTemplateHTML('fetch-base', data);
         },
     };
@@ -964,6 +984,7 @@
             }
             eventFn.add(evt);
         });
+        ankiContainer.addEventListener('mousedown', ev => eventFn.cacheSwitchData(ev));
         inputEventSelectors.push('.super-fetch-name,.parent-super-name');
         setting.addEventListener('contextmenu', evt => evt.target.dataset.op === 'add' && eventFn.copy(evt));
 
