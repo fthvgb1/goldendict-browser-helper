@@ -119,6 +119,7 @@
         selector: '.fetch-import,.fetch-export',
         showProcessor(ev) {
             if (!ev.target.checked) {
+                actionHelper.switchData = {};
                 saveFetchItems();
                 freshBtns();
                 setting.children[0].classList.add('fetch-hidden');
@@ -318,6 +319,7 @@
         fn(ev.target.value);
     });
 
+    PushHookAnkiChange('.operate-type', ev => actionHelper.switchAction(ev));
 
     // show extract processor
     PushHookAnkiChange('#fetch.swal2-checkbox', ev => eventFn.showProcessor(ev));
@@ -897,11 +899,10 @@
             return this.textNode.has(ele.nodeName)
         },
 
-        switchAction(data = {}) {
-            return e => {
-                const v = e.target.value;
-                findParent(e.target, '.fetch-item').querySelector('.fetch-action-container').replaceWith(actions.handlers[v].getTemplate(data));
-            }
+        switchAction(e) {
+            const data = actionHelper.switchData?.[e.target.previousElementSibling.value] ?? {};
+            const v = e.target.value;
+            findParent(e.target, '.fetch-item').querySelector('.fetch-action-container').replaceWith(actions.handlers[v].getTemplate(data));
         },
 
         parseFetchRule(arr, rule = {}) {
@@ -934,15 +935,15 @@
             return rule['']?.children ?? null;
         },
 
+        switchData: {},
+
         buildFetchItem(data = {}) {
             data['operate-type'] = data['operate-type'] ?? 'fetch';
             const handler = actions.handlers[data['operate-type']];
             data['op'] = Object.keys(actions.handlers).map(k => [k, actions.handlers[k].text, {title: actions.handlers[k].desc}]);
             data['fetch-operator'] = handler.getTemplate(data);
-            const div = templateHelper.buildTemplateHTML('fetch-base', data);
-            div.querySelector('.operate-type').addEventListener('change', actionHelper.switchAction(data));
-            div.querySelector('.fetch-active').addEventListener('change', fetchActive);
-            return div;
+            this.switchData[data['fetch-name']] = data;
+            return templateHelper.buildTemplateHTML('fetch-base', data);
         },
     };
 
