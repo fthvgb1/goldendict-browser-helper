@@ -1,4 +1,4 @@
-;const {ankiFetchClickFn, ankiFetchData, getAnkiFetchParams, arrayDiff, superFetchHook, setEleDrag} = (() => {
+;const {ankiFetchClickFn, getAnkiFetchParams, arrayDiff, superFetchHook, setEleDrag} = (() => {
     PushHookAnkiStyle(GM_getResourceText('extract-sentence'));
 
     PushHookAnkiDidRender(freshBtns);
@@ -506,22 +506,6 @@
     };
 
 
-    function ankiFetchData(param, target = null, from = null) {
-        if (!target) {
-            target = actionHelper.getDestEle(param);
-        }
-        if (!from) {
-            from = actionHelper.getFieldElement(param['fetch-field'], target);
-        }
-
-        if (target && from) {
-            actions.dispatchAction(param, from, target);
-            return
-        }
-        log(param);
-    }
-
-
     async function executeActions(...names) {
         names = names.filter(name => name);
         if (names.length < 1) {
@@ -561,10 +545,11 @@
         if (param.length < 1) {
             return;
         }
+        const triggerEle = button.parentElement.previousElementSibling.querySelector('.spell-content');
         const sequence = GM_getValue('sequentially-fetch', false);
         if (!sequence) {
             for (const item of param) {
-                await actionHelper.executeAction(item);
+                await actionHelper.executeAction(item, triggerEle, triggerEle);
             }
             return;
         }
@@ -575,7 +560,7 @@
         const from = actionHelper.getFieldElement(fetchItems[0]['fetch-field']);
         for (const child of from.children) {
             for (const item of fetchItems) {
-                await actionHelper.executeAction(item, child)
+                await actionHelper.executeAction(item, child, triggerEle)
             }
         }
     }
@@ -853,8 +838,8 @@
     const actionHelper = {
 
         async executeAction(param, from = null, target = null) {
-            from = from ? from : this.getFromEle(param);
-            target = target ? target : this.getDestEle(param);
+            from = this.getFromEle(param, from);
+            target = this.getDestEle(param, target);
             await actions.dispatchAction(param, from, target);
         },
 
@@ -871,13 +856,18 @@
         getFromEle(item, triggerEle = null) {
             const field = item['fetch-field'];
             if ('*' === field && triggerEle) {
+                this.elementCache[field] = triggerEle;
                 return triggerEle;
             }
             return this.getEleAndCache(field, triggerEle);
         },
-        getDestEle(item) {
+        getDestEle(item, target) {
             const field = item?.['fetch-to-field'] ?? item['fetch-field'];
-            return this.getEleAndCache(field);
+            if ('*' === field) {
+                this.elementCache[field] = target;
+                return target;
+            }
+            return this.getEleAndCache(field, target);
         },
 
         getFieldElement(name) {
@@ -994,7 +984,6 @@
 
     return {
         ankiFetchClickFn,
-        ankiFetchData,
         getAnkiFetchParams,
         arrayDiff: diff,
         setEleDrag,
