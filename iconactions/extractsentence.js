@@ -545,11 +545,11 @@
         if (param.length < 1) {
             return;
         }
-        const triggerEle = button.parentElement.previousElementSibling.querySelector('.spell-content');
+        const triggerEle = button.parentElement.previousElementSibling.querySelector('.spell-content,.field-value');
         const sequence = GM_getValue('sequentially-fetch', false);
         if (!sequence) {
             for (const item of param) {
-                await actionHelper.executeAction(item, triggerEle, triggerEle);
+                await actionHelper.executeAction(item, null, null, triggerEle);
             }
             return;
         }
@@ -560,7 +560,7 @@
         const from = actionHelper.getFieldElement(fetchItems[0]['fetch-field']);
         for (const child of from.children) {
             for (const item of fetchItems) {
-                await actionHelper.executeAction(item, child, triggerEle)
+                await actionHelper.executeAction(item, child, null, triggerEle)
             }
         }
     }
@@ -837,9 +837,9 @@
     };
     const actionHelper = {
 
-        async executeAction(param, from = null, target = null) {
-            from = this.getFromEle(param, from);
-            target = this.getDestEle(param, target);
+        async executeAction(param, from = null, target = null, triggerEle = null) {
+            from = from ? from : this.getFromEle(param, triggerEle);
+            target = target ? target : this.getDestEle(param, triggerEle);
             await actions.dispatchAction(param, from, target);
         },
 
@@ -856,26 +856,27 @@
         getFromEle(item, triggerEle = null) {
             const field = item['fetch-field'];
             if ('*' === field && triggerEle) {
-                this.elementCache[field] = triggerEle;
                 return triggerEle;
             }
             return this.getEleAndCache(field, triggerEle);
         },
-        getDestEle(item, target) {
+        getDestEle(item, triggerEle = null) {
             const field = item?.['fetch-to-field'] ?? item['fetch-field'];
-            if ('*' === field) {
-                this.elementCache[field] = target;
-                return target;
+            if ('*' === field && triggerEle) {
+                return triggerEle;
             }
-            return this.getEleAndCache(field, target);
+            return this.getEleAndCache(field);
         },
 
-        getFieldElement(name) {
-            if ('$doc' === name) {
+        getFieldElement(field) {
+            if ('$doc' === field) {
                 return document
             }
-            let from = document.querySelector(`:where(.field-name)[value='${name}']`);
-            return findParent(from, '.form-item,.sentence_setting')?.querySelector('.spell-content,.field-value') ?? null;
+            const element = document.querySelector(`.field-name[value='${field}']`);
+            if (!element) {
+                return null;
+            }
+            return findParent(element, '.form-item')?.querySelector('.spell-content,.field-value');
         },
 
         flushElementCache() {
