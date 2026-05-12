@@ -623,7 +623,15 @@
         if (!express.includes('.')) {
             return vars?.[express] ?? defaults;
         }
+        const variables = vars;
         for (const name of express.split('.')) {
+            if (actionHelper.reg.test(name)) {
+                vars = getVarVal(variables, trims(name, '{}'), undefined);
+                if (undefined === vars) {
+                    return defaults;
+                }
+                continue;
+            }
             if (!vars?.[name]) {
                 return defaults;
             }
@@ -845,7 +853,10 @@
 
         elementCache: {},
 
-        getEleAndCache(field) {
+        getEleAndCache(field, triggerEle = null) {
+            if ('*' === field && triggerEle) {
+                return triggerEle;
+            }
             let el = this.elementCache[field];
             if (!el) {
                 el = this.getFieldElement(field);
@@ -854,18 +865,10 @@
             return el;
         },
         getFromEle(item, triggerEle = null) {
-            const field = item['fetch-field'];
-            if ('*' === field && triggerEle) {
-                return triggerEle;
-            }
-            return this.getEleAndCache(field, triggerEle);
+            return this.getEleAndCache(item['fetch-field'], triggerEle);
         },
         getDestEle(item, triggerEle = null) {
-            const field = item?.['fetch-to-field'] ?? item['fetch-field'];
-            if ('*' === field && triggerEle) {
-                return triggerEle;
-            }
-            return this.getEleAndCache(field);
+            return this.getEleAndCache(item?.['fetch-to-field'] ?? item['fetch-field'], triggerEle);
         },
 
         getFieldElement(field) {

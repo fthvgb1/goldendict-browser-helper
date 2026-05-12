@@ -162,13 +162,13 @@
                     if (showHook) {
                         const select = html.querySelector('.fetch-replacement-target');
                         let handle = select.value;
-                        handlers?.[handle]?.show?.(html, vars);
                         show?.[handle]?.(html, vars);
                         const selector = 'input[name=replaceValue],input[name=pattern]' + extraInput;
                         let inputs = html.querySelectorAll(selector);
                         const forEach = inputs.forEach;
                         handlers?.[handle]?.showInput && forEach
                             .bind(inputs)(el => handlers[handle].showInput.includes(el.name) && el.classList.add('show'));
+                        handlers?.[handle]?.show?.(html, vars);
 
                         select.addEventListener('change', ev => {
                             inputs = ev.target.parentElement.querySelectorAll(selector);
@@ -193,6 +193,9 @@
             text: mapTitle['replacement'],
             title: mapTitle['replacement'],
             handle(item, value, eleParam) {
+                if (!item.searchValue) {
+                    return value;
+                }
                 return actionHelper.replaceString(item, value, eleParam?.vars)
             }
         },
@@ -253,6 +256,16 @@
 
     const actionHelper = {
         ...superFetchHook.fetchActionHelper,
+
+        getVar(v, param) {
+            const scopes = {p: param.parentVars, g: param.globalVars};
+            const [express, scope] = v.split('|');
+            const vars = scopes[scope] ?? param.vars;
+            return superFetchHook.getVariable(vars, express, actionHelper.reg.test(express) ? undefined : express);
+        },
+        getVarName(v, vars) {
+            return v.split('.').map(vv => superFetchHook.getVariable(vars, vv, vv, true)).join('.');
+        },
 
         query(ele, selectorItem, last, keepItems = []) {
             const selector = selectorItem['fetch-selector'];
@@ -338,7 +351,7 @@
                     if (!el) {
                         continue;
                     }
-                    const vars = await this.getMultiVars(el, rules, item, cached, {...this.global});
+                    const vars = await this.getMultiVars(el, rules, item, {...this.global});
                     const format = item['fetch-format'] ? item['fetch-format'] : iterateObjByKey(vars, k => (k.endsWith('-ele') || this.global[k]) ? false : `{${k}}`).join('');
                     const value = this.replaceVars2Format(vars, format);
                     this.setValue(target, value, item);
@@ -346,9 +359,9 @@
             }
         },
 
-        async getMultiVars(el, rules, fetchConf, cached, vars = {}) {
+        async getMultiVars(el, rules, fetchConf, vars = {}) {
             for (const item of rules) {
-                await this.getVars(el, item, fetchConf, el, vars, cached);
+                await this.getVars(el, item, fetchConf, el, vars, vars);
             }
             return vars
         },
@@ -467,8 +480,7 @@
         },
 
         async handItems(items, value, param) {
-            const first = items?.[0];
-            if (param.rule.handleValue && (first.searchValue || actionHelper.accessEmpty.has(first.handleType))) {
+            if (param.rule.handleValue) {
                 const name = param.rule['super-fetch-name'];
                 for (const item of items) {
                     const handler = {currVarName: name, ...item};
@@ -540,10 +552,19 @@
         async handleVars(rule, name, vars, param) {
             vars[name] = this.getDefVars(rule['default-value'], vars);
             vars[name] = await this.handItems(rule['replacement-items'], vars[name], param);
-            if (Array.isArray(vars[name]) && rule.multiple_child && rule?.children?.length > 0) {
+            if (rule.multiple_child && rule?.children?.length > 0) {
                 const set = new Set(), arr = [];
-                for (const v of vars[name]) {
+                let iterator = vars[name], isObject = false;
+                if (!vars[name]?.[Symbol.iterator]) {
+                    isObject = true
+                    iterator = Object.keys(vars[name]);
+                }
+                for (let v of iterator) {
                     const val = {...vars};
+                    if (isObject) {
+                        val[`${name}-$key`] = v;
+                        v = vars[name][v];
+                    }
                     let i = -1;
                     for (const child of rule.children) {
                         ++i;
@@ -685,7 +706,6 @@
 
         textNode: new Set(['INPUT', 'TEXTAREA']),
         valueNode: new Set(['INPUT', 'TEXTAREA', 'SELECT']),
-        accessEmpty: new Set([]),
         tagForAnki(tagNames) {
             const tags = $('#anki-tags');
             const hadSelected = tags.val(), newTags = [];
@@ -800,16 +820,14 @@
                     param['super-fetch-items'].forEach(item => item?.operation === 'handle' ? handleItems.push(item) : fetchItems.push(item));
                     const rule = actionHelper.parseFetchRule(fetchItems);
                     if (rule) {
-                        await actionHelper.getMultiVars(from, rule, param, vars, vars);
+                        await actionHelper.getMultiVars(from, rule, param, vars);
                     }
                     for (const item of handleItems) {
                         const attr = item['fetch-data-type'] === 'text' ? 'innerText' : item['fetch-data-type'],
                             name = item['super-fetch-name'];
                         const selector = item['value-selector'];
                         if ('spell' === selector) {
-                            for (const it of item['replacement-items'] ?? []) {
-                                await this.handlerHelper(it, target, attr, vars)
-                            }
+                            await this.handlerHelper(item, target, attr, vars)
                             if (item?.['fetch-format']) {
                                 target[attr] = actionHelper.replaceVars2Format(vars, item['fetch-format']);
                                 name && (vars[name] = target[attr]);
@@ -820,9 +838,7 @@
                         for (const ele of target.querySelectorAll(item['value-selector'])) {
                             ++i;
                             vars['@i@'] = i;
-                            for (const it of item['replacement-items'] ?? []) {
-                                await this.handlerHelper(it, ele, attr, vars);
-                            }
+                            await this.handlerHelper(item, ele, attr, vars);
                             if (!item?.['fetch-format']) {
                                 continue;
                             }
@@ -831,11 +847,14 @@
                         }
                     }
                 },
-                async handlerHelper(item, ele, attr, vars) {
-                    if (item.searchValue || actionHelper.accessEmpty.has(item.handleType)) {
+                async handlerHelper(rule, ele, attr, vars) {
+                    if (!rule.handleValue) {
+                        return
+                    }
+                    for (const item of rule['replacement-items'] ?? []) {
                         if (this.handlers?.[item.handleType]) {
                             this.handlers?.[item.handleType](item, ele);
-                            return
+                            continue;
                         }
                         ele[attr] = await valueHandlers[item.handleType].handle(item, ele[attr], vars);
                     }

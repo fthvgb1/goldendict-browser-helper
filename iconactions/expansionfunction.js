@@ -13,7 +13,8 @@
         'setValue-desc': '此时替换项为要设置的变量名，为空表示设置当前值，正则项为设置的值或变量，当用函数时语法为{变量}.函数名|参数1,参数2...',
         'getVal-desc': '从符号表中取值，替换项为变量名，无需{}',
         'toNumber': '转为数字',
-        'o2Array': '转为数组',
+        'o2Array': 'iterator转数组',
+        'toArrays': '单体转数组',
         'str2Array': '字符转数组',
         'str2Array-desc': '此时替换值项为分隔符',
         'array2str': '数组转字符串',
@@ -47,7 +48,8 @@
         'object': '对象',
         'variable': '变量',
         'pushArrayValue': '向数组末尾添加一个值',
-        'func': '固有函数',
+        'pushArrayArray': '向数组末尾添加一个数组内的值',
+        'func': '函数',
     });
     const lang = superFetchHook.lang, getValue = superFetchHook.getVariable;
     superFetchHook.mergeMap(superFetchHook.valueHandlers.simpleValueHandlers.handlers, {
@@ -79,9 +81,9 @@
         if: {
             fn: (value, item, param) => {
                 const o = superFetchHook.valueHandlers['ifBranch'];
-                const v1 = superFetchHook.fetchActionHelper.getDefVars(item['v1'], param.vars);
+                const v1 = superFetchHook.fetchActionHelper.getVar(item['v1'], param);
                 const compareType = item.compareType, compareFn = o.compareFn[compareType];
-                const v2 = superFetchHook.fetchActionHelper.getDefVars(item['v2'], param.vars);
+                const v2 = superFetchHook.fetchActionHelper.getVar(item['v2'], param);
                 const valFn = o.valueType[item.valueType];
                 const r = o.noType.has(compareType) ? compareFn(v1, v2, item) : compareFn(valFn(v1), valFn(v2), item);
                 if ((item.isBreak && r) || (!item.isBreak && !r)) {
@@ -210,7 +212,8 @@
                 if (!name) {
                     return v;
                 }
-                setMapVal(name, v, vars);
+                const names = name.split('.').map(vv => getValue(param.vars, vv, vv, true)).join('.')
+                setMapVal(names, v, vars);
                 return _;
             },
             show(li, vars) {
@@ -234,9 +237,10 @@
         pushArrayValue: {
             fn(_, item, param) {
                 const v = superFetchHook.valueHandlers.valueRelation.buildValue(item, param);
-                const [name, g] = item.replaceValue.split('|');
-                const vars = g === 'g' ? param.globalVars : param.vars;
-                vars[name].push(v);
+                const [name, scope] = item.replaceValue.split('|');
+                const names = superFetchHook.fetchActionHelper.getVarName(name, param.vars)
+                const arr = superFetchHook.fetchActionHelper.getVar(scope ? `${names}|${scope}` : names, param);
+                arr.push(v);
                 return _;
             },
             show(li, vars) {
@@ -245,10 +249,32 @@
             showInput: 'replaceValue,pattern,variableType',
             extraShowInput: '[name=variableType]',
         },
+        pushArrayArray: {
+            fn(_, item, param) {
+                const v = superFetchHook.valueHandlers.valueRelation.buildValue(item, param);
+                const [name, scope] = item.replaceValue.split('|');
+                const names = superFetchHook.fetchActionHelper.getVarName(name, param.vars)
+                const arr = superFetchHook.fetchActionHelper.getVar(scope ? `${names}|${scope}` : names, param);
+                arr.push(...v);
+                return _;
+            },
+            show(li, vars) {
+                superFetchHook.valueHandlers.valueRelation.handlers.setValue.show(li, vars);
+                li.querySelector('.variableType').classList.remove('show');
+            },
+            showInput: 'replaceValue,pattern',
+        },
         toNumber: Number,
-        str2Array: (s, item) => s.split(item.replaceValue),
+        str2Array: {
+            fn: (s, item) => Array.isArray(s) ? s : s.split(item.replaceValue),
+            showInput: 'replaceValue',
+        },
         o2Array: arr => [...arr],
-        array2str: (arr, item) => arr.join(item.replaceValue),
+        toArrays: arr => [arr],
+        array2str: {
+            fn: (arr, item) => arr.join(item.replaceValue),
+            showInput: 'replaceValue',
+        },
     }, {
         scope: {fetch: {fetch: '*', handle: 'getVal'}, replacement: 'setValue'},
         buildValue(item, param) {
