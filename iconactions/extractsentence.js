@@ -623,15 +623,8 @@
         if (!express.includes('.')) {
             return vars?.[express] ?? defaults;
         }
-        const variables = vars;
+        express = express.replace(actionHelper.fetchReplaceVarsRex, (substring, args) => getVarVal(vars, args, undefined));
         for (const name of express.split('.')) {
-            if (actionHelper.reg.test(name)) {
-                vars = getVarVal(variables, trims(name, '{}'), undefined);
-                if (undefined === vars) {
-                    return defaults;
-                }
-                continue;
-            }
             if (!vars?.[name]) {
                 return defaults;
             }
