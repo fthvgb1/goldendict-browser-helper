@@ -498,7 +498,8 @@
                 return defaultVal;
             }
             if (!defaultVal.includes('|')) {
-                return getVarVal(vars, superFetchHook.allowFn.trims(defaultVal, '{}'), defaultVal);
+                const express = superFetchHook.allowFn.trims(defaultVal, '{}');
+                return getVarVal(vars, express, express.endsWith('?') ? '' : defaultVal);
             }
             const name = this.defaultReg.exec(defaultVal)[1].split('|');
             for (const k of name) {
