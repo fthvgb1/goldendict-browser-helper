@@ -257,11 +257,21 @@
     const actionHelper = {
         ...superFetchHook.fetchActionHelper,
 
-        getVar(v, param) {
+        getVar(v, param, getVar = false) {
             const scopes = {p: param.parentVars, g: param.globalVars};
-            const [express, scope] = v.split('|');
+            let [express, scope] = v.split('|');
+            if (!actionHelper.reg.test(express)) {
+                return getVar ? superFetchHook.getVarVal(scopes[scope] ?? param.vars, express) : express;
+            }
+            if (!scopes[scope]) {
+                return superFetchHook.getVariable(param.vars, express, undefined);
+            }
+            express = this.replaceVars2Format(param.vars, express, true);
+            if (!express) {
+                return '';
+            }
             const vars = scopes[scope] ?? param.vars;
-            return superFetchHook.getVariable(vars, express, actionHelper.reg.test(express) ? undefined : express);
+            return superFetchHook.getVariable(vars, express, undefined);
         },
         getVarName(v, vars) {
             return v.split('.').map(vv => superFetchHook.getVariable(vars, vv, vv, true)).join('.');
@@ -446,6 +456,7 @@
             }
             return ele;
         },
+        varRegX: /^\{.*}$/,
         fetchReplaceVarsRex: /\{(.*?)}/g,
         reg: /\{.*}/,
         templateVarself: /\{\{(.*?)}}/g,
@@ -499,7 +510,7 @@
             }
             if (!defaultVal.includes('|')) {
                 const express = superFetchHook.allowFn.trims(defaultVal, '{}');
-                return getVarVal(vars, express, express.endsWith('?') ? '' : defaultVal);
+                return getVarVal(vars, express, '');
             }
             const name = this.defaultReg.exec(defaultVal)[1].split('|');
             for (const k of name) {
@@ -510,7 +521,7 @@
                     return vars[k];
                 }
             }
-            return defaultVal;
+            return '';
         },
         getDefaultValue(rule, vars) {
             const format = rule['fetch-format'], name = rule['super-fetch-name'];

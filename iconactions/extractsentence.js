@@ -606,13 +606,15 @@
         return rightTrim(leftTrim(s, symbol), symbol);
     }
 
-    const varReg = /\{.*}/;
+    const varReg = /\{.*}/, varRegs = /^\{.*?}$/;
 
     function getVariable(vars, express, defaults = '', bracket = false) {
         if (bracket && !varReg.test(express)) {
             return express;
         }
-        express = trims(express, '{}');
+        if (varRegs.test(express)) {
+            express = trims(express, '{}');
+        }
         return getVarVal(vars, express, defaults);
     }
 
@@ -624,6 +626,9 @@
             return vars?.[express] ?? defaults;
         }
         express = express.replace(actionHelper.fetchReplaceVarsRex, (substring, args) => getVarVal(vars, args, undefined));
+        if (!express) {
+            return defaults;
+        }
         for (const name of express.split('.')) {
             if (!vars?.[name]) {
                 return defaults;

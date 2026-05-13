@@ -237,9 +237,7 @@
         pushArrayValue: {
             fn(_, item, param) {
                 const v = superFetchHook.valueHandlers.valueRelation.buildValue(item, param);
-                const [name, scope] = item.replaceValue.split('|');
-                const names = superFetchHook.fetchActionHelper.getVarName(name, param.vars)
-                const arr = superFetchHook.fetchActionHelper.getVar(scope ? `${names}|${scope}` : names, param);
+                const arr = superFetchHook.fetchActionHelper.getVar(item.replaceValue, param, true);
                 arr.push(v);
                 return _;
             },
@@ -252,9 +250,7 @@
         pushArrayArray: {
             fn(_, item, param) {
                 const v = superFetchHook.valueHandlers.valueRelation.buildValue(item, param);
-                const [name, scope] = item.replaceValue.split('|');
-                const names = superFetchHook.fetchActionHelper.getVarName(name, param.vars)
-                const arr = superFetchHook.fetchActionHelper.getVar(scope ? `${names}|${scope}` : names, param);
+                const arr = superFetchHook.fetchActionHelper.getVar(item.replaceValue, param, true);
                 arr.push(...v);
                 return _;
             },
