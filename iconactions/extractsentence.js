@@ -762,14 +762,15 @@
         const turnDrag = onoff => ele.querySelectorAll(selector).forEach(item => item.draggable = onoff);
         const param = {
             currentMovingEle: null,
-            flag: false, parent: null, turnDrag
+            flag: false, parent: null, turnDrag,
+            target: null
         };
         const evenFn = {
             dragstart(e) {
                 if (!e.target.matches(selector)) {
                     return
                 }
-                e.stopPropagation();
+                e.stopImmediatePropagation();
                 e.dataTransfer.effectAllowed = 'move';
                 param.currentMovingEle = e.target;
                 param.currentMovingEle.classList.add('moving');
@@ -778,16 +779,15 @@
                 }
             },
             dragenter(e) {
-                if (!e.target.matches(selector) || !param.currentMovingEle) {
+                e.preventDefault();
+                if (!param.currentMovingEle) {
                     return
                 }
-                e.stopPropagation();
                 const children = [...(param.parent ? param.parent : ele).querySelectorAll(selector)];
                 if (e.target === param.currentMovingEle || children.length <= 1) {
                     return
                 }
                 if (!e.target.classList.contains('moving') && !param.currentMovingEle?.classList?.contains('moving')) {
-                    //log(e.target, currentItem)
                     return;
                 }
                 const curIndex = children.indexOf(param.currentMovingEle);
@@ -796,7 +796,23 @@
                     return;
                 }
                 let tarIndex = children.indexOf(e.target);
-                e.target.insertAdjacentElement(tarIndex > curIndex ? 'afterend' : 'beforebegin', param.currentMovingEle);
+                let tarEle = e.target;
+                if (tarIndex < 0) {
+                    tarEle = findParent(e.target, selector);
+                    if (!tarEle) {
+                        return;
+                    }
+                    tarIndex = children.indexOf(tarEle);
+                    if (tarIndex < 0 || tarIndex === curIndex || tarEle.classList.contains('moving')) {
+                        return;
+                    }
+                    if (param.target === tarEle) {
+                        return;
+                    }
+                }
+                param.target = tarEle;
+                tarEle.insertAdjacentElement(tarIndex > curIndex ? 'afterend' : 'beforebegin', param.currentMovingEle);
+
             },
             dragend(e) {
                 e.preventDefault();
@@ -804,6 +820,7 @@
                     return
                 }
                 e.stopPropagation();
+                param.target = null;
                 param.currentMovingEle.classList.remove('moving');
                 param.currentMovingEle = null;
             },
