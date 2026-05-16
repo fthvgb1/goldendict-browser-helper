@@ -759,71 +759,77 @@
     };
 
     function setEleDrag(ele, selector, parentSelector = '', config = {}) {
-        let currentItem, flag = false, parent;
         const turnDrag = onoff => ele.querySelectorAll(selector).forEach(item => item.draggable = onoff);
+        const param = {
+            currentMovingEle: null,
+            flag: false, parent: null, turnDrag
+        };
         const evenFn = {
             dragstart(e) {
-                //log(e.target);
+                if (!e.target.matches(selector)) {
+                    return
+                }
+                e.stopPropagation();
                 e.dataTransfer.effectAllowed = 'move';
-                currentItem = e.target;
-                currentItem.classList.add('moving');
+                param.currentMovingEle = e.target;
+                param.currentMovingEle.classList.add('moving');
                 if (parentSelector) {
-                    parent = findParent(currentItem, parentSelector);
+                    param.parent = findParent(param.currentMovingEle, parentSelector);
                 }
             },
             dragenter(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                const children = [...(parent ? parent : ele).querySelectorAll(selector)];
-                if (e.target === currentItem || children.length <= 1) {
+                if (!e.target.matches(selector) || !param.currentMovingEle) {
                     return
                 }
-                if (!e.target.classList.contains('moving') && !currentItem?.classList?.contains('moving')) {
+                e.stopPropagation();
+                const children = [...(param.parent ? param.parent : ele).querySelectorAll(selector)];
+                if (e.target === param.currentMovingEle || children.length <= 1) {
+                    return
+                }
+                if (!e.target.classList.contains('moving') && !param.currentMovingEle?.classList?.contains('moving')) {
                     //log(e.target, currentItem)
                     return;
                 }
-                const cur = children.indexOf(currentItem);
-                let tar = children.indexOf(e.target);
-                if (cur < 0) {
+                const curIndex = children.indexOf(param.currentMovingEle);
+                if (curIndex < 0) {
                     //log('not '+selector,e.target)
                     return;
                 }
-                let tarEle = e.target;
-                if (tar < 0) {
-                    tarEle = findParent(e.target, selector);
-                    if (!tarEle) {
-                        return;
-                    }
-                    tar = children.indexOf(tarEle);
-                    if (tar < 0) {
-                        return;
-                    }
-                }
-                tarEle.insertAdjacentElement(tar > cur ? 'afterend' : 'beforebegin', currentItem);
+                let tarIndex = children.indexOf(e.target);
+                e.target.insertAdjacentElement(tarIndex > curIndex ? 'afterend' : 'beforebegin', param.currentMovingEle);
             },
             dragend(e) {
-                currentItem.classList.remove('moving');
-                //saveFetchItems();
+                e.preventDefault();
+                if (!e.target.matches(selector)) {
+                    return
+                }
+                e.stopPropagation();
+                param.currentMovingEle.classList.remove('moving');
+                param.currentMovingEle = null;
             },
             dragover(e) {
-                e.preventDefault();
+                !actionHelper.isTextNode(e.target) && e.preventDefault();
+                if (!e.target.matches(selector)) {
+                    return
+                }
+                e.stopPropagation();
             },
             mousedown(ev) {
                 if (actionHelper.isTextNode(ev.target)) {
                     turnDrag(false);
-                    flag = true
+                    param.flag = true
                 }
             },
-            mouseup(ev) {
-                if (flag) {
+            mouseup() {
+                if (param.flag) {
                     turnDrag(true);
-                    flag = false;
+                    param.flag = false;
                 }
             },
             ...config
         }
         turnDrag(true);
-        Object.keys(evenFn).forEach(name => ele.addEventListener(name, evenFn[name]));
+        Object.keys(evenFn).forEach(name => ele.addEventListener(name, evt => evenFn[name](evt, param)));
     }
 
 
