@@ -763,7 +763,7 @@
         const turnDrag = onoff => ele.querySelectorAll(selector).forEach(item => item.draggable = onoff);
         const evenFn = {
             dragstart(e) {
-                log(e.target);
+                //log(e.target);
                 e.dataTransfer.effectAllowed = 'move';
                 currentItem = e.target;
                 currentItem.classList.add('moving');
