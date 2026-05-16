@@ -758,19 +758,23 @@
         }
     };
 
-    function setEleDrag(ele, selector, config = {}) {
-        let currentItem, flag = false;
+    function setEleDrag(ele, selector, parentSelector = '', config = {}) {
+        let currentItem, flag = false, parent;
         const turnDrag = onoff => ele.querySelectorAll(selector).forEach(item => item.draggable = onoff);
         const evenFn = {
             dragstart(e) {
+                log(e.target);
                 e.dataTransfer.effectAllowed = 'move';
                 currentItem = e.target;
                 currentItem.classList.add('moving');
+                if (parentSelector) {
+                    parent = findParent(currentItem, parentSelector);
+                }
             },
             dragenter(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                const children = [...ele.querySelectorAll(selector)];
+                const children = [...(parent ? parent : ele).querySelectorAll(selector)];
                 if (e.target === currentItem || children.length <= 1) {
                     return
                 }
