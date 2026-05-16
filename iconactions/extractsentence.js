@@ -769,6 +769,7 @@
             },
             dragenter(e) {
                 e.preventDefault();
+                e.stopPropagation();
                 const children = [...ele.querySelectorAll(selector)];
                 if (e.target === currentItem || children.length <= 1) {
                     return
@@ -780,6 +781,7 @@
                 const cur = children.indexOf(currentItem);
                 let tar = children.indexOf(e.target);
                 if (cur < 0) {
+                    //log('not '+selector,e.target)
                     return;
                 }
                 let tarEle = e.target;
@@ -816,15 +818,8 @@
             },
             ...config
         }
-        return on => {
-            if (on) {
-                turnDrag(true);
-                Object.keys(evenFn).forEach(name => ele.addEventListener(name, evenFn[name]));
-                return
-            }
-            Object.keys(evenFn).forEach(v => ele.removeEventListener(v, evenFn[v]));
-            turnDrag(false);
-        }
+        turnDrag(true);
+        Object.keys(evenFn).forEach(name => ele.addEventListener(name, evenFn[name]));
     }
 
 

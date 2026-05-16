@@ -1128,13 +1128,9 @@
             return;
         }
         evtFn.autoAddWidth();
-        const fns = [...setting.querySelectorAll('.fetch-replacement-items')].map(el => setEleDrag(el, 'li'));
-        evtFn.dragEle['replaceItem'] = onOff => fns.forEach(fn => fn(onOff));
-        evtFn.dragEle.replaceItem(true);
-        evtFn.dragEle['fetch-item'] = setEleDrag(setting, '.fetch-item');
-        evtFn.dragEle['fetch-item'](true);
-        evtFn.dragEle['super-fetch-item'] = setEleDrag(setting, '.super-fetch-item');
-        evtFn.dragEle['super-fetch-item'](true);
+        setEleDrag(setting, '.fetch-item');
+        setEleDrag(setting, '.fetch-replacement-item');
+        setEleDrag(setting, '.super-fetch-item');
     };
     superFetchHook.valueHandlers = valueHandlers;
     superFetchHook.mergeMap(superFetchHook.fetchActionHelper, actionHelper);
