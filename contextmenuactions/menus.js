@@ -65,7 +65,7 @@
             }
             let active = false;
             if (fetchItem['url-scope']) {
-                for (const scope of fetchItem['url-scope'].split('|')) {
+                for (const scope of fetchItem['url-scope'].split('||')) {
                     if (new RegExp(scope).test(location.href)) {
                         active = true;
                         break;
