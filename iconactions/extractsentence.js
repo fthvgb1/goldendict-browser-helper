@@ -503,6 +503,7 @@
         'append': '追加',
         'none': '啥都不干',
         'htmlElement': '元素',
+        'add-contextmenu': '加入到Tampermonkey菜单',
     };
 
 

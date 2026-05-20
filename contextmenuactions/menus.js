@@ -58,7 +58,11 @@
             },
             key: 'm'
         },
-        ...(() => GM_getValue('action', '').split(',').filterAndMapX(name => {
+        ...(() => GM_getValue('fetch-items', []).filterAndMapX(fetchItem => {
+            if (!fetchItem['add-contextmenu']) {
+                return false
+            }
+            const name = fetchItem['fetch-name'];
             if (!name) {
                 return false;
             }

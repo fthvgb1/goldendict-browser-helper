@@ -9,7 +9,7 @@
         return allVoices
     }
 
-    let voices = prioritizeNaturalVoices(speechSynthesis.getVoices()), utterance, vice, viceMap = {}, playStat = 0,
+    let voices = prioritizeNaturalVoices(speechSynthesis.getVoices()), utterance, voice, voiceMap = {}, playStat = 0,
         icon;
 
     (() => {
@@ -27,7 +27,7 @@
                 playStat = 1;
                 setIcon('⏸️');
             })
-            voices.map(v => viceMap[v.voiceURI] = v);
+            voices.map(v => voiceMap[v.voiceURI] = v);
         };
         voices.length > 1 ? fn() : speechSynthesis.addEventListener("voiceschanged", () => (voices = prioritizeNaturalVoices(speechSynthesis.getVoices()), fn()));
         return voices;
@@ -43,16 +43,22 @@
         pp && (pp.innerHTML = i);
     };
 
-    function play(text, vice = null) {
-        utterance.voice = vice ? vice : viceMap[selectVice];
+    function playTts(text, voice) {
+        utterance.voice = voice ? voice : voiceMap[selectVice];
         utterance.text = text;
         utterance.rate = rate;
         playStat = 1;
         speechSynthesis.speak(utterance);
     }
 
+    function play(text, voice = null) {
+        voice = voice ? voice : voiceMap[selectVice];
+        const tts = window?.playTTS ?? playTts;
+        tts(text, voice)
+    }
+
     function speak(speakText) {
-        if (viceMap[selectVice]) {
+        if (voiceMap[selectVice]) {
             play(speakText);
             return
         }
@@ -61,15 +67,15 @@
         for (const value of voices) {
             const lang = value.lang.toLowerCase();
             if (lang.indexOf(la) > -1) {
-                vice = value
+                voice = value
                 break;
             }
         }
-        if (!vice) {
+        if (!voice) {
             icon.title = '似乎无可用的tts,请先安装';
             return
         }
-        play(speakText, vice);
+        play(speakText, voice);
     }
 
     PushIconAction({

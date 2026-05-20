@@ -69,6 +69,7 @@ input:required {
     border: 1px dashed #e3300d;
 }
 
+.fetch-item:not(:has(.operate-type>option:is([value=fetch],[value=handleElement]):checked)) .add-contextmenu,
 .multiple_child:not(:checked) ~ *,
 .concatenation:not(:checked) ~ *,
 .fetch-replacement-item:only-of-type .replacement-remove,
@@ -96,7 +97,7 @@ input:required {
     display: block;
 }
 
-.operate-type, .fetch-box > .fetch-active {
+.operate-type, .fetch-box > :is(.fetch-active,.add-contextmenu) {
     display: block;
     margin: auto;
 }
