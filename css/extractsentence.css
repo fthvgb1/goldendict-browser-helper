@@ -69,7 +69,7 @@ input:required {
     border: 1px dashed #e3300d;
 }
 
-.fetch-item:not(:has(.operate-type>option:is([value=fetch],[value=handleElement]):checked)) .add-contextmenu,
+.fetch-item:not(:has(.operate-type>option:is([value=fetch],[value=handleElement]):checked)) :is(.add-contextmenu,.url-scope),
 .multiple_child:not(:checked) ~ *,
 .concatenation:not(:checked) ~ *,
 .fetch-replacement-item:only-of-type .replacement-remove,
@@ -92,7 +92,7 @@ input:required {
     margin-left: 0;
 }
 
-.fetch-name {
+.fetch-name, .url-scope {
     width: 7vw;
     display: block;
 }

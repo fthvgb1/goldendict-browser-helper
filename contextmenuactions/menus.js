@@ -59,12 +59,25 @@
             key: 'm'
         },
         ...(() => GM_getValue('fetch-items', []).filterAndMapX(fetchItem => {
-            if (!fetchItem['add-contextmenu']) {
-                return false
-            }
             const name = fetchItem['fetch-name'];
-            if (!name) {
+            if (!name || !fetchItem['fetch-active']) {
                 return false;
+            }
+            let active = false;
+            if (fetchItem['url-scope']) {
+                for (const scope of fetchItem['url-scope'].split('|')) {
+                    if (new RegExp(scope).test(location.href)) {
+                        active = true;
+                        break;
+                    }
+                }
+                if (!active) {
+                    return false;
+                }
+            }
+            if (!fetchItem['add-contextmenu']) {
+                active && superFetchHook.executeActions(name);
+                return false
             }
             return {title: name, action: () => superFetchHook.executeActions(name)}
         }))(),

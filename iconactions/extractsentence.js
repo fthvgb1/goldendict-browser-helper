@@ -504,6 +504,7 @@
         'none': '啥都不干',
         'htmlElement': '元素',
         'add-contextmenu': '加入到Tampermonkey菜单',
+        'url-scope': '生效作用域，正则匹配url，多个用|隔开，只对自动执行或添加tampermonkey菜单有效',
     };
 
 
