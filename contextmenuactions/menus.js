@@ -58,29 +58,16 @@
             },
             key: 'm'
         },
-        ...(() => GM_getValue('fetch-items', []).filterAndMapX(fetchItem => {
-            const name = fetchItem['fetch-name'];
-            if (!name || !fetchItem['fetch-active']) {
-                return false;
-            }
-            let active = false;
-            if (fetchItem['url-scope']) {
-                for (const scope of fetchItem['url-scope'].split('||')) {
-                    if (new RegExp(scope).test(location.href)) {
-                        active = true;
-                        break;
-                    }
-                }
-                if (!active) {
-                    return false;
-                }
-            }
-            if (!fetchItem['add-contextmenu']) {
-                active && superFetchHook.executeActions(name);
-                return false
-            }
-            return {title: name, action: () => superFetchHook.executeActions(name)}
-        }))(),
+        ...(() => {
+            let menus = customizeMenu(location.href);
+            navigation.addEventListener("navigate", e => {
+                const newMenu = customizeMenu(e.destination.url);
+                arrayDiff(newMenu, menus, (a, b) => a.title === b.title).forEach(menu => window.userJSMenu[menu.title] = GM_registerMenuCommand(menu.title, menu.action));
+                arrayDiff(menus, newMenu, (a, b) => a.title === b.title).forEach(v => GM_unregisterMenuCommand(window.userJSMenu[v.title]));
+                menus = newMenu;
+            });
+            return menus
+        })(),
         /*{
             title: "sh",
             action: {
@@ -117,5 +104,32 @@
             },
         }*/
     ]];
+
+    function customizeMenu(url) {
+        return GM_getValue('fetch-items', []).filterAndMapX(fetchItem => {
+            const name = fetchItem['fetch-name'];
+            if (!name || !fetchItem['fetch-active']) {
+                return false;
+            }
+            let active = false;
+            if (fetchItem['url-scope']) {
+                for (const scope of fetchItem['url-scope'].split('||')) {
+                    if (new RegExp(scope).test(url)) {
+                        active = true;
+                        break;
+                    }
+                }
+                if (!active) {
+                    return false;
+                }
+            }
+            if (!fetchItem['add-contextmenu']) {
+                active && superFetchHook.executeActions(name);
+                return false
+            }
+            return {title: name, action: () => superFetchHook.executeActions(name)};
+        });
+    }
+
     PushContextMenu(...menus);
 })();

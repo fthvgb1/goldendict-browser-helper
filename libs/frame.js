@@ -55,6 +55,7 @@
     }
 
     function initContextMenu() {
+        !window?.userJSMenu && (window.userJSMenu = {});
         contextMenuActions.forEach(menu => {
             let fn = menu.action;
             if (typeof menu.action === 'string') {
@@ -66,12 +67,12 @@
                     request(menu.action, menu.path, menu.hasOwnProperty('call') ? menu.call : null)
                 }
             }
-            GM_registerMenuCommand(menu.title, () => {
+            window.userJSMenu[menu.title] = GM_registerMenuCommand(menu.title, () => {
                 if (self === top) {
                     fn();
                 }
             }, menu.key);
-        })
+        });
     }
 
     function initIconActions() {

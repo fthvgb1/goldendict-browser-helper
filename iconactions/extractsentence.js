@@ -823,7 +823,7 @@
                 }
                 e.stopPropagation();
                 param.target = null;
-                param.currentMovingEle.classList.remove('moving');
+                param.currentMovingEle && param.currentMovingEle.classList.remove('moving');
                 param.currentMovingEle = null;
             },
             dragover(e) {
@@ -938,7 +938,9 @@
             const v = e.target.value;
             const data = o?.[v] ?? {};
             o[v] = this.getSwitchData(e.target);
-            const container = findParent(e.target, '.fetch-item').querySelector('.fetch-action-container');
+            const fetchItem = findParent(e.target, '.fetch-item');
+            fetchItem.querySelectorAll('[data-single-run]').forEach(el => el.dataset.singleRun = actions.handlers[v]?.singleRun ?? false);
+            const container = fetchItem.querySelector('.fetch-action-container');
             container.replaceWith(actions.handlers[v].getTemplate(data));
         },
 
@@ -976,6 +978,7 @@
 
         buildFetchItem(data = {}) {
             data['operate-type'] = data['operate-type'] ?? 'fetch';
+            data.singleRun = actions.handlers[data['operate-type']]?.singleRun ?? false;
             const handler = actions.handlers[data['operate-type']];
             data['op'] = Object.keys(actions.handlers).map(k => [k, actions.handlers[k].text, {title: actions.handlers[k].desc}]);
             data['fetch-operator'] = handler.getTemplate(data);

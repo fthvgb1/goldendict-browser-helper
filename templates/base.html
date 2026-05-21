@@ -7,7 +7,7 @@
             {{op|buildOption(operate-type,0,1,2)}}}
         </select>
         <input class="url-scope" name="url-scope" placeholder="{{url-scope|lang}}" title="{{url-scope|lang}}"
-               type="text" value="{{url-scope|htmlSpecial}}">
+               data-single-run="{{singleRun}}" type="text" value="{{url-scope|htmlSpecial}}">
     </div>
     <template>fetch-operator</template>
     <div class="fetch-box">
@@ -16,7 +16,7 @@
                {{fetch-active|checked}}>
 
         <input class="swal2-checkbox add-contextmenu" name="add-contextmenu" placeholder="{{add-contextmenu|lang}}"
-               title="{{add-contextmenu|lang}}" type="checkbox"
+               data-single-run="{{singleRun}}" title="{{add-contextmenu|lang}}" type="checkbox"
                {{add-contextmenu|checked}}>
         <div class="fetch-buttons">
             <button class="fetch-delete" title="{{fetch-delete|lang}}">➖</button>

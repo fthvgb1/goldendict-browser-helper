@@ -770,6 +770,7 @@
                 text: mapTitle['fetch'], // option innerText
                 scope: 'all', // all html text;
                 desc: mapTitle['fetch'], // option title
+                singleRun: true, //can be added to contextmenu or automatic run
                 getTemplate(data) {
                     data['selector-items'] = data?.['selector-items'] ? data['selector-items'] : [{}];
                     data['fetch-chain-html'] = data['selector-items']
@@ -859,6 +860,7 @@
                         }
                     }
                 },
+                singleRun: true,
                 async handlerHelper(rule, ele, attr, vars) {
                     if (!rule.handleValue) {
                         return
