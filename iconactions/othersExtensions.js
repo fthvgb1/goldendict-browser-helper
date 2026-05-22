@@ -73,4 +73,33 @@
     superFetchHook.valueHandlers.simpleValueHandlers.handlers.trim = s => s.trim();
 
 
+    superFetchHook.hookLang({
+        typeKeys: '输入快捷键',
+        'typeKeys-desc': '组合键用空格隔开，多组用,逗号隔开',
+        'simpleType': '简单输入快捷键',
+        'simpleType-desc': '替换即为快捷键',
+        'typeCopyType': '输入所快捷键扣复制，然后再输入快捷键',
+        'typeCopyType-desc': '替换项为前一个快捷键，pattern项为后一个快捷键',
+    });
+    superFetchHook.simpleValueHandlerHelper.addHandlers('typeKeys', {
+        simpleType: {
+            fn(value, item) {
+                request('keys=' + parseKey(item.replaceValue));
+                return value;
+            },
+            showInput: 'replaceValue',
+        },
+        typeCopyType: {
+            fn(value, item) {
+                request({
+                    prev: parseKey(item.replaceValue),
+                    next: parseKey(item.pattern),
+                }, 'aca')
+                return value;
+            },
+            showInput: 'replaceValue,pattern',
+        }
+    }, {scope: {fetch: {fetch: '*'}},})
+
+
 })();
