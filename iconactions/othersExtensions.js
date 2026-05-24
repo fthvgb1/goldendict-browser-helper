@@ -80,6 +80,14 @@
         'simpleType-desc': '替换即为快捷键',
         'typeCopyType': '输入所快捷键扣复制，然后再输入快捷键',
         'typeCopyType-desc': '替换项为前一个快捷键，pattern项为后一个快捷键',
+        'delay': '延时执行',
+        'delayOrInterval': '延时或超时执行',
+        'delayTime': '延时时间',
+        'delayTime-desc': '延时时间,单位毫秒',
+        'interval': '定时执行',
+        'interval-desc': '定时执行此项后面对值处理的所有操作',
+        'intervalTime-desc': '定时时间，单位毫秒',
+        'clearInterval': '停止前一个定时器',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('typeKeys', {
         simpleType: {
@@ -101,5 +109,60 @@
         }
     }, {scope: {fetch: {fetch: '*'}},})
 
+    superFetchHook.simpleValueHandlerHelper.addHandlers('delayOrInterval', {
+        delay: {
+            async fn(value, item) {
+                const timber = time => new Promise(resolve => setTimeout(resolve, time));
+                await timber(item.delayTime);
+                return value
+            },
+            param: {
+                fields: {
+                    delayTime: {
+                        type: 'number',
+                        width: '7vw',
+                    },
+                },
+                mountElementSelector: '.fetch-replacement-target',
+            }
+        },
+        interval: {
+            fn(value, item, param) {
+                const handlers = param.handlers.splice(0);
+                param.interval = setInterval(async () => {
+                    value = await superFetchHook.fetchActionHelper.handItems(handlers, value, param);
+                }, item.intervalTime);
+                return value;
+            },
+            param: {
+                fields: {
+                    intervalTime: {
+                        type: 'number',
+                        width: '7vw',
+                    },
+                },
+                mountElementSelector: '.fetch-replacement-target',
+            }
+        },
+        clearInterval: {
+            fn(value, item, param) {
+                param.interval && clearInterval(param.interval);
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+            }
+        }
+    }, {scope: {fetch: {fetch: '*'}}})
+
+
+    //todo recursive execute
+    /*superFetchHook.valueHandlers.elementWatcher = {};
+    superFetchHook.valueHandlers.executeActions = {
+        handle(item, value, eleParam) {
+            for (const name of item?.actionNames.split(',')) {
+                superFetchHook.executeActions(name)
+            }
+        }
+    }*/
 
 })();

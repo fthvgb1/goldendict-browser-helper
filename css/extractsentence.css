@@ -204,7 +204,7 @@ select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAtt
 }
 
 .fetch-replacement-item input:where([name=v1],[name=v2]) {
-    width: 4.3vw;
+    width: 4.2vw;
 }
 
 .fetch-replacement-item:has(.fetch-replacement-target>option:is([value=setValue],[value=pushArrayValue]):checked) :where(.fetch-replacement-target, .fetch-replacement-value) {

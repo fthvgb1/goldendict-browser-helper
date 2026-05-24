@@ -81,7 +81,7 @@
             if (!param) {
                 return null;
             }
-            const fn = iterateObjByKey(param.fields, (field, attr) => {
+            let fn = iterateObjByKey(param?.fields ?? {}, (field, attr) => {
                 return (pre, html, vars) => {
                     const value = vars[field] ?? '';
                     const diff = attr?.diff ?? (el => el.nextElementSibling.matches(attr?.diffSelector ?? `[name=${field}]`));
@@ -95,6 +95,9 @@
                     return ele;
                 };
             });
+            if (!fn || fn.length < 1) {
+                fn = [pre => pre];
+            }
             return (html, vars) => {
                 const el = html.querySelector(param.mountElementSelector);
                 const endEl = fn.reduce((pre, cur) => cur(pre, html, vars), el);
@@ -354,7 +357,6 @@
         },
 
         async fetchItem(ele, target, item, rules) {
-            const cached = {};
             for (const ell of ele ?? []) {
                 const els = ell.splice(0, item['fetch-num'] < 1 ? ell.length : item['fetch-num']);
                 for (const el of els ?? []) {
@@ -492,8 +494,14 @@
 
         async handItems(items, value, param) {
             if (param.rule.handleValue) {
+                param.handlers = [...items];
+                param.fetchType = 'fetch';
                 const name = param.rule['super-fetch-name'];
-                for (const item of items) {
+                while (true) {
+                    const item = param.handlers.shift();
+                    if (!item) {
+                        break
+                    }
                     const handler = {currVarName: name, ...item};
                     value = param.vars[name] = await valueHandlers[handler.handleType].handle(handler, value, param);
                     if (handler?.break) {
@@ -565,6 +573,10 @@
             vars[name] = this.getDefVars(rule['default-value'], vars);
             vars[name] = await this.handItems(rule['replacement-items'], vars[name], param);
             if (rule.multiple_child && rule?.children?.length > 0) {
+                if (vars[name] instanceof NodeList && vars[name].length > 0) {
+                    await this.queryChildrenElements(vars[name], vars, name, param)
+                    return vars[name];
+                }
                 const set = new Set(), arr = [];
                 let iterator = vars[name], isObject = false;
                 if (!vars[name]?.[Symbol.iterator]) {
@@ -622,6 +634,28 @@
             return vars[name];
         },
 
+        async queryChildrenElements(el, vars, name, param) {
+            const s = new Set(), rule = param.rule;
+            let i = -1;
+            vars[name] = [];
+            for (const ell of el) {
+                ++i;
+                const v = {...vars};
+                v['@i@'] = i;
+                const r = await this.parseVar(v, name, ell, rule, {
+                    ...param, vars: v, parentVars: vars
+                });
+                if (rule?.['fetch-repeat'] && s.has(r)) {
+                    continue;
+                }
+                s.add(r);
+                vars[name].push(r);
+            }
+            if (rule['concatenation']) {
+                vars[name] = vars[name].join(rule.separator)
+            }
+        },
+
         // fetch vars
         async getVars(ele, rule, fetchConf, from, vars = {}, globalVars = vars, parentVars = vars) {
             const name = rule['super-fetch-name'], param = {
@@ -641,25 +675,7 @@
                 vars[name] = this.getDefaultValue(rule, vars);
                 log("query rule's value-selector fail", ele, rule['value-selector'], rule);
             } else if (el instanceof NodeList && el.length > 0) {
-                const s = new Set();
-                let i = -1;
-                vars[name] = [];
-                for (const ell of el) {
-                    ++i;
-                    const v = {...vars};
-                    v['@i@'] = i;
-                    const r = await this.parseVar(v, name, ell, rule, {
-                        ...param, vars: v, parentVars: vars
-                    });
-                    if (rule?.['fetch-repeat'] && s.has(r)) {
-                        continue;
-                    }
-                    s.add(r);
-                    vars[name].push(r);
-                }
-                if (rule['concatenation']) {
-                    vars[name] = vars[name].join(rule.separator)
-                }
+                await this.queryChildrenElements(el, vars, name, param)
             } else {
                 await this.parseVar(vars, name, el, rule, {...param, parentVars: vars});
             }
@@ -751,7 +767,7 @@
                     let ele = from, keep = [], i = 0;
                     while (true) {
                         i++;
-                        const selectorItem = selectorItems.splice(0, 1)?.[0];
+                        const selectorItem = selectorItems.shift();
                         if (!selectorItem?.['fetch-selector']) {
                             i === 1 && await actionHelper.fetchItem([[from]], target, param, rule);
                             return;
@@ -865,12 +881,18 @@
                     if (!rule.handleValue) {
                         return
                     }
-                    for (const item of rule['replacement-items'] ?? []) {
+
+                    const param = {vars, rule, handlers: [...rule['replacement-items']], fetchType: 'handle'};
+                    while (true) {
+                        const item = param.handlers.shift();
+                        if (!item) {
+                            break;
+                        }
                         if (this.handlers?.[item.handleType]) {
-                            this.handlers?.[item.handleType](item, ele);
+                            this.handlers?.[item.handleType](item, ele, param);
                             continue;
                         }
-                        ele[attr] = await valueHandlers[item.handleType].handle(item, ele[attr], vars);
+                        ele[attr] = await valueHandlers[item.handleType].handle(item, ele[attr], param);
                     }
                 },
                 scope: 'html',
@@ -889,8 +911,12 @@
             },
             replacement: {
                 async action(param, target) {
-                    const p = {vars: {value: target.value}};
-                    for (const item of param['replacement-items']) {
+                    const p = {vars: {value: target.value}, rule: param, handles: [...param['replacement-items']]};
+                    while (true) {
+                        const item = p.handles.shift();
+                        if (!item) {
+                            break;
+                        }
                         p.vars.value = await valueHandlers[item.handleType].handle(item, p.vars.value, p);
                     }
                     target.value = p.vars.value;
