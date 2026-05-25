@@ -73,6 +73,7 @@
             }
             const ele = templateHelper.buildFormElement[type](field, value, attr.attrs);
             attr?.width && (ele.style.width = attr.width);
+            'checkbox' === attr.type && (ele.checked = value);
             attr?.hook && (attr.hook(ele, value, vars, attr, pre));
             return ele;
         },
@@ -356,16 +357,16 @@
             })
         },
 
-        async fetchItem(ele, target, item, rules) {
+        async fetchItem(ele, target, item, rules, vars = {}) {
             for (const ell of ele ?? []) {
                 const els = ell.splice(0, item['fetch-num'] < 1 ? ell.length : item['fetch-num']);
                 for (const el of els ?? []) {
                     if (!el) {
                         continue;
                     }
-                    const vars = await this.getMultiVars(el, rules, item, {...this.global});
-                    const format = item['fetch-format'] ? item['fetch-format'] : iterateObjByKey(vars, k => (k.endsWith('-ele') || this.global[k]) ? false : `{${k}}`).join('');
-                    const value = this.replaceVars2Format(vars, format);
+                    const varss = await this.getMultiVars(el, rules, item, {...vars, ...this.global});
+                    const format = item['fetch-format'] ? item['fetch-format'] : iterateObjByKey(varss, k => (k.endsWith('-ele') || this.global[k]) ? false : `{${k}}`).join('');
+                    const value = this.replaceVars2Format(varss, format);
                     this.setValue(target, value, item);
                 }
             }
@@ -753,7 +754,7 @@
 
         handlers: {
             fetch: {
-                async action(param, from, target) {
+                async action(param, from, target, vars = {}) {
                     if (param['selector-items'].length < 1 || param?.['super-fetch-items']?.length < 1) {
                         log('not have valid fetch rule!', param)
                         return;
@@ -769,7 +770,7 @@
                         i++;
                         const selectorItem = selectorItems.shift();
                         if (!selectorItem?.['fetch-selector']) {
-                            i === 1 && await actionHelper.fetchItem([[from]], target, param, rule);
+                            i === 1 && await actionHelper.fetchItem([[from]], target, param, rule, vars);
                             return;
                         }
                         const last = selectorItems.length < 1;
@@ -781,7 +782,7 @@
                             break
                         }
                     }
-                    await actionHelper.fetchItem(ele, target, param, rule);
+                    await actionHelper.fetchItem(ele, target, param, rule, vars);
                 },
                 text: mapTitle['fetch'], // option innerText
                 scope: 'all', // all html text;
@@ -844,8 +845,9 @@
                 }
             },
             handleElement: {
-                async action(param, from, target) {
-                    const fetchItems = [], handleItems = [], vars = {...actionHelper.global};
+                async action(param, from, target, vars = {}) {
+                    const fetchItems = [], handleItems = [];
+                    vars = {...vars, ...actionHelper.global};
                     param['super-fetch-items'].forEach(item => item?.operation === 'handle' ? handleItems.push(item) : fetchItems.push(item));
                     const rule = actionHelper.parseFetchRule(fetchItems);
                     if (rule) {

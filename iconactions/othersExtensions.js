@@ -152,17 +152,38 @@
                 mountElementSelector: '.fetch-replacement-target',
             }
         }
-    }, {scope: {fetch: {fetch: '*'}}})
+    }, {scope: {fetch: {fetch: '*'}}});
 
 
-    //todo recursive execute
-    /*superFetchHook.valueHandlers.elementWatcher = {};
+    superFetchHook.hookLang({
+        'executeActions': '执行操作',
+        'actionNames': '执行的操作名，多个用,逗号隔开',
+        'shareVars': '共享当前操作的符号表',
+        'async': '异步执行',
+    });
     superFetchHook.valueHandlers.executeActions = {
-        handle(item, value, eleParam) {
-            for (const name of item?.actionNames.split(',')) {
-                superFetchHook.executeActions(name)
+        async handle(item, value, param) {
+            await superFetchHook.executeActions(...item?.actionNames.split(','), item.shareVars ? param.vars : {}, item.async);
+            return value
+        },
+        renderHook: superFetchHook.simpleValueHandlerHelper.buildFieldRender({
+            mountElementSelector: '.handleType',
+            fields: {
+                actionNames: {
+                    type: 'text'
+                },
+                shareVars: {
+                    type: 'checkbox'
+                },
+                async: {
+                    type: 'checkbox',
+                }
             }
-        }
-    }*/
+        })
+    }
+
+    // todo observe element and add event
+    superFetchHook.valueHandlers.elementWatcher = {};
+    superFetchHook.valueHandlers.addevent = {};
 
 })();

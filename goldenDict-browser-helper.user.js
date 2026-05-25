@@ -2,12 +2,10 @@
 // @name         goldenDict-browser-helper
 // @namespace    https://github.com/fthvgb1
 // @homepage     https://github.com/fthvgb1/goldendict-browser-helper
-// @version      2.53
+// @version      2.54
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1
-// @match        http://*/*
-// @include      https://*/*
-// @include      file:///*
+// @include      *
 // @connect      127.0.0.1
 // @run-at       document-start
 // @grant        GM_xmlhttpRequest
@@ -88,12 +86,6 @@
 
     initContextMenu();
 
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", () => {
-            initIconActions();
-        });
-    } else {
-        initIconActions();
-    }
+    "loading" === document.readyState ? document.addEventListener("DOMContentLoaded", initIconActions) : initIconActions();
 
 })();

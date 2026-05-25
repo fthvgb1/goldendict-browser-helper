@@ -509,7 +509,17 @@
 
 
     async function executeActions(...names) {
-        names = names.filter(name => name);
+        let vars = {}, async = true;
+        names = names.filterAndMapX(name => {
+            if ('string' === typeof name && name) {
+                return name
+            } else if ('object' === typeof name) {
+                vars = name;
+            } else if ('boolean' === typeof name) {
+                async = name;
+            }
+            return false
+        });
         if (names.length < 1) {
             return;
         }
@@ -517,7 +527,13 @@
         getAnkiFetchParams().forEach(rule => rules[rule['fetch-name']] = rule);
         for (const name of names) {
             try {
-                rules?.[name] && await actionHelper.executeAction(rules[name])
+                if (rules?.[name]) {
+                    if (async) {
+                        actionHelper.executeAction(rules[name], null, null, null, vars);
+                    } else {
+                        await actionHelper.executeAction(rules[name], null, null, null, vars);
+                    }
+                }
             } catch (e) {
                 console.log('execute action', name, 'error:', e);
             }
@@ -860,17 +876,17 @@
 
     const actions = {
         // execute action
-        async dispatchAction(param, from = null, target = null) {
-            await this.handlers?.[param?.['operate-type']]?.action?.(param, from, target);
+        async dispatchAction(param, from = null, target = null, vars = {}) {
+            await this.handlers?.[param?.['operate-type']]?.action?.(param, from, target, vars);
         },
 
     };
     const actionHelper = {
 
-        async executeAction(param, from = null, target = null, triggerEle = null) {
+        async executeAction(param, from = null, target = null, triggerEle = null, vars = {}) {
             from = from ? from : this.getFromEle(param, triggerEle);
             target = target ? target : this.getDestEle(param, triggerEle);
-            await actions.dispatchAction(param, from, target);
+            await actions.dispatchAction(param, from, target, vars);
         },
 
         elementCache: {},
