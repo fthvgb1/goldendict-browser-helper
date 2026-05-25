@@ -179,11 +179,71 @@
                     type: 'checkbox',
                 }
             }
-        })
+        }),
+        scope: {fetch: {fetch: '*'}},
     }
 
+    superFetchHook.hookLang({
+        'simpleElementWatcher': '简单元素变化监听',
+        'querySelector': '选择器或者元素的变量名',
+        'subtree': 'subtree 监听元素的整个子树属性变化',
+        'childList': 'childList 元素发生的节点的新增与删除',
+        'attributes': 'attributes 节点属性值的变化',
+        'observe': '开始监听',
+        'observe-desc': '将执行此项后面对值处理的所有操作',
+        'disconnectObserve': '停止监听',
+    });
+    superFetchHook.simpleValueHandlerHelper.addHandlers('simpleElementWatcher', {
+        observe: {
+            fn(value, item, param) {
+                const handlers = param.handlers.splice(0);
+                const selector = superFetchHook.getVariable(param.vars, item.querySelector, item.querySelector, true);
+                const ele = selector instanceof Element ? selector : document.querySelector(selector);
+                if (!ele) {
+                    console.log("can't parse element")
+                    return value;
+                }
+                const observer = new MutationObserver(async (mutationList) => {
+                    param.vars.mutationRecord = mutationList;
+                    value = await superFetchHook.fetchActionHelper.handItems(handlers, value, param);
+                });
+                param.observer = observer;
+                observer.observe(ele, {
+                    subtree: item.subtree,
+                    childList: item.childList,
+                    attributes: item.attributes,
+                });
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    querySelector: {
+                        type: 'text',
+                        width: '8vw',
+                    },
+                    subtree: {
+                        type: 'checkbox'
+                    },
+                    childList: {
+                        type: 'checkbox',
+                    },
+                    attributes: {
+                        type: 'checkbox',
+                    }
+                }
+            }
+        },
+        disconnectObserve: {
+            fn(value, item, param) {
+                param?.observer && param.observer.disconnect();
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+            }
+        }
+    }, {scope: {fetch: {fetch: '*'}}});
     // todo observe element and add event
-    superFetchHook.valueHandlers.elementWatcher = {};
-    superFetchHook.valueHandlers.addevent = {};
+    //superFetchHook.valueHandlers.addevent = {};
 
 })();
