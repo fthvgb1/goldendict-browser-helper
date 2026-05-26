@@ -64,7 +64,7 @@ func openFile(w http.ResponseWriter, r *http.Request) {
 	if path == "" {
 		return
 	}
-	w.Header().Set("Access-Control-Allow-Headers", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	file, err := os.Open(path)
 	if err != nil {
 		log.Println(err)
@@ -113,7 +113,7 @@ func ReadClipboard(w http.ResponseWriter, r *http.Request) {
 
 func tapKeyboardAndCopy(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(r.RequestURI, "/pdfjs") {
-		w.Header().Set("Access-Control-Allow-Headers", "*")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		fs.ServeHTTP(w, r)
 		return
 	}

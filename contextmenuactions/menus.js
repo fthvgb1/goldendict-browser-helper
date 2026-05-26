@@ -39,6 +39,20 @@
             },
             key: 'm'
         },
+        {
+            title: "PDFJS",
+            async action() {
+                const helperServerHost = GM_getValue('host', 'http://127.0.0.1:9999');
+                if (location.href.startsWith('file:///')) {
+                    const path = location.href.replace('file:///', '');
+                    const file = `${helperServerHost}/file?file=${path}`;
+                    location.href = `${helperServerHost}/pdfjs/viewer.html?file=${file}`
+                    return
+                }
+                location.href = `${helperServerHost}/pdfjs/viewer.html`;
+            },
+            key: "v"
+        },
         ...(() => {
             let menus = customizeMenu(location.href);
             navigation.addEventListener("navigate", e => {
