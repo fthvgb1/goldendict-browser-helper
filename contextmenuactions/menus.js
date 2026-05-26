@@ -41,7 +41,7 @@
         },
         {
             title: "PDFJS",
-            async action() {
+            action() {
                 const helperServerHost = GM_getValue('host', 'http://127.0.0.1:9999');
                 if (location.href.startsWith('file:///')) {
                     const path = location.href.replace('file:///', '');

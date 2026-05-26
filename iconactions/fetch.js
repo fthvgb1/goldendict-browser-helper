@@ -358,13 +358,14 @@
         },
 
         async fetchItem(ele, target, item, rules, vars = {}) {
+            const shareVar = Object.keys(vars).length > 0;
             for (const ell of ele ?? []) {
                 const els = ell.splice(0, item['fetch-num'] < 1 ? ell.length : item['fetch-num']);
                 for (const el of els ?? []) {
                     if (!el) {
                         continue;
                     }
-                    const varss = await this.getMultiVars(el, rules, item, {...vars, ...this.global});
+                    const varss = await this.getMultiVars(el, rules, item, shareVar ? vars : {...this.global});
                     const format = item['fetch-format'] ? item['fetch-format'] : iterateObjByKey(varss, k => (k.endsWith('-ele') || this.global[k]) ? false : `{${k}}`).join('');
                     const value = this.replaceVars2Format(varss, format);
                     this.setValue(target, value, item);
@@ -463,15 +464,11 @@
         fetchReplaceVarsRex: /\{(.*?)}/g,
         reg: /\{.*}/,
         templateVarself: /\{\{(.*?)}}/g,
-        tamperVar: /\{\$(.*?)}/g,
         replaceVars2Format(vars, str, empty = false) {
             if (!str) {
                 return str;
             }
-            return str.replace(this.tamperVar, (substring, name) => {
-                const t = GM_getValue(name, '');
-                return t ? t : substring
-            }).replace(this.templateVarself, (substring, name) => {
+            return str.replace(this.templateVarself, (substring, name) => {
                 if (!vars?.[name]) {
                     return substring
                 }
@@ -571,7 +568,7 @@
         },
 
         async handleVars(rule, name, vars, param) {
-            vars[name] = this.getDefVars(rule['default-value'], vars);
+            vars[name] = vars[name] ?? this.getDefVars(rule['default-value'], vars);
             vars[name] = await this.handItems(rule['replacement-items'], vars[name], param);
             if (rule.multiple_child && rule?.children?.length > 0) {
                 if (vars[name] instanceof NodeList && vars[name].length > 0) {

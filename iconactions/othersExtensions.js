@@ -164,7 +164,10 @@
     superFetchHook.valueHandlers.executeActions = {
         async handle(item, value, param) {
             await superFetchHook.executeActions(...item?.actionNames.split(','), item.shareVars ? param.vars : {}, item.async);
-            return value
+            if (item.async || !item.shareVars) {
+                return value
+            }
+            return param.vars[param.rule['super-fetch-name']]
         },
         renderHook: superFetchHook.simpleValueHandlerHelper.buildFieldRender({
             mountElementSelector: '.handleType',
