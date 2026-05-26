@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"embed"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	str "github.com/fthvgb1/wp-go/helper/strings"
 	"github.com/go-vgo/robotgo"
 	"golang.design/x/clipboard"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -24,6 +26,11 @@ var port int
 var mux = sync.Mutex{}
 var timeout time.Duration
 var logfile string
+
+//go:embed pdfjs
+var pdfJS embed.FS
+
+var fs = http.FileServerFS(pdfJS)
 
 func main() {
 	flag.IntVar(&port, "p", 9999, "httpserver listen port")
@@ -44,11 +51,32 @@ func main() {
 	http.HandleFunc("/cmd", executeCmd)
 	http.HandleFunc("/clipboard", ReadClipboard)
 	http.HandleFunc("/typeStr", typeStr)
+	http.HandleFunc("/file", openFile)
 	log.Println("http listened ", port)
 	err := http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), nil)
 	if err != nil {
 		panic(err)
 	}
+}
+
+func openFile(w http.ResponseWriter, r *http.Request) {
+	path := r.URL.Query().Get("file")
+	if path == "" {
+		return
+	}
+	w.Header().Set("Access-Control-Allow-Headers", "*")
+	file, err := os.Open(path)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer file.Close()
+	_, err = io.Copy(w, file)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println("opened file:", path)
 }
 
 func typeStr(_ http.ResponseWriter, r *http.Request) {
@@ -84,6 +112,11 @@ func ReadClipboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func tapKeyboardAndCopy(w http.ResponseWriter, r *http.Request) {
+	if strings.HasPrefix(r.RequestURI, "/pdfjs") {
+		w.Header().Set("Access-Control-Allow-Headers", "*")
+		fs.ServeHTTP(w, r)
+		return
+	}
 	if r.RequestURI == "/favicon.ico" {
 		return
 	}
