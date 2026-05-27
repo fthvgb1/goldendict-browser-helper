@@ -260,7 +260,7 @@
             fn(value, item, param) {
                 const handlers = param.handlers.splice(0);
                 window.userJSMenu[item.menuTitle] = GM_registerMenuCommand(item.menuTitle, async () => {
-                    await superFetchHook.fetchActionHelper.handItems(handlers, value, param);
+                    value = await superFetchHook.fetchActionHelper.handItems(handlers, value, param);
                 }, item.accessKey);
                 return value;
             },
