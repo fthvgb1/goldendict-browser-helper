@@ -246,6 +246,56 @@
             }
         }
     }, {scope: {fetch: {fetch: '*'}}});
+
+    superFetchHook.hookLang({
+        'handleMenu': 'tampermonkey菜单管理',
+        'addMenu': '添加菜单',
+        'addMenu-desc': '此项后面的操作为点击菜单的操作',
+        'removeMenu': '删除菜单',
+        'menuTitle': '菜单标题',
+        'accessKey': '快捷键，可选',
+    });
+    superFetchHook.simpleValueHandlerHelper.addHandlers('handleMenu', {
+        addMenu: {
+            fn(value, item, param) {
+                const handlers = param.handlers.splice(0);
+                window.userJSMenu[item.menuTitle] = GM_registerMenuCommand(item.menuTitle, async () => {
+                    await superFetchHook.fetchActionHelper.handItems(handlers, value, param);
+                }, item.accessKey);
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    menuTitle: {
+                        type: 'text',
+                        width: '7vw',
+                        attrs: {required: 'required'}
+                    },
+                    accessKey: {
+                        type: 'text',
+                        width: '4vw',
+                    }
+                }
+            }
+        },
+        removeMenu: {
+            fn(value, item) {
+                GM_unregisterMenuCommand(window.userJSMenu[item.menuTitle]);
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    menuTitle: {
+                        type: 'text',
+                        width: '8vw',
+                        attrs: {required: 'required'}
+                    },
+                }
+            }
+        },
+    }, {scope: {fetch: {fetch: '*'}}});
     // todo observe element and add event
     //superFetchHook.valueHandlers.addevent = {};
 
