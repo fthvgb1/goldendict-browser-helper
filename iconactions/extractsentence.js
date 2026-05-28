@@ -526,13 +526,15 @@
         const rules = {};
         getAnkiFetchParams().forEach(rule => rules[rule['fetch-name']] = rule);
         for (const name of names) {
+            if (!rules?.[name]) {
+                console.log('action ', name, ' not exist');
+                continue;
+            }
             try {
-                if (rules?.[name]) {
-                    if (async) {
-                        actionHelper.executeAction(rules[name], null, null, null, vars);
-                    } else {
-                        await actionHelper.executeAction(rules[name], null, null, null, vars);
-                    }
+                if (async) {
+                    actionHelper.executeAction(rules[name], null, null, null, vars);
+                } else {
+                    await actionHelper.executeAction(rules[name], null, null, null, vars);
                 }
             } catch (e) {
                 console.log('execute action', name, 'error:', e);

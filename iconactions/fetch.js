@@ -375,7 +375,14 @@
 
         async getMultiVars(el, rules, fetchConf, vars = {}) {
             for (const item of rules) {
-                await this.getVars(el, item, fetchConf, el, vars, vars);
+                const param = {
+                    rule: item, beforeQueryEle: el,
+                    fetchParam: fetchConf, vars, from: el, globalVars: vars, parentVars: vars
+                }
+                await this.getVars(el, item, param);
+                if (param?.stopProcess) {
+                    return vars;
+                }
             }
             return vars
         },
@@ -554,11 +561,18 @@
             }
             vars[name] = value;
             vars[name] = await this.handItems(rule?.['replacement-items'], value, param);
+            if (param?.stopProcess) {
+                return vars[name];
+            }
             let symbolTable = vars;
             if (rule?.children?.length > 0) {
                 symbolTable = rule.childUseIndependentSymbol ? {...vars} : vars;
                 for (const item of rule?.children ?? []) {
-                    children[item['super-fetch-name']] = await this.getVars(el, item, param.fetchParam, param.from, symbolTable, param.globalVars, vars);
+                    const p = {...param, vars: symbolTable, parentVars: vars};
+                    children[item['super-fetch-name']] = await this.getVars(el, item, p);
+                    if (p?.stopProcess) {
+                        return vars[name];
+                    }
                 }
             }
             if (vars[name] && rule?.['fetch-format']) {
@@ -570,9 +584,12 @@
         async handleVars(rule, name, vars, param) {
             vars[name] = vars[name] ?? this.getDefVars(rule['default-value'], vars);
             vars[name] = await this.handItems(rule['replacement-items'], vars[name], param);
+            if (param?.stopProcess) {
+                return vars[name];
+            }
             if (rule.multiple_child && rule?.children?.length > 0) {
                 if (vars[name] instanceof NodeList && vars[name].length > 0) {
-                    await this.queryChildrenElements(vars[name], vars, name, param)
+                    await this.queryChildrenElements(vars[name], vars, name, param);
                     return vars[name];
                 }
                 const set = new Set(), arr = [];
@@ -593,9 +610,13 @@
                         val['@i@'] = i;
                         val[name] = v;
                         const childName = child['super-fetch-name'];
-                        val[childName] = await this.handleVars(child, childName, val, {
+                        const p = {
                             ...param, vars: val, rule: child, parentVars: vars,
-                        });
+                        };
+                        val[childName] = await this.handleVars(child, childName, val, p);
+                        if (p?.stopProcess) {
+                            return vars[name];
+                        }
                     }
                     if (rule?.['fetch-format']) {
                         val[name] = this.replaceVars2Format(val, (rule['fetch-format']));
@@ -616,12 +637,16 @@
                     symbolTable = rule.childUseIndependentSymbol ? {...vars} : vars;
                     for (const child of rule.children) {
                         const childName = child['super-fetch-name'];
-                        vars[childName] = await this.handleVars(child, childName, symbolTable, {
+                        const p = {
                             ...param,
                             vars: symbolTable,
                             parentVars: vars,
                             rule: child
-                        });
+                        }
+                        vars[childName] = await this.handleVars(child, childName, symbolTable, p);
+                        if (p?.stopProcess) {
+                            return vars[name];
+                        }
                     }
                 }
                 if (rule['fetch-format']) {
@@ -643,6 +668,9 @@
                 const r = await this.parseVar(v, name, ell, rule, {
                     ...param, vars: v, parentVars: vars
                 });
+                if (param?.stopProcess) {
+                    return
+                }
                 if (rule?.['fetch-repeat'] && s.has(r)) {
                     continue;
                 }
@@ -655,11 +683,10 @@
         },
 
         // fetch vars
-        async getVars(ele, rule, fetchConf, from, vars = {}, globalVars = vars, parentVars = vars) {
-            const name = rule['super-fetch-name'], param = {
-                rule, beforeQueryEle: ele,
-                fetchParam: fetchConf, vars, from, globalVars, parentVars
-            };
+        async getVars(ele, rule, param) {
+            param.rule = rule;
+            const name = rule['super-fetch-name'];
+            const {vars, fetchParam: fetchConf, from, globalVars} = param;
             if (rule.cached && globalVars.hasOwnProperty(name)) {
                 vars[name] = globalVars[name];
                 return vars[name];
@@ -675,7 +702,11 @@
             } else if (el instanceof NodeList && el.length > 0) {
                 await this.queryChildrenElements(el, vars, name, param)
             } else {
-                await this.parseVar(vars, name, el, rule, {...param, parentVars: vars});
+                const p = {...param, parentVars: vars};
+                await this.parseVar(vars, name, el, rule, p);
+                if (p?.stopProcess) {
+                    param.stopProcess = true;
+                }
             }
             if (rule.cached) {
                 globalVars[name] = vars[name];
@@ -742,6 +773,25 @@
                 hadSelected.push(...newTags);
                 addNewTags(tags, hadSelected);
                 tags.val(hadSelected).trigger('change');
+            }
+        },
+
+        extractHandlers(param, option = param.handlers.length) {
+            const buildFn = handlers => {
+                return async (value, item, param) => {
+                    return await superFetchHook.fetchActionHelper.handItems(handlers, value, param);
+                }
+            }
+            switch (typeof option) {
+                case "number":
+                    return buildFn(param.handlers.splice(0, option));
+                case "function":
+                    return buildFn(option(param));
+                case "string":
+                    const i = param.handlers.findIndex(value => value?.rangeHandle === option);
+                    return buildFn(param.handlers.splice(0, i > -1 ? i : param.handlers.length));
+                default:
+                    return buildFn(param.handlers);
             }
         }
     };

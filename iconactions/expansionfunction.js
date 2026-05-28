@@ -25,7 +25,8 @@
         'haveReturn-desc': '替换值项为程序路径，模式项为参数,[arg1,arg2],{}使用变量',
         'cmdNoReturn': '无需返回值',
         'ifBranch': '简单的if分支',
-        'break': '中断',
+        'break': '中断当前项的所有值操作',
+        'stopProcess': '结束整个操作',
         'include': '包含',
         'strRegexTest': '字符串正则测试',
         'v1': '值1,可为变量',
@@ -128,6 +129,16 @@
                 li.querySelectorAll('.fetch-replacement-target ~:not(button)').forEach(el => el.remove());
                 [replaceValue, pattern].reduce((pre, cur) => pre.insertAdjacentElement('afterend', cur),
                     li.querySelector('.fetch-replacement-target'));
+            }
+        },
+        stopProcess: {
+            fn: (value, item, param) => {
+                item.break = true;
+                param.stopProcess = true;
+                return value;
+            },
+            show: (li, vars) => {
+                superFetchHook.valueHandlers.ifBranch.handlers.break.show(li, vars);
             }
         },
 
