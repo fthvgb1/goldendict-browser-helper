@@ -173,10 +173,9 @@
             datum.actionNames = $(li.querySelector('.actionNames')).val();
         },
         domLoadedRender: [],
-        renderHook(html, vars, ev) {
-            const lii = html
-            this.renderHookX(html, vars);
-            const fn = (li = lii) => {
+        renderHook(li, vars, ev) {
+            this.renderHookX(li, vars);
+            const fn = () => {
                 vars.actionNames = vars.actionNames ? vars.actionNames : [];
                 const select = li.querySelector('.actionNames');
                 const select2 = $(select);
@@ -215,7 +214,7 @@
                 select2.val(vars.actionNames).trigger('change');
             };
             !ev && this.domLoadedRender.push(fn);
-            ev && fn(html);
+            ev && fn();
         },
         renderHookX: superFetchHook.simpleValueHandlerHelper.buildFieldRender({
             mountElementSelector: '.handleType',
