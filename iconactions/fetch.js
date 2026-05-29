@@ -66,7 +66,7 @@
             };
             let type = attr.type;
             if ('select' === attr.type) {
-                value = attr.getOptions?.(value);
+                value = attr.getOptions?.(value) ?? '';
             } else {
                 'textarea' !== attr.type && (type = 'input');
                 attr.attrs.type = attr.type;
@@ -1208,6 +1208,13 @@
         if (!ev.target.checked) {
             return;
         }
+        iterateObjByKey(valueHandlers, (k, v) => {
+            if (!v?.domLoadedRender) {
+                return
+            }
+            v?.domLoadedRender?.forEach(v => v());
+            v.domLoadedRender = [];
+        }, false);
         evtFn.autoAddWidth();
         setEleDrag(setting, '.fetch-item');
         setEleDrag(setting, '.fetch-replacement-item');

@@ -172,52 +172,57 @@
         form(li, datum) {
             datum.actionNames = $(li.querySelector('.actionNames')).val();
         },
-        renderHook(li, vars) {
-            this.renderHookX(li, vars);
-            const select = li.querySelector('.actionNames');
-            const select2 = $(select);
-            select2.select2({
-                placeholder: lang('actionNames'),
-                data: (() => {
-                    const arr = getAnkiFetchParams().filterAndMapX(item => {
-                        const name = item['fetch-name']
-                        if (vars.actionNames.includes(name)) {
-                            return false
-                        }
-                        return {
+        domLoadedRender: [],
+        renderHook(html, vars, ev) {
+            const lii = html.children[0];
+            this.renderHookX(html, vars);
+            const fn = (li = lii) => {
+                vars.actionNames = vars.actionNames ? vars.actionNames : [];
+                const select = li.querySelector('.actionNames');
+                const select2 = $(select);
+                select2.select2({
+                    placeholder: lang('actionNames'),
+                    data: (() => {
+                        const arr = getAnkiFetchParams().filterAndMapX(item => {
+                            const name = item['fetch-name']
+                            if (vars.actionNames.includes(name)) {
+                                return false
+                            }
+                            return {
+                                id: name,
+                                text: name
+                            }
+                        });
+                        arr.push(...vars.actionNames.map(name => ({
                             id: name,
                             text: name
-                        }
-                    });
-                    arr.push(...vars.actionNames.map(name => ({
-                        id: name,
-                        text: name
-                    })));
-                    return arr;
-                })(),
-                multiple: true,
-                allowClear: true,
-                tags: true,
-            });
-            select2.on('select2:select', evt => {
-                const val = select2.val(), name = evt.params.data.id;
-                val.push(name);
-                const o = evt.params.data.element;
-                const option = new Option(name, name, true, true);
-                o.remove();
-                select2.append(option);
-                select2.val(val).trigger('change');
-            });
-            select2.val(vars.actionNames).trigger('change');
+                        })));
+                        return arr;
+                    })(),
+                    multiple: true,
+                    allowClear: true,
+                    tags: true,
+                });
+                select2.on('select2:select', evt => {
+                    const val = select2.val(), name = evt.params.data.id;
+                    val.push(name);
+                    const o = evt.params.data.element;
+                    const option = new Option(name, name, true, true);
+                    o.remove();
+                    select2.append(option);
+                    select2.val(val).trigger('change');
+                });
+                select2.val(vars.actionNames).trigger('change');
+            };
+            !ev && this.domLoadedRender.push(fn);
+            ev && fn(html);
         },
         renderHookX: superFetchHook.simpleValueHandlerHelper.buildFieldRender({
             mountElementSelector: '.handleType',
             fields: {
                 actionNames: {
                     type: 'select',
-                    getOptions(value) {
-                        return [];
-                    },
+
                     attrs: {
                         className: 'actionNames', multiple: 'multiple'
                     }
