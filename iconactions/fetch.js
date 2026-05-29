@@ -366,6 +366,9 @@
                         continue;
                     }
                     const varss = await this.getMultiVars(el, rules, item, shareVar ? vars : {...this.global});
+                    if (varss?.stopProcess) {
+                        return;
+                    }
                     const format = item['fetch-format'] ? item['fetch-format'] : iterateObjByKey(varss, k => (k.endsWith('-ele') || this.global[k]) ? false : `{${k}}`).join('');
                     const value = this.replaceVars2Format(varss, format);
                     this.setValue(target, value, item);
@@ -381,6 +384,7 @@
                 }
                 await this.getVars(el, item, param);
                 if (param?.stopProcess) {
+                    vars.stopProcess = true;
                     return vars;
                 }
             }

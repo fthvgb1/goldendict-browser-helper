@@ -536,6 +536,9 @@
                 } else {
                     await actionHelper.executeAction(rules[name], null, null, null, vars);
                 }
+                if (vars?.stopProcess) {
+                    return;
+                }
             } catch (e) {
                 console.log('execute action', name, 'error:', e);
             }

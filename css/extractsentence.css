@@ -207,6 +207,15 @@ select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAtt
     width: 4.2vw;
 }
 
+.fetch-replacement-item .select2 {
+    max-width: 18vw;
+    min-width: 18vw;
+}
+
+.fetch-replacement-item .select2 .select2-selection--multiple .select2-selection__choice__display {
+    font-size: 1.2vw;
+}
+
 .fetch-replacement-item:has(.fetch-replacement-target>option:is([value=setValue],[value=pushArrayValue]):checked) :where(.fetch-replacement-target, .fetch-replacement-value) {
     width: 4.7vw;
 }

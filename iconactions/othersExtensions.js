@@ -128,9 +128,9 @@
         },
         interval: {
             fn(value, item, param) {
-                const handlers = param.handlers.splice(0);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param);
                 param.interval = setInterval(async () => {
-                    value = await superFetchHook.fetchActionHelper.handItems(handlers, value, param);
+                    value = await fn(value, item, param);
                 }, item.intervalTime);
                 return value;
             },
@@ -157,23 +157,47 @@
 
     superFetchHook.hookLang({
         'executeActions': '执行操作',
-        'actionNames': '执行的操作名，多个用,逗号隔开',
+        'actionNames': '执行的操作名',
         'shareVars': '共享当前操作的符号表',
         'async': '异步执行',
     });
     superFetchHook.valueHandlers.executeActions = {
         async handle(item, value, param) {
-            await superFetchHook.executeActions(...item?.actionNames.split(','), item.shareVars ? param.vars : {}, item.async);
+            await superFetchHook.executeActions(...item?.actionNames, item.shareVars ? param.vars : {}, item.async);
             if (item.async || !item.shareVars) {
                 return value
             }
             return param.vars[param.rule['super-fetch-name']]
         },
-        renderHook: superFetchHook.simpleValueHandlerHelper.buildFieldRender({
+        form(li, datum) {
+            datum.actionNames = $(li.querySelector('.actionNames')).val();
+        },
+        renderHook(li, vars) {
+            this.renderHookX(li, vars);
+            const actions = $(li.querySelector('.actionNames'));
+            actions.select2({
+                placeholder: lang('actionNames'),
+                data: getAnkiFetchParams().map(item => ({
+                    id: item['fetch-name'],
+                    text: item['fetch-name']
+                })),
+                multiple: true,
+                allowClear: true,
+                tags: true
+            });
+            actions.val(vars.actionNames).trigger('change');
+        },
+        renderHookX: superFetchHook.simpleValueHandlerHelper.buildFieldRender({
             mountElementSelector: '.handleType',
             fields: {
                 actionNames: {
-                    type: 'text'
+                    type: 'select',
+                    getOptions(value) {
+                        return [];
+                    },
+                    attrs: {
+                        className: 'actionNames', multiple: 'multiple'
+                    }
                 },
                 shareVars: {
                     type: 'checkbox'
@@ -199,7 +223,7 @@
     superFetchHook.simpleValueHandlerHelper.addHandlers('simpleElementWatcher', {
         observe: {
             fn(value, item, param) {
-                const handlers = param.handlers.splice(0);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param);
                 const selector = superFetchHook.getVariable(param.vars, item.querySelector, item.querySelector, true);
                 const ele = selector instanceof Element ? selector : document.querySelector(selector);
                 if (!ele) {
@@ -208,7 +232,7 @@
                 }
                 const observer = new MutationObserver(async (mutationList) => {
                     param.vars.mutationRecord = mutationList;
-                    value = await superFetchHook.fetchActionHelper.handItems(handlers, value, param);
+                    value = await fn(value, item, param);
                 });
                 param.observer = observer;
                 observer.observe(ele, {
@@ -248,7 +272,7 @@
     }, {scope: {fetch: {fetch: '*'}}});
 
     superFetchHook.hookLang({
-        'handleMenu': 'tampermonkey菜单管理',
+        'handleMenu': 'tampermonkey菜单',
         'addMenu': '添加菜单',
         'addMenu-desc': '此项后面的操作为点击菜单的操作',
         'removeMenu': '删除菜单',
@@ -258,9 +282,9 @@
     superFetchHook.simpleValueHandlerHelper.addHandlers('handleMenu', {
         addMenu: {
             fn(value, item, param) {
-                const handlers = param.handlers.splice(0);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param);
                 window.userJSMenu[item.menuTitle] = GM_registerMenuCommand(item.menuTitle, async () => {
-                    value = await superFetchHook.fetchActionHelper.handItems(handlers, value, param);
+                    value = await fn(value, item, param);
                 }, item.accessKey);
                 return value;
             },
@@ -296,7 +320,41 @@
             }
         },
     }, {scope: {fetch: {fetch: '*'}}});
-    // todo observe element and add event
-    //superFetchHook.valueHandlers.addevent = {};
+
+    superFetchHook.hookLang({
+        'simpleEvent': '事件处理',
+        'eventIdentifier': '事件名，用于后续取消或其它操作',
+        'event': '事件',
+        'removeMenu': '删除菜单',
+        'menuTitle': '菜单标题',
+        'accessKey': '快捷键，可选',
+    });
+
+    superFetchHook.simpleValueHandlerHelper.addHandlers('simpleEvent', {
+        addEvent: {
+            fn(value, item, param) {
+
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    eventIdentifier: {
+                        type: 'text',
+                        width: '5vw'
+                    },
+                    element: {
+                        type: 'text',
+                        width: '5vw'
+                    },
+                    event: {
+                        type: 'select',
+                        getOptions(val) {
+                            return buildOption([], val)
+                        }
+                    }
+                }
+            }
+        }
+    }, {scope: {fetch: {fetch: '*'}}});
 
 })();

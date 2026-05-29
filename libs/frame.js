@@ -450,7 +450,7 @@
     function buildOption(arr, selected = '', key = 'k', val = 'v', attr = undefined) {
         const sels = new Set();
         if (Array.isArray(selected)) {
-            selected.forEach(sels.add);
+            selected.forEach(v => sels.add(v));
         } else if (selected) {
             sels.add(selected);
         }
