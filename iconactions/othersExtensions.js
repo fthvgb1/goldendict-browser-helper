@@ -174,18 +174,41 @@
         },
         renderHook(li, vars) {
             this.renderHookX(li, vars);
-            const actions = $(li.querySelector('.actionNames'));
-            actions.select2({
+            const select = li.querySelector('.actionNames');
+            const select2 = $(select);
+            select2.select2({
                 placeholder: lang('actionNames'),
-                data: getAnkiFetchParams().map(item => ({
-                    id: item['fetch-name'],
-                    text: item['fetch-name']
-                })),
+                data: (() => {
+                    const arr = getAnkiFetchParams().filterAndMapX(item => {
+                        const name = item['fetch-name']
+                        if (vars.actionNames.includes(name)) {
+                            return false
+                        }
+                        return {
+                            id: name,
+                            text: name
+                        }
+                    });
+                    arr.push(...vars.actionNames.map(name => ({
+                        id: name,
+                        text: name
+                    })));
+                    return arr;
+                })(),
                 multiple: true,
                 allowClear: true,
-                tags: true
+                tags: true,
             });
-            actions.val(vars.actionNames).trigger('change');
+            select2.on('select2:select', evt => {
+                const val = select2.val(), name = evt.params.data.id;
+                val.push(name);
+                const o = evt.params.data.element;
+                const option = new Option(name, name, true, true);
+                o.remove();
+                select2.append(option);
+                select2.val(val).trigger('change');
+            });
+            select2.val(vars.actionNames).trigger('change');
         },
         renderHookX: superFetchHook.simpleValueHandlerHelper.buildFieldRender({
             mountElementSelector: '.handleType',
@@ -325,9 +348,7 @@
         'simpleEvent': '事件处理',
         'eventIdentifier': '事件名，用于后续取消或其它操作',
         'event': '事件',
-        'removeMenu': '删除菜单',
-        'menuTitle': '菜单标题',
-        'accessKey': '快捷键，可选',
+        'bindEventElement': '绑定的元素，可为选择器或者元素变量',
     });
 
     superFetchHook.simpleValueHandlerHelper.addHandlers('simpleEvent', {
@@ -342,7 +363,7 @@
                         type: 'text',
                         width: '5vw'
                     },
-                    element: {
+                    bindEventElement: {
                         type: 'text',
                         width: '5vw'
                     },
