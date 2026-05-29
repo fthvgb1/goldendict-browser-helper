@@ -174,7 +174,7 @@
         },
         domLoadedRender: [],
         renderHook(html, vars, ev) {
-            const lii = html.children[0];
+            const lii = html
             this.renderHookX(html, vars);
             const fn = (li = lii) => {
                 vars.actionNames = vars.actionNames ? vars.actionNames : [];

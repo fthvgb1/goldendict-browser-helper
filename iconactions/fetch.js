@@ -1198,7 +1198,7 @@
 
     superFetchHook.simpleValueHandlerHelper = simpleValueHandlerHelper;
     superFetchHook.templateHelper.templateFnHook['replacement-item'] = (html, vars) => {
-        valueHandlers?.[vars.handleType]?.renderHook?.(html, vars);
+        valueHandlers?.[vars.handleType]?.renderHook?.(html.children[0], vars);
         return html;
     };
 
