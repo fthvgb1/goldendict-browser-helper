@@ -207,7 +207,7 @@ select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAtt
     width: 4.2vw;
 }
 
-.fetch-replacement-item .select2 {
+.fetch-replacement-item .actionNames + .select2 {
     max-width: 18vw;
     min-width: 18vw;
 }

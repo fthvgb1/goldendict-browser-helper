@@ -24,9 +24,13 @@
         'haveReturn': '有结果值返回调用',
         'haveReturn-desc': '替换值项为程序路径，模式项为参数,[arg1,arg2],{}使用变量',
         'cmdNoReturn': '无需返回值',
-        'ifBranch': '简单的if分支',
+        'ifBranch': '简单的if和中断',
+        'else-desc': '前一个if判断为false时执行该项后面的所有操作',
+        'endIf-desc': '可以断续执行该项后面的操作',
         'break': '中断当前项的所有值操作',
-        'stopProcess': '结束整个操作',
+        'stopProcess': '结束当前整个操作',
+        'throwException': '抛出异常信息',
+        'exceptionMessage': '异常消息，格式同打印到控制台',
         'include': '包含',
         'strRegexTest': '字符串正则测试',
         'v1': '值1,可为变量',
@@ -80,16 +84,23 @@
 
     superFetchHook.simpleValueHandlerHelper.addHandlers('ifBranch', {
         if: {
-            fn: (value, item, param) => {
+            fn: async (value, item, param) => {
                 const o = superFetchHook.valueHandlers['ifBranch'];
                 const v1 = superFetchHook.fetchActionHelper.getVar(item['v1'], param);
                 const compareType = item.compareType, compareFn = o.compareFn[compareType];
                 const v2 = superFetchHook.fetchActionHelper.getVar(item['v2'], param);
                 const valFn = o.valueType[item.valueType];
                 const r = o.noType.has(compareType) ? compareFn(v1, v2, item) : compareFn(valFn(v1), valFn(v2), item);
-                if ((item.isBreak && r) || (!item.isBreak && !r)) {
-                    item.break = true;
-                    return value;
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, p => {
+                    const elseIndex = p.handlers.findIndex(v => v.rangeHandle === 'else');
+                    if (elseIndex > -1) {
+                        return p.handlers.splice(0, elseIndex);
+                    }
+                    const endIndex = p.handlers.findIndex(v => v.rangeHandle === 'endif');
+                    return p.handlers.splice(0, endIndex > -1 ? endIndex : p.handlers.length);
+                });
+                if (r) {
+                    value = await fn(value, item, param);
                 }
                 return value;
             },
@@ -102,14 +113,15 @@
                 });
                 const v1 = o.createInput('v1', {value: vars?.['v1'] ?? ''}),
                     v2 = o.createInput('v2', {value: vars?.['v2'] ?? ''});
-                const breaks = superFetchHook.templateHelper.createElement('input', {
-                    type: 'checkbox',
-                    name: 'isBreak', className: 'show',
-                    title: lang('isBreak')
-                });
-                vars?.isBreak && (breaks.checked = true);
-                li.querySelector('.fetch-replacement-value').replaceWith(v1);
-                li.querySelector('.pattern').replaceWith(compare);
+
+                const replaceSelect = li.querySelector('.fetch-replacement-target');
+                const replaceValueEle = li.querySelector('.fetch-replacement-value');
+                if (replaceValueEle) {
+                    replaceValueEle.replaceWith(v1);
+                    li.querySelector('.pattern').replaceWith(compare);
+                } else {
+                    [v1, compare].reduce((pre, cur) => pre.insertAdjacentElement('afterend', cur), replaceSelect);
+                }
                 const valueType = superFetchHook.templateHelper.createElement('select', {
                     name: 'valueType',
                     className: 'show',
@@ -117,18 +129,47 @@
                 });
                 const pattern = superFetchHook.templateHelper.buildFormElement.input('regPattern', vars?.pattern ?? '', {className: 'show'});
 
-                [v2, pattern, valueType, breaks].reduce((pre, cur) => pre.insertAdjacentElement('afterend', cur), compare);
+                [v2, pattern, valueType].reduce((pre, cur) => pre.insertAdjacentElement('afterend', cur), compare);
+            }
+        },
+        endIf: {
+            fn: v => v,
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: {
+                        type: 'text',
+                        hook: el => el.value = 'endif',
+                        attrs: {
+                            className: 'hidden',
+                        }
+                    }
+                }
+            }
+        },
+        else: {
+            async fn(value, item, param) {
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endif');
+                value = await fn(value, item, param)
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: {
+                        type: 'text',
+                        hook: el => el.value = 'else',
+                        attrs: {
+                            className: 'hidden',
+                        }
+                    }
+                }
             }
         },
         break: {
             fn: (value, item) => (item.break = true, value),
-            show: (li, vars) => {
-                const o = superFetchHook.valueHandlers['ifBranch'];
-                const replaceValue = o.createInput('replaceValue', {className: 'fetch-replacement-value'});
-                const pattern = o.createInput('pattern', {className: 'pattern'});
-                li.querySelectorAll('.fetch-replacement-target ~:not(button)').forEach(el => el.remove());
-                [replaceValue, pattern].reduce((pre, cur) => pre.insertAdjacentElement('afterend', cur),
-                    li.querySelector('.fetch-replacement-target'));
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
             }
         },
         stopProcess: {
@@ -137,10 +178,26 @@
                 param.stopProcess = true;
                 return value;
             },
-            show: (li, vars) => {
-                superFetchHook.valueHandlers.ifBranch.handlers.break.show(li, vars);
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
             }
         },
+        throwException: {
+            fn(value, item) {
+                const err = new Error(item.exceptionMessage);
+                err.code = 'userThrow';
+                throw err;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    exceptionMessage: {
+                        type: 'text',
+                        width: '12vw',
+                    }
+                }
+            }
+        }
 
     }, {
         scope: {fetch: {fetch: '*'}},

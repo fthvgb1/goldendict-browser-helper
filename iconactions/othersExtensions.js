@@ -172,7 +172,7 @@
         form(li, datum) {
             datum.actionNames = $(li.querySelector('.actionNames')).val();
         },
-        domLoadedRender: [],
+        afterRender: [],
         renderHook(li, vars, ev) {
             this.renderHookX(li, vars);
             const fn = () => {
@@ -213,8 +213,7 @@
                 });
                 select2.val(vars.actionNames).trigger('change');
             };
-            !ev && this.domLoadedRender.push(fn);
-            ev && fn();
+            ev ? fn() : this.afterRender.push(fn);
         },
         renderHookX: superFetchHook.simpleValueHandlerHelper.buildFieldRender({
             mountElementSelector: '.handleType',

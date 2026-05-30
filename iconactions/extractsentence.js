@@ -536,10 +536,10 @@
                 } else {
                     await actionHelper.executeAction(rules[name], null, null, null, vars);
                 }
-                if (vars?.stopProcess) {
-                    return;
-                }
             } catch (e) {
+                if (e.code === 'userThrow') {
+                    throw e;
+                }
                 console.log('execute action', name, 'error:', e);
             }
         }

@@ -367,6 +367,7 @@
                     }
                     const varss = await this.getMultiVars(el, rules, item, shareVar ? vars : {...this.global});
                     if (varss?.stopProcess) {
+                        delete varss.stopProcess;
                         return;
                     }
                     const format = item['fetch-format'] ? item['fetch-format'] : iterateObjByKey(varss, k => (k.endsWith('-ele') || this.global[k]) ? false : `{${k}}`).join('');
@@ -783,6 +784,7 @@
         extractHandlers(param, option = param.handlers.length) {
             const buildFn = handlers => {
                 return async (value, item, param) => {
+                    param.handlers = handlers;
                     return await superFetchHook.fetchActionHelper.handItems(handlers, value, param);
                 }
             }
@@ -1209,11 +1211,11 @@
             return;
         }
         iterateObjByKey(valueHandlers, (k, v) => {
-            if (!v?.domLoadedRender) {
+            if (!v?.afterRender) {
                 return
             }
-            v?.domLoadedRender?.forEach(v => v());
-            v.domLoadedRender = [];
+            v?.afterRender?.forEach(v => v());
+            v.afterRender = [];
         }, false);
         evtFn.autoAddWidth();
         setEleDrag(setting, '.fetch-item');
