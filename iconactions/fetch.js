@@ -783,9 +783,12 @@
 
         extractHandlers(param, option = param.handlers.length) {
             const buildFn = handlers => {
-                return async (value, item, param) => {
+                return async value => {
+                    const handlerss = param.handlers;
                     param.handlers = handlers;
-                    return await superFetchHook.fetchActionHelper.handItems(handlers, value, param);
+                    value = await superFetchHook.fetchActionHelper.handItems(handlers, value, param);
+                    param.handlers = handlerss;
+                    return value;
                 }
             }
             switch (typeof option) {

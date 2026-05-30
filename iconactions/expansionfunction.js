@@ -101,6 +101,7 @@
                 });
                 if (r) {
                     value = await fn(value, item, param);
+                    param.handlers[0].searchValue === 'else' && (param.handlers[0].drop = true);
                 }
                 return value;
             },
@@ -150,6 +151,9 @@
         else: {
             async fn(value, item, param) {
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endif');
+                if (item?.drop) {
+                    return value;
+                }
                 value = await fn(value, item, param)
                 return value;
             },
