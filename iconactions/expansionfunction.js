@@ -27,7 +27,7 @@
         'ifBranch': '简单的if和中断',
         'else-desc': '前一个if判断为false时执行该项后面的所有操作',
         'endIf-desc': '可以断续执行该项后面的操作',
-        'break': '中断当前项的所有值操作',
+        'break': '结束当前项的后续值操作',
         'stopProcess': '结束当前整个操作',
         'throwException': '抛出异常信息',
         'exceptionMessage': '异常消息，格式同打印到控制台',
@@ -92,12 +92,13 @@
                 const valFn = o.valueType[item.valueType];
                 const r = o.noType.has(compareType) ? compareFn(v1, v2, item) : compareFn(valFn(v1), valFn(v2), item);
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param, p => {
-                    const elseIndex = p.handlers.findIndex(v => v.rangeHandle === 'else');
-                    if (elseIndex > -1) {
-                        return p.handlers.splice(0, elseIndex);
+                    for (const rangeHandleItem of ['elseif', 'else', 'endif']) {
+                        const i = p.handlers.findIndex(v => v.rangeHandle === rangeHandleItem);
+                        if (i > -1) {
+                            return p.handlers.splice(0, i);
+                        }
                     }
-                    const endIndex = p.handlers.findIndex(v => v.rangeHandle === 'endif');
-                    return p.handlers.splice(0, endIndex > -1 ? endIndex : p.handlers.length);
+                    return p.handlers.splice(0, p.handlers.length);
                 });
                 if (r) {
                     value = await fn(value, item, param);
@@ -105,7 +106,7 @@
                 }
                 return value;
             },
-            show(li, vars) {
+            show(li, vars, fn = null) {
                 const o = superFetchHook.valueHandlers['ifBranch'];
                 const compare = superFetchHook.templateHelper.createElement('select', {
                     name: 'compareType',
@@ -114,15 +115,9 @@
                 });
                 const v1 = o.createInput('v1', {value: vars?.['v1'] ?? ''}),
                     v2 = o.createInput('v2', {value: vars?.['v2'] ?? ''});
-
+                li.querySelectorAll('.fetch-replacement-target ~ :not(button)').forEach(el => el.remove());
                 const replaceSelect = li.querySelector('.fetch-replacement-target');
-                const replaceValueEle = li.querySelector('.fetch-replacement-value');
-                if (replaceValueEle) {
-                    replaceValueEle.replaceWith(v1);
-                    li.querySelector('.pattern').replaceWith(compare);
-                } else {
-                    [v1, compare].reduce((pre, cur) => pre.insertAdjacentElement('afterend', cur), replaceSelect);
-                }
+                [v1, compare].reduce((pre, cur) => pre.insertAdjacentElement('afterend', cur), replaceSelect);
                 const valueType = superFetchHook.templateHelper.createElement('select', {
                     name: 'valueType',
                     className: 'show',
@@ -131,6 +126,22 @@
                 const pattern = superFetchHook.templateHelper.buildFormElement.input('regPattern', vars?.pattern ?? '', {className: 'show'});
 
                 [v2, pattern, valueType].reduce((pre, cur) => pre.insertAdjacentElement('afterend', cur), compare);
+                fn?.()
+            }
+        },
+        elseif: {
+            async fn(value, item, param) {
+                return await superFetchHook.valueHandlers.ifBranch.handlers.if.fn(value, item, param)
+            },
+            show: (li, vars) => {
+                superFetchHook.valueHandlers.ifBranch.handlers.if.show(li, vars, () => {
+                    li.querySelector('[name=valueType]').insertAdjacentElement('afterend', superFetchHook.templateHelper.createElement('input', {
+                        type: 'text',
+                        name: 'rangeHandle',
+                        className: 'hidden',
+                        value: 'elseif',
+                    }))
+                })
             }
         },
         endIf: {

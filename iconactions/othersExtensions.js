@@ -237,17 +237,31 @@
     }
 
     superFetchHook.hookLang({
-        'simpleElementWatcher': '简单元素变化监听',
+        'simpleWatcher': '简单watcher',
+        'urlWatcher': 'url变化',
         'querySelector': '选择器或者元素的变量名',
         'subtree': 'subtree 监听元素的整个子树属性变化',
         'childList': 'childList 元素发生的节点的新增与删除',
         'attributes': 'attributes 节点属性值的变化',
-        'observe': '开始监听',
+        'elementObserve': '元素监听',
         'observe-desc': '将执行此项后面对值处理的所有操作',
-        'disconnectObserve': '停止监听',
+        'disconnectObserve': '元素停止监听',
     });
-    superFetchHook.simpleValueHandlerHelper.addHandlers('simpleElementWatcher', {
-        observe: {
+    superFetchHook.simpleValueHandlerHelper.addHandlers('simpleWatcher', {
+        urlWatcher: {
+            fn(value, item, param) {
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param);
+                navigation.addEventListener("navigate", async e => {
+                    param.vars.navigateEvt = e;
+                    value = await fn(value);
+                });
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+            }
+        },
+        elementObserve: {
             fn(value, item, param) {
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param);
                 const selector = superFetchHook.getVariable(param.vars, item.querySelector, item.querySelector, true);
@@ -258,7 +272,7 @@
                 }
                 const observer = new MutationObserver(async (mutationList) => {
                     param.vars.mutationRecord = mutationList;
-                    value = await fn(value, item, param);
+                    value = await fn(value);
                 });
                 param.observer = observer;
                 observer.observe(ele, {
@@ -302,14 +316,15 @@
         'addMenu': '添加菜单',
         'addMenu-desc': '此项后面的操作为点击菜单的操作',
         'removeMenu': '删除菜单',
-        'menuTitle': '菜单标题',
+        'menuTitle': '菜单标题,可使用{变量}',
         'accessKey': '快捷键，可选',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('handleMenu', {
         addMenu: {
             fn(value, item, param) {
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param);
-                window.userJSMenu[item.menuTitle] = GM_registerMenuCommand(item.menuTitle, async () => {
+                const menu = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.menuTitle);
+                window.userJSMenu[menu] = GM_registerMenuCommand(menu, async () => {
                     value = await fn(value, item, param);
                 }, item.accessKey);
                 return value;
@@ -330,8 +345,8 @@
             }
         },
         removeMenu: {
-            fn(value, item) {
-                GM_unregisterMenuCommand(window.userJSMenu[item.menuTitle]);
+            fn(value, item, param) {
+                GM_unregisterMenuCommand(window.userJSMenu[superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.menuTitle)]);
                 return value;
             },
             param: {

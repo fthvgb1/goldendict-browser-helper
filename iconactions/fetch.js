@@ -192,6 +192,10 @@
     };
 
 
+    superFetchHook.hookLang({
+        'stringConjunction': '字符串拼接',
+        'format': '可使用{变量}',
+    });
     const valueHandlers = {
         replacement: {
             text: mapTitle['replacement'],
@@ -202,6 +206,21 @@
                 }
                 return actionHelper.replaceString(item, value, eleParam?.vars)
             }
+        },
+        stringConjunction: {
+            handle(item, value, param) {
+                return actionHelper.replaceVars2Format(param.vars, item.format)
+            },
+            renderHook: simpleValueHandlerHelper.buildFieldRender({
+                    mountElementSelector: '.handleType',
+                    fields: {
+                        format: {
+                            type: 'text',
+                            width: '17vw'
+                        }
+                    }
+                }
+            )
         },
 
         'remove element': {
