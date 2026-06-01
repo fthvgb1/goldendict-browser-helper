@@ -53,16 +53,7 @@
             },
             key: "v"
         },
-        ...(() => {
-            let menus = customizeMenu(location.href);
-            navigation.addEventListener("navigate", e => {
-                const newMenu = customizeMenu(e.destination.url);
-                arrayDiff(newMenu, menus, (a, b) => a.title === b.title).forEach(menu => window.userJSMenu[menu.title] = GM_registerMenuCommand(menu.title, menu.action));
-                arrayDiff(menus, newMenu, (a, b) => a.title === b.title).forEach(v => GM_unregisterMenuCommand(window.userJSMenu[v.title]));
-                menus = newMenu;
-            });
-            return menus
-        })(),
+        ...customizeMenu(location.href),
         /*{
             title: "sh",
             action: {

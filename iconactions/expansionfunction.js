@@ -84,6 +84,7 @@
 
     superFetchHook.simpleValueHandlerHelper.addHandlers('ifBranch', {
         if: {
+            identifier: new Set(['if', 'elseif', 'else', 'endif']),
             fn: async (value, item, param) => {
                 const o = superFetchHook.valueHandlers['ifBranch'];
                 const v1 = superFetchHook.fetchActionHelper.getVar(item['v1'], param);
@@ -91,10 +92,12 @@
                 const v2 = superFetchHook.fetchActionHelper.getVar(item['v2'], param);
                 const valFn = o.valueType[item.valueType];
                 const r = o.noType.has(compareType) ? compareFn(v1, v2, item) : compareFn(valFn(v1), valFn(v2), item);
+                // todo nest
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param, p => {
-                    for (const rangeHandleItem of ['elseif', 'else', 'endif']) {
-                        const i = p.handlers.findIndex(v => v.rangeHandle === rangeHandleItem);
-                        if (i > -1) {
+                    let i = -1;
+                    for (const handler of param.handlers) {
+                        ++i;
+                        if (superFetchHook.valueHandlers.ifBranch.handlers.if.identifier.has(handler?.rangeHandle)) {
                             return p.handlers.splice(0, i);
                         }
                     }
@@ -102,11 +105,14 @@
                 });
                 if (r) {
                     value = await fn(value, item, param);
-                    param.handlers[0].searchValue === 'else' && (param.handlers[0].drop = true);
+                    if (param.handlers[0]?.rangeHandle === 'else') {
+                        const h = param.handlers[0];
+                        h.drop = () => (delete h.drop, true);
+                    }
                 }
                 return value;
             },
-            show(li, vars, fn = null) {
+            show(li, vars, rangeHandle = 'if') {
                 const o = superFetchHook.valueHandlers['ifBranch'];
                 const compare = superFetchHook.templateHelper.createElement('select', {
                     name: 'compareType',
@@ -124,9 +130,11 @@
                     innerHTML: buildOption(Object.keys(o.valueType).map(v => [v, lang(v)]), vars?.valueType, 0, 1),
                 });
                 const pattern = superFetchHook.templateHelper.buildFormElement.input('regPattern', vars?.pattern ?? '', {className: 'show'});
-
-                [v2, pattern, valueType].reduce((pre, cur) => pre.insertAdjacentElement('afterend', cur), compare);
-                fn?.()
+                const handleRange = superFetchHook.templateHelper.buildFormElement.input('rangeHandle', rangeHandle, {
+                    className: 'hidden',
+                    type: 'text'
+                });
+                [v2, pattern, valueType, handleRange].reduce((pre, cur) => pre.insertAdjacentElement('afterend', cur), compare);
             }
         },
         elseif: {
@@ -134,35 +142,13 @@
                 return await superFetchHook.valueHandlers.ifBranch.handlers.if.fn(value, item, param)
             },
             show: (li, vars) => {
-                superFetchHook.valueHandlers.ifBranch.handlers.if.show(li, vars, () => {
-                    li.querySelector('[name=valueType]').insertAdjacentElement('afterend', superFetchHook.templateHelper.createElement('input', {
-                        type: 'text',
-                        name: 'rangeHandle',
-                        className: 'hidden',
-                        value: 'elseif',
-                    }))
-                })
-            }
-        },
-        endIf: {
-            fn: v => v,
-            param: {
-                mountElementSelector: '.fetch-replacement-target',
-                fields: {
-                    rangeHandle: {
-                        type: 'text',
-                        hook: el => el.value = 'endif',
-                        attrs: {
-                            className: 'hidden',
-                        }
-                    }
-                }
+                superFetchHook.valueHandlers.ifBranch.handlers.if.show(li, vars, 'elseif');
             }
         },
         else: {
             async fn(value, item, param) {
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endif');
-                if (item?.drop) {
+                if (item?.drop?.()) {
                     return value;
                 }
                 value = await fn(value, item, param)
@@ -174,6 +160,21 @@
                     rangeHandle: {
                         type: 'text',
                         hook: el => el.value = 'else',
+                        attrs: {
+                            className: 'hidden',
+                        }
+                    }
+                }
+            }
+        },
+        endif: {
+            fn: v => v,
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: {
+                        type: 'text',
+                        hook: el => el.value = 'endif',
                         attrs: {
                             className: 'hidden',
                         }
