@@ -55,6 +55,10 @@
         'pushArrayValue': '向数组末尾添加一个值',
         'pushArrayArray': '向数组末尾添加一个数组内的值',
         'func': '函数',
+        'breakIterator': '中断子项查queryAll或遍历',
+        'breakChildrenHandle': '中断后续子项',
+        'endRangeHandle': '结束前一个作用域',
+        'endRangeHandle-desc': '用于结束如url，元素监听等',
     });
     const lang = superFetchHook.lang, getValue = superFetchHook.getVariable;
     superFetchHook.mergeMap(superFetchHook.valueHandlers.simpleValueHandlers.handlers, {
@@ -188,6 +192,18 @@
                 mountElementSelector: '.fetch-replacement-target',
             }
         },
+        breakIterator: {
+            fn: (value, item, param) => (item.break = true, param.breakIterator = true, value),
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+            }
+        },
+        breakChildrenHandle: {
+            fn: (value, item, param) => (item.break = true, param.breakChildrenHandle = true, value),
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+            }
+        },
         stopProcess: {
             fn: (value, item, param) => {
                 item.break = true;
@@ -213,8 +229,22 @@
                     }
                 }
             }
+        },
+        endRangeHandle: {
+            fn: v => v,
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: {
+                        type: 'text',
+                        hook: el => el.value = 'endRangeHandle',
+                        attrs: {
+                            className: 'hidden',
+                        }
+                    }
+                }
+            }
         }
-
     }, {
         scope: {fetch: {fetch: '*'}},
         createInput(name, attr = {}) {

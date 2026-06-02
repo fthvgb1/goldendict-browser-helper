@@ -246,21 +246,49 @@
         'elementObserve': '元素监听',
         'observe-desc': '将执行此项后面对值处理的所有操作',
         'disconnectObserve': '元素停止监听',
+        'urlWatcherName': 'watcher名,用于结束监听',
+        'cancelUrlWatcher': '取消Url监听',
+        'elementObserveName': 'observe名称，用于取消observe',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('simpleWatcher', {
         urlWatcher: {
             fn(value, item, param) {
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param);
-                navigation.addEventListener("navigate", async e => {
+                const urlWatcher = async e => {
                     param.vars.navigateEvt = e;
                     value = await fn(value);
-                });
+                };
+                setMapVal(`urlWatcher.${item.urlWatcherName}`, urlWatcher, window);
+                navigation.addEventListener("navigate", urlWatcher);
                 return value;
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    urlWatcherName: {
+                        type: 'text',
+                        width: '7vw'
+                    }
+                }
             }
         },
+        cancelUrlWatcher: {
+            fn(value, item) {
+                const watcher = superFetchHook.getVarVal(window, `urlWatcher.${item.urlWatcherName}`);
+                watcher && Navigaion.removeEventListener('navigate', watcher);
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    urlWatcherName: {
+                        type: 'text',
+                        width: '7vw'
+                    }
+                }
+            },
+        },
+
         elementObserve: {
             fn(value, item, param) {
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param);
@@ -274,7 +302,7 @@
                     param.vars.mutationRecord = mutationList;
                     value = await fn(value);
                 });
-                param.observer = observer;
+                setMapVal(`elementObserve.${item.elementObserveName}`, observer, window);
                 observer.observe(ele, {
                     subtree: item.subtree,
                     childList: item.childList,
@@ -285,9 +313,13 @@
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
+                    elementObserveName: {
+                        type: 'text',
+                        width: '4vw',
+                    },
                     querySelector: {
                         type: 'text',
-                        width: '8vw',
+                        width: '5vw',
                     },
                     subtree: {
                         type: 'checkbox'
@@ -302,11 +334,18 @@
             }
         },
         disconnectObserve: {
-            fn(value, item, param) {
-                param?.observer && param.observer.disconnect();
+            fn(value, item) {
+                superFetchHook.getVarVal(window, `elementObserve.${item.elementObserveName}`)?.disconnect?.();
+                return value;
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    elementObserveName: {
+                        type: 'text',
+                        width: '5vw',
+                    },
+                }
             }
         }
     }, {scope: {fetch: {fetch: '*'}}});

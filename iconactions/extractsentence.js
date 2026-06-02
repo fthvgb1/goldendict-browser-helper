@@ -761,7 +761,6 @@
                 attr.title = attr?.title ?? mapTitle[`${name}-desc`] ?? mapTitle[name] ?? name;
                 attr.placeholder = attr.title;
                 const input = templateHelper.createElement('input', {name, className: name, ...attr});
-                'text' === attr.type && (value = htmlSpecial(value));
                 'number' === attr.type && (value = value ? value : 0);
                 input.value = value;
                 return input

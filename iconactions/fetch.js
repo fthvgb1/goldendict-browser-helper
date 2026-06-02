@@ -628,19 +628,29 @@
                         val[`${name}-$key`] = v;
                         v = vars[name][v];
                     }
-                    let i = -1;
+                    let i = -1, breakIterator = false;
                     for (const child of rule.children) {
                         ++i;
-                        val['@i@'] = i;
+                        val[`${name}-index`] = i;
                         val[name] = v;
                         const childName = child['super-fetch-name'];
                         const p = {
                             ...param, vars: val, rule: child, parentVars: vars,
                         };
                         val[childName] = await this.handleVars(child, childName, val, p);
+                        if (p?.breakIterator) {
+                            breakIterator = true;
+                            break;
+                        }
+                        if (p?.breakChildrenHandle) {
+                            break
+                        }
                         if (p?.stopProcess) {
                             return vars[name];
                         }
+                    }
+                    if (breakIterator) {
+                        break;
                     }
                     if (rule?.['fetch-format']) {
                         val[name] = this.replaceVars2Format(val, (rule['fetch-format']));
@@ -673,6 +683,12 @@
                         }
                     }
                 }
+                /* if(param?.afterChildren?.length>0){
+                     param.vars= symbolTable;
+                     param.handlers = param.afterChildren;
+                     vars[name] =await this.handItems(param.afterChildren, vars[name], param);
+                     param.vars = vars;
+                 }*/
                 if (rule['fetch-format']) {
                     vars[name] = this.replaceVars2Format(symbolTable, rule['fetch-format']);
                 }
@@ -688,7 +704,7 @@
             for (const ell of el) {
                 ++i;
                 const v = {...vars};
-                v['@i@'] = i;
+                v[`${name}-index`] = i;
                 const r = await this.parseVar(v, name, ell, rule, {
                     ...param, vars: v, parentVars: vars
                 });
@@ -800,7 +816,7 @@
             }
         },
 
-        extractHandlers(param, option = param.handlers.length) {
+        extractHandlers(param, option = 'endRangeHandle') {
             const buildFn = handlers => {
                 return async value => {
                     const handlerss = param.handlers;
@@ -810,17 +826,15 @@
                     return value;
                 }
             }
-            switch (typeof option) {
-                case "number":
-                    return buildFn(param.handlers.splice(0, option));
-                case "function":
-                    return buildFn(option(param));
-                case "string":
+            const m = {
+                number: () => buildFn(param.handlers.splice(0, option)),
+                function: () => buildFn(option(param)),
+                string: () => {
                     const i = param.handlers.findIndex(value => value?.rangeHandle === option);
                     return buildFn(param.handlers.splice(0, i > -1 ? i : param.handlers.length));
-                default:
-                    return buildFn(param.handlers);
+                }
             }
+            return m[typeof option]?.() ?? buildFn(param.handlers);
         }
     };
 
