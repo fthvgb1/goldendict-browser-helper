@@ -3,8 +3,8 @@
         'capitalize': '首字母大写',
         'htmlFns': 'html相关',
         'toElement': '字符转成元素对象',
-        'getAttribute': '获取元素属性',
-        'getAttribute-desc': '此时替换值为属性名，模式为参数，多个用|分隔，如果是方法名的话就返回执行结果',
+        'getElementAttribute': '获取元素属性',
+        'getElementAttribute-desc': '此时替换值为属性名，模式为参数，多个用|分隔，如果是方法名的话就返回执行结果',
         'getComputedStyle': '获取元素样式',
         'getComputedStyle-desc': '获取元素样式，此时替换为属性名，模式为伪类',
         'valueRelation': '值相关',
@@ -69,19 +69,178 @@
         jsonDecode: JSON.parse,
     });
 
+    superFetchHook.hookLang({
+        stringToElement: '字符串转元素',
+        elementIdentOuterHTML: '字符串可使用{变量}，为空表示使前变量',
+        attrName: '属性名，如果为方法名，可以联合参数使用',
+        parameter: '参数，多个用|分隔',
+        styleAttrName: '样式属性名，伪类用|隔开',
+        elementVarName: '元素',
+        insertElement: '插入元素',
+        beforebegin: '元素自身之前',
+        afterbegin: '第一个子元素之前',
+        beforeend: '最后一个子元素之后',
+        afterend: '元素自身之后',
+        position: '位置',
+        insertElementType: '插入的类型',
+        insertedElement: '插入的元素',
+        element: '元素',
+        deleteElement: '删除元素',
+        deleteElementSelector: '要删除元素的选择器,为空将删除自身',
+    });
     superFetchHook.simpleValueHandlerHelper.addHandlers('htmlFns', {
-        toElement: s => superFetchHook.templateHelper.createElement('div', s).children[0],
-        getAttribute(el, item) {
-            const v = getValue(el, item.replaceValue);
-            if ('function' !== typeof v) {
-                return v
+        stringToElement: {
+            fn(value, item, param) {
+                const html = item.elementIdentOuterHTML ? superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.elementIdentOuterHTML) : value;
+                return superFetchHook.templateHelper.createElement('div', html).children[0]
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    elementIdentOuterHTML: {
+                        type: 'text',
+                        width: '10vw',
+                    }
+                }
             }
-            const call = v.bind(el);
-            const p = item.pattern ? item.pattern.split('|') : '';
-            return p ? call(...p) : call();
         },
-        getComputedStyle(el, item) {
-            return getValue(getComputedStyle(el, item.pattern ? item.pattern : null), item.replaceValue)
+        insertElement: {
+            fn(value, item, param) {
+                const ele = getValue(param.vars, item.elementVarName ? item.elementVarName : param.rule['super-fetch-name']);
+                if (!(ele instanceof Element)) {
+                    console.log('can parse element', value, item);
+                    return value;
+                }
+                let insertedElement = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.insertedElement);
+                if ('element' === item.insertElementType) {
+                    insertedElement = getValue(param.vars, item.insertedElement);
+                    if (!(insertedElement instanceof Element)) {
+                        console.log('can parse insertedElement', value, item);
+                        return value;
+                    }
+                }
+                const m = {
+                    text: 'insertAdjacentText',
+                    html: 'insertAdjacentHTML',
+                    element: 'insertAdjacentElement',
+                }
+                ele[m[item.insertElementType]](item.position, insertedElement);
+                return value;
+            },
+            show(li) {
+                li.style.maxWidth = '31vw';
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    elementVarName: {
+                        type: 'text',
+                        width: '5vw',
+                    },
+                    position: {
+                        type: 'select',
+                        width: '6vw',
+                        getOptions(v) {
+                            const arr = ['beforebegin', 'afterbegin', 'beforeend', 'afterend'].map(p => [p, lang(p)]);
+                            return buildOption(arr, v, 0, 1);
+                        }
+                    },
+                    insertElementType: {
+                        type: 'select',
+                        width: '4vw',
+                        getOptions(v) {
+                            return buildOption(['text', 'html', 'element'].map(e => [e, lang(e)]), v, 0, 1)
+                        }
+                    },
+                    insertedElement: {
+                        type: 'text',
+                        width: '23vw',
+                    }
+                }
+            }
+        },
+
+        deleteElement: {
+            fn(value, item, param) {
+                const ele = getValue(param.vars, item.elementVarName ? item.elementVarName : param.rule['super-fetch-name']);
+                if (!(ele instanceof Element)) {
+                    console.log('can parse element', value, item);
+                    return value;
+                }
+                item.deleteElementSelector ? ele.querySelectorAll(item.deleteElementSelector).forEach(el => el.remove()) : ele.remove();
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    elementVarName: {
+                        type: 'text',
+                        width: '4vw',
+                    },
+                    deleteElementSelector: {
+                        type: 'text',
+                        width: '4vw',
+                    }
+                }
+            }
+        },
+
+        getElementAttribute: {
+            fn(value, item, param) {
+                const ele = getValue(param.vars, item.elementVarName ? item.elementVarName : param.rule['super-fetch-name']);
+                if (!(ele instanceof Element)) {
+                    console.log('can parse element', value, item);
+                    return value;
+                }
+                const v = getValue(ele, item.attrName);
+                if ('function' !== typeof v) {
+                    return v
+                }
+                const call = v.bind(value);
+                const p = item.parameter ? item.parameter.split('|') : '';
+                return p ? call(...p) : call();
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    elementVarName: {
+                        type: 'text',
+                        width: '3vw',
+                    },
+                    attrName: {
+                        type: 'text',
+                        width: '5vw',
+                    },
+                    parameter: {
+                        type: 'text',
+                        width: '3.8vw'
+                    }
+                }
+            }
+        },
+        getComputedStyle: {
+            fn(value, item, param) {
+                const ele = superFetchHook.getVariable(param.vars, item.elementVarName ? item.elementVarName : param.rule['super-fetch-name']);
+                if (!(value instanceof Element)) {
+                    console.log('can parse element', value, item);
+                    return value;
+                }
+                const [attr, pseudoElt] = item.styleAttrName.split('|');
+                return getValue(getComputedStyle(ele, pseudoElt), attr);
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    elementVarName: {
+                        type: 'text',
+                        width: '4vw',
+                    },
+                    styleAttrName: {
+                        type: 'text',
+                        width: '6vw',
+                    },
+                }
+            }
         },
     }, {scope: {fetch: {fetch: '*', handle: 'getAttribute,getComputedStyle'}}});
 
