@@ -41,14 +41,11 @@ func main() {
 		f, err := os.OpenFile(logfile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 		if err != nil {
 			log.Println(err, "will use stdout")
-			executecmd.Output = os.Stdout
 		} else {
 			defer f.Close()
 			log.SetOutput(f)
 			executecmd.Output = f
 		}
-	} else {
-		executecmd.Output = os.Stdout
 	}
 	http.HandleFunc("/", tapKeyboardAndCopy)
 	http.HandleFunc("/aca", ActionCopyAction)

@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-var Output io.Writer
+var Output io.Writer = os.Stdout
 
 func PipeExecCMDs(cmds []string, res bool, args map[string][]string) (string, []byte, error) {
 	var b bytes.Buffer
@@ -79,11 +79,10 @@ func ExecCMD(cmd string, res bool, fn func([]byte, error), args ...string) ([]by
 	if res {
 		return cm.CombinedOutput()
 	}
+	cm.Stdout = Output
+	cm.Stderr = Output
 	var b bytes.Buffer
-	if fn == nil {
-		cm.Stdout = Output
-		cm.Stderr = Output
-	} else {
+	if fn != nil {
 		cm.Stdout = &b
 		cm.Stderr = &b
 	}

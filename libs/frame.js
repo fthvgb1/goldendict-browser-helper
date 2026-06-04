@@ -522,7 +522,7 @@
     function setMapVal(k, v, object = {}) {
         const names = k.split('.');
         while (true) {
-            const name = names.splice(0, 1)[0] ?? '';
+            const name = names.shift() ?? '';
             if (!name) {
                 return
             }

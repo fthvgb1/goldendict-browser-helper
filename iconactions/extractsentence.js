@@ -833,6 +833,10 @@
                     }
                 }
                 param.target = tarEle;
+                /* seem not necessary
+                tarIndex > curIndex ?tarEle.parentElement.moveBefore(tarEle,param.currentMovingEle):
+                    param.currentMovingEle.parentElement.moveBefore(param.currentMovingEle,tarEle)
+                return;*/
                 tarEle.insertAdjacentElement(tarIndex > curIndex ? 'afterend' : 'beforebegin', param.currentMovingEle);
 
             },

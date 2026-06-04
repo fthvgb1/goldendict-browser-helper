@@ -202,7 +202,7 @@
                 if (item.addNode) {
                     ele.setAttribute(attrName, attrValue);
                 } else {
-                    ele[attrName] = attrValue;
+                    setMapVal(attrName, attrValue, ele);
                 }
                 return value;
             },
