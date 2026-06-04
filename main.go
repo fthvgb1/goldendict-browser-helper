@@ -41,10 +41,14 @@ func main() {
 		f, err := os.OpenFile(logfile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 		if err != nil {
 			log.Println(err, "will use stdout")
+			executecmd.Output = os.Stdout
 		} else {
 			defer f.Close()
 			log.SetOutput(f)
+			executecmd.Output = f
 		}
+	} else {
+		executecmd.Output = os.Stdout
 	}
 	http.HandleFunc("/", tapKeyboardAndCopy)
 	http.HandleFunc("/aca", ActionCopyAction)
@@ -251,7 +255,12 @@ func executeCmd(w http.ResponseWriter, r *http.Request) {
 	var cmd string
 	var args []string
 	var re []byte
+	fn := func() {
+		a := append([]string{"execute cmd:", cmd}, args...)
+		log.Println(slice.ToAnySlice(a)...)
+	}
 	if len(r.Form["cmd"]) > 1 {
+		fn()
 		cmd, re, err = executecmd.PipeExecCMDs(r.Form["cmd"], res, r.Form)
 	} else if len(r.Form["cmd"]) == 1 {
 		cmd = r.Form.Get("cmd")
@@ -264,8 +273,10 @@ func executeCmd(w http.ResponseWriter, r *http.Request) {
 			args = executecmd.ParseArgs(r.Form["args"][0])
 		}
 		if r.Form.Get("sh") == "1" {
+			fn()
 			re, err = executecmd.ShellCmd(cmd, res, r.Form["args"])
 		} else {
+			fn()
 			re, err = executecmd.ExecCMD(cmd, res, nil, args...)
 		}
 	} else {
@@ -281,8 +292,6 @@ func executeCmd(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	a := append([]string{"executed cmd:", cmd}, args...)
-	log.Println(slice.ToAnySlice(a)...)
 }
 
 var envMutex sync.Mutex

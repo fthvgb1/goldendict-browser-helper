@@ -454,8 +454,9 @@
                 item.pattern = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.pattern);
                 req({
                     cmd: item.replaceValue,
+                    res: 0,
                     args: shellQuote.parse(item.pattern)
-                }, 'cmd').then(r => console.log(r.response));
+                }, 'cmd');
                 return value;
             },
             showInput: 'replaceValue,pattern',

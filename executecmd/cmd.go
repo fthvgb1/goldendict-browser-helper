@@ -6,6 +6,7 @@ import (
 	"github.com/fthvgb1/wp-go/helper"
 	"github.com/fthvgb1/wp-go/helper/number"
 	"github.com/fthvgb1/wp-go/helper/slice"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -13,6 +14,8 @@ import (
 	"strings"
 	"time"
 )
+
+var Output io.Writer
 
 func PipeExecCMDs(cmds []string, res bool, args map[string][]string) (string, []byte, error) {
 	var b bytes.Buffer
@@ -77,8 +80,13 @@ func ExecCMD(cmd string, res bool, fn func([]byte, error), args ...string) ([]by
 		return cm.CombinedOutput()
 	}
 	var b bytes.Buffer
-	cm.Stdout = &b
-	cm.Stderr = &b
+	if fn == nil {
+		cm.Stdout = Output
+		cm.Stderr = Output
+	} else {
+		cm.Stdout = &b
+		cm.Stderr = &b
+	}
 	err := cm.Start()
 	if err != nil {
 		return nil, err
@@ -87,8 +95,6 @@ func ExecCMD(cmd string, res bool, fn func([]byte, error), args ...string) ([]by
 		err = cm.Wait()
 		if fn != nil {
 			fn(b.Bytes(), err)
-		} else {
-			log.Println(string(b.Bytes()), err)
 		}
 	}()
 	return nil, nil
