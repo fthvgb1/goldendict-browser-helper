@@ -87,6 +87,10 @@
         element: '元素',
         deleteElement: '删除元素',
         deleteElementSelector: '要删除元素的选择器,为空将删除自身',
+        editElementAttribute: '修改元素属性',
+        attrValue: '属性值',
+        addNode: '添加为节点',
+        attrNameForSetting: '属性名',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('htmlFns', {
         stringToElement: {
@@ -180,6 +184,46 @@
                     deleteElementSelector: {
                         type: 'text',
                         width: '4vw',
+                    }
+                }
+            }
+        },
+
+        editElementAttribute: {
+            fn(value, item, param) {
+                const ele = getValue(param.vars, item.elementVarName ? item.elementVarName : param.rule['super-fetch-name']);
+                if (!(ele instanceof Element)) {
+                    console.log('can parse element', value, item);
+                    return value;
+                }
+
+                const attrValue = superFetchHook.getVariable(param.vars, item.attrValue, item.attrValue);
+                const attrName = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.attrName);
+                if (item.addNode) {
+                    ele.setAttribute(attrName, attrValue);
+                } else {
+                    ele[attrName] = attrValue;
+                }
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    elementVarName: {
+                        type: 'text',
+                        width: '3vw',
+                    },
+                    attrName: {
+                        title: lang('attrNameForSetting'),
+                        type: 'text',
+                        width: '3.8vw',
+                    },
+                    attrValue: {
+                        type: 'text',
+                        width: '3.8vw'
+                    },
+                    addNode: {
+                        type: 'checkbox'
                     }
                 }
             }

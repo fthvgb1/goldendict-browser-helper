@@ -59,7 +59,7 @@
         },
 
         buildElement(field, value, vars, attr, pre) {
-            const placeholder = superFetchHook.mapTitle[field] ?? field;
+            const placeholder = attr?.title ?? superFetchHook.mapTitle[field] ?? field;
             const title = superFetchHook.mapTitle[`${field}-desc`] ?? placeholder;
             attr.attrs = {
                 placeholder, title, className: field + ' show', ...attr?.attrs,
@@ -93,7 +93,7 @@
                     const ele = superFetchHook.simpleValueHandlerHelper.buildElement(field, value, vars, attr, pre);
                     attr?.width && (ele.style.width = attr.width);
                     pre.nextElementSibling.matches('.replacement-add') ? pre.insertAdjacentElement('afterend', ele) : pre.nextElementSibling.replaceWith(ele);
-                    return ele;
+                    return attr?.afterInsertDoc?.(ele, value, vars, attr, pre) ?? ele;
                 };
             });
             if (!fn || fn.length < 1) {
