@@ -402,6 +402,85 @@
     }, {scope: {fetch: {fetch: '*'}}});
 
     superFetchHook.hookLang({
+        foreach: '循环遍历',
+        iterator: '循环的变量',
+        iteratorElement: '循环子变量',
+    })
+    superFetchHook.simpleValueHandlerHelper.addHandlers('foreach', {
+        forof: {
+            async fn(value, item, param) {
+                const iterator = superFetchHook.getVariable(param.vars, item.iterator);
+                const arr = ['forof'], identifier = new Set(['forof', 'endforof']), handlers = [];
+                const h = [];
+                while (true) {
+                    const handler = param.handlers.shift();
+                    if (!handler) {
+                        break;
+                    }
+                    if (!identifier.has(handler?.rangeHandle)) {
+                        h.push(handler);
+                        continue;
+                    }
+                    if (arr[arr.length - 1] === 'forof' && handler.rangeHandle === 'endforof') {
+                        handlers.push([...h]);
+                        h.splice(0);
+                        arr.pop();
+                        if (arr.length < 1) {
+                            break;
+                        }
+                        continue;
+                    }
+                    arr.push(handler.rangeHandle);
+                }
+                const fn = handlers.reverse().reduce((prev, cur) => {
+                    cur.push(prev);
+                    return superFetchHook.fetchActionHelper.buildHandlers(cur, param);
+                }, v => v);
+
+                for (const iteratorElement of iterator) {
+                    param.vars[item.iteratorElement] = iteratorElement;
+                    value = await fn(value);
+                }
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    iterator: {
+                        type: 'text',
+                        width: '4vw',
+                    },
+                    iteratorElement: {
+                        type: 'text',
+                        width: '4vw',
+                    },
+                    rangeHandle: {
+                        type: 'text',
+                        hook: el => el.value = 'forof',
+                        attrs: {
+                            className: 'hidden',
+                        }
+                    }
+                }
+            }
+        },
+        endforof: {
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: {
+                        type: 'text',
+                        hook: el => el.value = 'endforof',
+                        attrs: {
+                            className: 'hidden',
+                        }
+                    }
+                }
+            }
+        }
+    }, {scope: {fetch: {fetch: '*'}}});
+
+    superFetchHook.hookLang({
         'simpleEvent': '事件处理',
         'eventIdentifier': '事件名，用于后续取消或其它操作',
         'event': '事件',

@@ -531,6 +531,10 @@
                     if (!item) {
                         break
                     }
+                    if ('function' === typeof item) {
+                        value = param.vars[name] = item(value, param);
+                        continue;
+                    }
                     const handler = {currVarName: name, ...item};
                     value = param.vars[name] = await valueHandlers[handler.handleType].handle(handler, value, param);
                     if (handler?.break) {
@@ -816,25 +820,27 @@
             }
         },
 
+        buildHandlers(handlers, param) {
+            return async value => {
+                const handlerss = param.handlers;
+                param.handlers = handlers;
+                value = await superFetchHook.fetchActionHelper.handItems(handlers, value, param);
+                param.handlers = handlerss;
+                return value;
+            }
+        },
+
+        buildHandlersMap: {
+            number: (param, option) => actionHelper.buildHandlers(param.handlers.splice(0, option), param),
+            function: (param, option) => actionHelper.buildHandlers(option(param), param),
+            string: (param, option) => {
+                const i = param.handlers.findIndex(value => value?.rangeHandle === option);
+                return actionHelper.buildHandlers(param.handlers.splice(0, i > -1 ? i : param.handlers.length), param);
+            }
+        },
+
         extractHandlers(param, option = 'endRangeHandle') {
-            const buildFn = handlers => {
-                return async value => {
-                    const handlerss = param.handlers;
-                    param.handlers = handlers;
-                    value = await superFetchHook.fetchActionHelper.handItems(handlers, value, param);
-                    param.handlers = handlerss;
-                    return value;
-                }
-            }
-            const m = {
-                number: () => buildFn(param.handlers.splice(0, option)),
-                function: () => buildFn(option(param)),
-                string: () => {
-                    const i = param.handlers.findIndex(value => value?.rangeHandle === option);
-                    return buildFn(param.handlers.splice(0, i > -1 ? i : param.handlers.length));
-                }
-            }
-            return m[typeof option]?.() ?? buildFn(param.handlers);
+            return actionHelper.buildHandlersMap[typeof option]?.(param, option) ?? actionHelper.buildHandlers(param.handlers);
         }
     };
 
