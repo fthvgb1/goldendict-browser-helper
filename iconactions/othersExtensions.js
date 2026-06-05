@@ -405,6 +405,7 @@
         foreach: '循环遍历',
         iterator: '循环的变量',
         iteratorElement: '循环子变量',
+        breakforof: '中断forof',
     })
     superFetchHook.simpleValueHandlerHelper.addHandlers('foreach', {
         forof: {
@@ -440,6 +441,10 @@
                 for (const iteratorElement of iterator) {
                     param.vars[item.iteratorElement] = iteratorElement;
                     value = await fn(value);
+                    if (param?.breakforof) {
+                        delete param.breakforof;
+                        break;
+                    }
                 }
                 return value;
             },
@@ -457,6 +462,25 @@
                     rangeHandle: {
                         type: 'text',
                         hook: el => el.value = 'forof',
+                        attrs: {
+                            className: 'hidden',
+                        }
+                    }
+                }
+            }
+        },
+        breakforof: {
+            fn(value, item, param) {
+                param.breakforof = true;
+                item.break = true;
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: {
+                        type: 'text',
+                        hook: el => el.value = 'breakforof',
                         attrs: {
                             className: 'hidden',
                         }
