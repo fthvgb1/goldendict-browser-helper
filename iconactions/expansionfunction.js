@@ -91,6 +91,11 @@
         attrValue: '属性值',
         addNode: '添加为节点',
         attrNameForSetting: '属性名',
+        elementSelector: '选择器',
+        queryAll: '获取全部',
+        anchorMode: '锚点模式',
+        queryElementVarName: '元素，为空表示为 document',
+        queryElement: '查找元素',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('htmlFns', {
         stringToElement: {
@@ -185,6 +190,47 @@
                         type: 'text',
                         width: '4vw',
                     }
+                }
+            }
+        },
+
+        queryElement: {
+            fn(value, item, param) {
+                const ele = item.elementVarName ? getValue(param.vars, item.elementVarName) : document;
+                if (item.anchorMode) {
+                    return superFetchHook.fetchActionHelper.anchor2Ele({
+                        'value-selector': item.elementSelector,
+                        'multiple_child': item.queryAll
+                    }, ele);
+                }
+                return item.queryAll ? ele.querySelectorAll(item.elementSelector) : ele.querySelector(item.elementSelector);
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    elementVarName: {
+                        type: 'text',
+                        title: lang('queryElementVarName'),
+                        width: '4vw',
+                    },
+                    elementSelector: {
+                        type: 'text',
+                        width: '6.4vw',
+                    },
+                    queryAll: {
+                        type: 'checkbox',
+                        afterInsertDoc(ele) {
+                            ele.addEventListener('change', evt => {
+                                const classList = ele.nextElementSibling.classList;
+                                ele.checked ? classList.remove('show') : classList.add('show')
+                            });
+                            return ele;
+                        }
+                    },
+                    anchorMode: {
+                        type: 'checkbox',
+                        afterInsertDoc: el => el.previousElementSibling.checked ? el.classList.remove('show') : el.classList.add('show')
+                    },
                 }
             }
         },
