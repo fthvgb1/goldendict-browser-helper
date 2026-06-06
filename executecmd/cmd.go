@@ -2,10 +2,12 @@ package executecmd
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/fthvgb1/wp-go/helper"
 	"github.com/fthvgb1/wp-go/helper/number"
 	"github.com/fthvgb1/wp-go/helper/slice"
+	"github.com/fthvgb1/wp-go/safety"
 	"io"
 	"log"
 	"os"
@@ -16,6 +18,8 @@ import (
 )
 
 var Output io.Writer = os.Stdout
+
+var pidMap = safety.NewMap[int, *os.Process]()
 
 func PipeExecCMDs(cmds []string, res bool, args map[string][]string) (string, []byte, error) {
 	var b bytes.Buffer
@@ -96,7 +100,8 @@ func ExecCMD(cmd string, res bool, fn func([]byte, error), args ...string) ([]by
 			fn(b.Bytes(), err)
 		}
 	}()
-	return nil, nil
+	pidMap.Store(cm.Process.Pid, cm.Process)
+	return []byte(number.IntToString(cm.Process.Pid)), nil
 }
 
 func ShellCmd(cmd string, res bool, args []string) ([]byte, error) {
@@ -137,6 +142,19 @@ func ShellCmd(cmd string, res bool, args []string) ([]byte, error) {
 		defer fn()
 	}
 	return ExecCMD(sh, res, def, args...)
+}
+
+func KillProcess(pid int) error {
+	p, ok := pidMap.Load(pid)
+	if !ok {
+		return errors.New("process not exist")
+	}
+	err := p.Kill()
+	if err != nil {
+		return err
+	}
+	pidMap.Delete(pid)
+	return nil
 }
 
 func ParseArgs(a string) (r []string) {

@@ -53,10 +53,28 @@ func main() {
 	http.HandleFunc("/clipboard", ReadClipboard)
 	http.HandleFunc("/typeStr", typeStr)
 	http.HandleFunc("/file", openFile)
+	http.HandleFunc("/kill", kill)
 	log.Println("http listened ", port)
 	err := http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), nil)
 	if err != nil {
 		panic(err)
+	}
+}
+
+func kill(w http.ResponseWriter, r *http.Request) {
+	pid := r.URL.Query().Get("pid")
+	if pid == "" {
+		w.Write([]byte("pid error"))
+		return
+	}
+	p := str.ToInteger[int](pid, 0)
+	if p < 1 {
+		w.Write([]byte("pid error"))
+		return
+	}
+	err := executecmd.KillProcess(p)
+	if err != nil {
+		w.Write([]byte(err.Error()))
 	}
 }
 
