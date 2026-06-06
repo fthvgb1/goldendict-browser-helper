@@ -411,32 +411,36 @@
         forof: {
             async fn(value, item, param) {
                 const iterator = superFetchHook.getVariable(param.vars, item.iterator);
-                const arr = ['forof'], identifier = new Set(['forof', 'endforof']), handlers = [];
-                const h = [];
+                const arr = ['forof'], identifier = new Set(['forof', 'endforof']);
+                const h = [[]];
                 while (true) {
                     const handler = param.handlers.shift();
                     if (!handler) {
                         break;
                     }
                     if (!identifier.has(handler?.rangeHandle)) {
-                        h.push(handler);
+                        h[h.length - 1].push(handler);
                         continue;
                     }
                     if (arr[arr.length - 1] === 'forof' && handler.rangeHandle === 'endforof') {
-                        handlers.push([...h]);
-                        h.splice(0);
+                        if (h.length < 2) {
+                            break;
+                        }
+                        const handlers = h.pop();
                         arr.pop();
+                        h[h.length - 1].push(superFetchHook.fetchActionHelper.buildHandlers(handlers, param))
                         if (arr.length < 1) {
                             break;
                         }
                         continue;
                     }
+                    h.push([handler]);
                     arr.push(handler.rangeHandle);
                 }
-                const fn = handlers.reverse().reduce((prev, cur) => {
-                    cur.push(prev);
-                    return superFetchHook.fetchActionHelper.buildHandlers(cur, param);
-                }, v => v);
+                if (h[0].length < 1) {
+                    return value;
+                }
+                const fn = superFetchHook.fetchActionHelper.buildHandlers(h[0], param)
 
                 for (const iteratorElement of iterator) {
                     param.vars[item.iteratorElement] = iteratorElement;

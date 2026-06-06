@@ -532,7 +532,7 @@
                         break
                     }
                     if ('function' === typeof item) {
-                        value = param.vars[name] = item(value, param);
+                        value = param.vars[name] = await item(value, {}, param);
                         continue;
                     }
                     const handler = {currVarName: name, ...item};
