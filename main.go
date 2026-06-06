@@ -263,9 +263,14 @@ func executeCmd(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	getPid := false
+	if r.Form.Get("getPid") == "1" {
+		getPid = true
+	}
 	var res bool
 	if helper.Defaults(r.Form.Get("res"), "1") == "1" {
 		res = true
+		getPid = false
 	}
 	var cmd string
 	var args []string
@@ -289,10 +294,10 @@ func executeCmd(w http.ResponseWriter, r *http.Request) {
 		}
 		if r.Form.Get("sh") == "1" {
 			fn()
-			re, err = executecmd.ShellCmd(cmd, res, r.Form["args"])
+			re, err = executecmd.ShellCmd(cmd, res, getPid, r.Form["args"])
 		} else {
 			fn()
-			re, err = executecmd.ExecCMD(cmd, res, nil, args...)
+			re, err = executecmd.ExecCMD(cmd, res, getPid, nil, args...)
 		}
 	} else {
 		return
