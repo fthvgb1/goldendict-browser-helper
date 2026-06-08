@@ -24,6 +24,7 @@
         'haveReturn': '有结果值返回调用',
         'haveReturn-desc': '替换值项为程序路径，模式项为参数,[arg1,arg2],{}使用变量',
         'cmdNoReturn': '无需返回值',
+        'cmdNoReturnWithPid': '无返回值但获取pid',
         'ifBranch': '简单的if和中断',
         'else-desc': '前一个if判断为false时执行该项后面的所有操作',
         'endIf-desc': '可以断续执行该项后面的操作',
@@ -548,6 +549,20 @@
                     args: shellQuote.parse(item.pattern)
                 }, 'cmd');
                 return value;
+            },
+            showInput: 'replaceValue,pattern',
+        },
+        cmdNoReturnWithPid: {
+            async fn(value, item, param) {
+                const req = superFetchHook.valueHandlers.executeCmd.req;
+                item.pattern = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.pattern);
+                const r = await req({
+                    cmd: item.replaceValue,
+                    res: 0,
+                    getPid: 1,
+                    args: shellQuote.parse(item.pattern)
+                }, 'cmd');
+                return r.response;
             },
             showInput: 'replaceValue,pattern',
         }

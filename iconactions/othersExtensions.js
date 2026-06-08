@@ -411,37 +411,7 @@
         forof: {
             async fn(value, item, param) {
                 const iterator = superFetchHook.getVariable(param.vars, item.iterator);
-                const arr = ['forof'], identifier = new Set(['forof', 'endforof']);
-                const h = [[]];
-                while (true) {
-                    const handler = param.handlers.shift();
-                    if (!handler) {
-                        break;
-                    }
-                    if (!identifier.has(handler?.rangeHandle)) {
-                        h[h.length - 1].push(handler);
-                        continue;
-                    }
-                    if (arr[arr.length - 1] === 'forof' && handler.rangeHandle === 'endforof') {
-                        if (h.length < 2) {
-                            break;
-                        }
-                        const handlers = h.pop();
-                        arr.pop();
-                        h[h.length - 1].push(superFetchHook.fetchActionHelper.buildHandlers(handlers, param))
-                        if (arr.length < 1) {
-                            break;
-                        }
-                        continue;
-                    }
-                    h.push([handler]);
-                    arr.push(handler.rangeHandle);
-                }
-                if (h[0].length < 1) {
-                    return value;
-                }
-                const fn = superFetchHook.fetchActionHelper.buildHandlers(h[0], param)
-
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['forof', 'endforof']);
                 for (const iteratorElement of iterator) {
                     param.vars[item.iteratorElement] = iteratorElement;
                     value = await fn(value);
@@ -512,34 +482,105 @@
         'simpleEvent': '事件处理',
         'eventIdentifier': '事件名，用于后续取消或其它操作',
         'event': '事件',
-        'bindEventElement': '绑定的元素，可为选择器或者元素变量',
+        'bindEventElement': '事件冒泡时传播的元素选择器,相当于jquery的$.on()',
+        'addEvent': '添加事件',
+        'specificEvent': '要添加的事件名',
+        'preventDefault': '阻止默认行为',
+        'stopPropagation': '阻止事件向上传播',
+        'stopImmediatePropagation': '阻止除自身外的事件向上传播',
+        'mouseEvent': '鼠标事件',
+        'click': 'click 鼠标单击',
+        'mousedown': 'mousedown 鼠标按下',
+        'mouseup': 'mouseup 鼠标松开',
+        'dblclick': 'dblclick 鼠标双击',
+        'contextmenu': 'contextmenu 鼠标菜单键(通常为右键)',
+        'mouseenter': 'mouseenter 鼠标进入',
+        'mouseout': 'mouseout 鼠标移出(会冒泡)',
+        'mouseleave': 'mouseleave 鼠标移出(不会冒泡)',
+        'mousemove': 'mousemove 鼠标移动',
+        'mouseover': 'mouseover 鼠标在元素及子元素上'
     });
 
     superFetchHook.simpleValueHandlerHelper.addHandlers('simpleEvent', {
         addEvent: {
             fn(value, item, param) {
-
+                const ele = superFetchHook.getVariable(param.vars, item.elementVarName ? item.elementVarName : param.rule['super-fetch-name']);
+                const handle = superFetchHook.fetchActionHelper.extractHandlers(param);
+                const eventIdentifier = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.eventIdentifier);
+                const fn = async ev => {
+                    param.vars[item.eventIdentifier] = ev;
+                    ['preventDefault', 'stopPropagation', 'stopImmediatePropagation'].forEach(v => item[v] && ev[v]());
+                    await handle(value);
+                };
+                ele.addEventListener(item.event, fn, {});
+                setMapVal(`$eventManger.${eventIdentifier}`, fn, window);
+                return value;
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
+                    elementVarName: {
+                        type: 'text',
+                        width: '5vw'
+                    },
                     eventIdentifier: {
                         type: 'text',
                         width: '5vw'
                     },
                     bindEventElement: {
                         type: 'text',
-                        width: '5vw'
+                        width: '6vw'
                     },
                     event: {
                         type: 'select',
                         getOptions(val) {
                             return buildOption([], val)
+                        },
+                        afterInsertDoc(select) {
+                            select.parentElement.style.maxWidth = '31vw';
+                            const select2 = $(select);
+                            const data = iterateObjByKey(superFetchHook.valueHandlers.simpleEvent.eventSet, (k, v) => {
+                                return {text: lang(k), children: v.map(name => ({id: name, text: lang(name)}))}
+                            })
+                            select2.select2({
+                                placeholder: lang('specificEvent'),
+                                data: data,
+                                allowClear: true,
+                                tags: true,
+                            });
+                            return select.nextElementSibling
                         }
-                    }
+                    },
+                    preventDefault: {
+                        type: 'checkbox',
+                    },
+                    stopPropagation: {
+                        type: 'checkbox',
+                    },
+                    stopImmediatePropagation: {
+                        type: 'checkbox',
+                    },
+                    capture: {
+                        title: lang('useCapture'),
+                        type: 'checkbox',
+                    },
+                    once: {
+                        title: lang('executeOnce'),
+                        type: 'checkbox',
+                    },
+                    passive: {
+                        title: lang('executeOnce'),
+                        type: 'checkbox',
+                    },
                 }
             }
         }
-    }, {scope: {fetch: {fetch: '*'}}});
+    }, {
+        eventSet: {
+            mouseEvent: ['click', 'mousedown', 'mouseup', 'dblclick', 'contextmenu', 'mouseenter', 'mouseout',
+                'mouseleave', 'mouseover']
+        },
+        scope: {fetch: {fetch: '*'}}
+    });
 
 })();

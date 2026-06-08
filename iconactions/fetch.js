@@ -836,10 +836,46 @@
             string: (param, option) => {
                 const i = param.handlers.findIndex(value => value?.rangeHandle === option);
                 return actionHelper.buildHandlers(param.handlers.splice(0, i > -1 ? i : param.handlers.length), param);
+            },
+            array(param, option) {
+                const [start, end] = option;
+                const arr = [start], identifier = new Set(option);
+                const h = [[]];
+                while (true) {
+                    const handler = param.handlers.shift();
+                    if (!handler) {
+                        break;
+                    }
+                    if (!identifier.has(handler?.rangeHandle)) {
+                        h[h.length - 1].push(handler);
+                        continue;
+                    }
+                    if (arr[arr.length - 1] === start && handler.rangeHandle === end) {
+                        if (h.length < 2) {
+                            break;
+                        }
+                        const handlers = h.pop();
+                        arr.pop();
+                        h[h.length - 1].push(superFetchHook.fetchActionHelper.buildHandlers(handlers, param))
+                        if (arr.length < 1) {
+                            break;
+                        }
+                        continue;
+                    }
+                    h.push([handler]);
+                    arr.push(handler.rangeHandle);
+                }
+                if (h[0].length < 1) {
+                    return v => v;
+                }
+                return actionHelper.buildHandlers(h[0], param)
             }
         },
 
         extractHandlers(param, option = 'endRangeHandle') {
+            if (Array.isArray(option)) {
+                return actionHelper.buildHandlersMap.array(param, option);
+            }
             return actionHelper.buildHandlersMap[typeof option]?.(param, option) ?? actionHelper.buildHandlers(param.handlers);
         }
     };
