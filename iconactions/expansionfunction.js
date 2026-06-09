@@ -73,6 +73,7 @@
     superFetchHook.hookLang({
         stringToElement: '字符串转元素',
         elementIdentOuterHTML: '字符串可使用{变量}，为空表示使前变量',
+        setElementVarName: '要设置的变量名,为空表示当前值',
         attrName: '属性名，如果为方法名，可以联合参数使用',
         parameter: '参数，多个用|分隔',
         styleAttrName: '样式属性名，伪类用|隔开',
@@ -97,19 +98,31 @@
         anchorMode: '锚点模式',
         queryElementVarName: '元素，为空表示为 document',
         queryElement: '查找元素',
+        replaceElement: '替换元素',
+        neededReplaceElement: '需要被替换的元素,为空表示当前值',
+        replaceElementName: '替换的元素,可使用{变量}，不使用则将创建',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('htmlFns', {
         stringToElement: {
             fn(value, item, param) {
-                const html = item.elementIdentOuterHTML ? superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.elementIdentOuterHTML) : value;
-                return superFetchHook.templateHelper.createElement('div', html).children[0]
+                const html = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.elementIdentOuterHTML);
+                const ele = superFetchHook.templateHelper.createElement('div', html).children[0];
+                if (!item.setElementVarName) {
+                    return ele;
+                }
+                param.vars[item.setElementVarName] = ele;
+                return value;
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
+                    setElementVarName: {
+                        type: 'text',
+                        width: '3vw',
+                    },
                     elementIdentOuterHTML: {
                         type: 'text',
-                        width: '10vw',
+                        width: '9vw',
                     }
                 }
             }
@@ -190,6 +203,41 @@
                     deleteElementSelector: {
                         type: 'text',
                         width: '4vw',
+                    }
+                }
+            }
+        },
+
+        replaceElement: {
+            fn(value, item, param) {
+                let v = false;
+                let ele = item.elementVarName ? getValue(param.vars, item.elementVarName) : (v = true, value);
+                let replacement = getValue(param.vars, item.replaceElementName);
+                const fn = replacement => {
+                    superFetchHook.templateHelper.isInDocument(ele) ? ele.replaceWith(replacement) : (ele = replacement);
+                    if (v) {
+                        return ele;
+                    }
+                    setMapVal(superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.elementVarName), ele, param.vars);
+                    return value;
+                }
+                if (replacement instanceof Element) {
+                    return fn(replacement);
+                }
+                replacement = superFetchHook.templateHelper.createElement('div', superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.replaceElementName)).children[0];
+                return fn(replacement)
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    elementVarName: {
+                        title: lang('neededReplaceElement'),
+                        type: 'text',
+                        width: '4vw',
+                    },
+                    replaceElementName: {
+                        type: 'text',
+                        width: '8vw',
                     }
                 }
             }

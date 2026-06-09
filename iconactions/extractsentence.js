@@ -688,6 +688,9 @@
             }
             return el;
         },
+        isInDocument(ele) {
+            return ele.parentElement && ele.parentElement.parentElement;
+        },
         buildTemplateHTML(template, vars = {}, ele = document.createElement('div')) {
             let t = this.templateCache?.[template] ?? '';
             if (!t) {
@@ -760,10 +763,8 @@
             input(name, value, attr = {}) {
                 attr.title = attr?.title ?? mapTitle[`${name}-desc`] ?? mapTitle[name] ?? name;
                 attr.placeholder = attr.title;
-                const input = templateHelper.createElement('input', {name, className: name, ...attr});
                 'number' === attr.type && (value = value ? value : 0);
-                input.value = value;
-                return input
+                return templateHelper.createElement('input', {name, className: name, value, ...attr})
             },
             select(name, options, attr = {}) {
                 attr.title = attr?.title ?? mapTitle[`${name}-desc`] ?? mapTitle[name] ?? name;

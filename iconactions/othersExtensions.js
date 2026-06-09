@@ -480,45 +480,64 @@
 
     superFetchHook.hookLang({
         'simpleEvent': '事件处理',
-        'eventIdentifier': '事件名，用于后续取消或其它操作',
+        'eventIdentifier': '事件标识，用于后续移除或其它操作',
         'event': '事件',
-        'bindEventElement': '事件冒泡时传播的元素选择器,相当于jquery的$.on()',
+        'bindEventElement': '事件作用到的元素的选择器,相当于jquery的$.on()',
         'addEvent': '添加事件',
-        'specificEvent': '要添加的事件名',
-        'preventDefault': '阻止默认行为',
-        'stopPropagation': '阻止事件向上传播',
-        'stopImmediatePropagation': '阻止除自身外的事件向上传播',
+        'removeEvent': '移除事件',
+        'specificEvent': '要添加的事件名,可手动添加没有在列表中的事件',
+        'preventDefault': '阻止默认行为 preventDefault',
+        'stopPropagation': '阻止事件继续传播 stopPropagation',
+        'stopImmediatePropagation': '阻止除自身外的事件继续传播 stopImmediatePropagation',
         'mouseEvent': '鼠标事件',
-        'click': 'click 鼠标单击',
-        'mousedown': 'mousedown 鼠标按下',
-        'mouseup': 'mouseup 鼠标松开',
-        'dblclick': 'dblclick 鼠标双击',
-        'contextmenu': 'contextmenu 鼠标菜单键(通常为右键)',
-        'mouseenter': 'mouseenter 鼠标进入',
-        'mouseout': 'mouseout 鼠标移出(会冒泡)',
-        'mouseleave': 'mouseleave 鼠标移出(不会冒泡)',
-        'mousemove': 'mousemove 鼠标移动',
-        'mouseover': 'mouseover 鼠标在元素及子元素上'
+        'click': '鼠标单击 click',
+        'mousedown': '鼠标按下 mousedown',
+        'mouseup': '鼠标松开 mouseup',
+        'dblclick': '鼠标双击 dblclick',
+        'contextmenu': '鼠标菜单键(通常为右键) contextmenu',
+        'mouseenter': '鼠标进入 mouseenter',
+        'mouseout': '鼠标移出(会冒泡) mouseout',
+        'mouseleave': '鼠标移出(不会冒泡) mouseleave',
+        'mousemove': '鼠标移动 mousemove',
+        'mouseover': '鼠标在元素及子元素上 mouseover',
+        'useCapture': '事件注册在捕获阶段 useCapture',
+        'executeOnce': '事件只执行一次，后自动注销 once',
+        'non-preventDefault': '忽略阻止默认行为 passive',
+        'endEventScope': '结束事件作用作用域'
     });
 
     superFetchHook.simpleValueHandlerHelper.addHandlers('simpleEvent', {
         addEvent: {
             fn(value, item, param) {
                 const ele = superFetchHook.getVariable(param.vars, item.elementVarName ? item.elementVarName : param.rule['super-fetch-name']);
-                const handle = superFetchHook.fetchActionHelper.extractHandlers(param);
+                const handle = superFetchHook.fetchActionHelper.extractHandlers(param, ['startEvenScopet', 'endEventScope']);
                 const eventIdentifier = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.eventIdentifier);
                 const fn = async ev => {
+                    if (item.bindEventElement && !ev.target.matches(item.bindEventElement)) {
+                        return;
+                    }
                     param.vars[item.eventIdentifier] = ev;
                     ['preventDefault', 'stopPropagation', 'stopImmediatePropagation'].forEach(v => item[v] && ev[v]());
                     await handle(value);
                 };
-                ele.addEventListener(item.event, fn, {});
-                setMapVal(`$eventManger.${eventIdentifier}`, fn, window);
+                ele.addEventListener(item.event, fn, {
+                    capture: item.capture,
+                    once: item.once,
+                    passive: item.passive
+                });
+                setMapVal(`$eventManger.${eventIdentifier}`, [ele, item.event, fn], window);
                 return value;
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
+                    rangeHandle: {
+                        type: 'text',
+                        attrs: {
+                            className: 'hidden',
+                            value: 'startEventScope'
+                        }
+                    },
                     elementVarName: {
                         type: 'text',
                         width: '5vw'
@@ -533,20 +552,34 @@
                     },
                     event: {
                         type: 'select',
+                        attrs: {
+                            className: 'hidden'
+                        },
                         getOptions(val) {
                             return buildOption([], val)
                         },
-                        afterInsertDoc(select) {
+                        afterInsertDoc(select, value) {
                             select.parentElement.style.maxWidth = '31vw';
                             const select2 = $(select);
-                            const data = iterateObjByKey(superFetchHook.valueHandlers.simpleEvent.eventSet, (k, v) => {
-                                return {text: lang(k), children: v.map(name => ({id: name, text: lang(name)}))}
-                            })
+                            let selected = false;
+                            const data = iterateObjByKey(superFetchHook.valueHandlers.simpleEvent.eventSet, (k, v) => (
+                                {
+                                    text: lang(k),
+                                    children: v.map(name => ({
+                                        id: name,
+                                        text: lang(name),
+                                        selected: (value === name ? (selected = true, true) : false)
+                                    }))
+                                }
+                            ));
+                            !selected && (data.unshift({id: value, text: value, selected: true}));
+                            data.unshift({id: '',});
                             select2.select2({
                                 placeholder: lang('specificEvent'),
                                 data: data,
                                 allowClear: true,
                                 tags: true,
+                                width: '13vw',
                             });
                             return select.nextElementSibling
                         }
@@ -569,8 +602,48 @@
                         type: 'checkbox',
                     },
                     passive: {
-                        title: lang('executeOnce'),
+                        title: lang('non-preventDefault'),
                         type: 'checkbox',
+                    },
+                }
+            }
+        },
+
+        ...(() => {
+            const o = {};
+            [
+                ['removeEvent', (value, item) => {
+                    const [ele, eventName, fn] = superFetchHook.getVarVal(window, `$eventManger.${item.eventIdentifier}`, []);
+                    if (ele && eventName && fn) {
+                        ele.removeEventListener(eventName, fn);
+                        delete window['$eventManger'][item.eventIdentifier];
+                    }
+                    return value
+                }], ...['preventDefault', 'stopPropagation', 'stopImmediatePropagation'].map(v => [v]),
+            ].forEach(([name, fn]) => o[name] = {
+                fn: fn ?? ((value, item, param) => (param.vars?.[item.eventIdentifier]?.[name]?.(), value)),
+                param: {
+                    mountElementSelector: '.fetch-replacement-target',
+                    fields: {
+                        eventIdentifier: {
+                            type: 'text',
+                            width: '11vw'
+                        },
+                    }
+                }
+            });
+            return o;
+        })(),
+        endEventScope: {
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: {
+                        type: 'text',
+                        attrs: {
+                            className: 'hidden',
+                            value: 'endEventScope'
+                        }
                     },
                 }
             }
