@@ -229,7 +229,7 @@
         copy(ev) {
             ev.preventDefault();
             const el = ev.target.dataset?.target ? findParent(ev.target, ev.target.dataset.target) : ev.target.parentElement;
-            el.insertAdjacentElement('afterend', el.cloneNode(true));
+            el.insertAdjacentElement('afterend', eventFn.addTplFn[ev.target.dataset.tplFn]({}, ev, el));
         },
         remove(ev) {
             ev.target.dataset?.target ?
@@ -682,7 +682,7 @@
         createElement(tag, attrs = {}) {
             const el = document.createElement(tag);
             if ('string' === typeof attrs) {
-                el.innerHTML = attrs;
+                el.innerHTML = attrs.trim();
             } else {
                 Object.keys(attrs).forEach(k => el[k] = attrs[k]);
             }
@@ -735,7 +735,7 @@
                 }
                 return val;
             });
-            ele.innerHTML = t;
+            ele.innerHTML = t.trim();
             ele.querySelectorAll('template').forEach(tpl => {
                 const t = tpl.innerHTML;
                 if (vars?.[t]) {

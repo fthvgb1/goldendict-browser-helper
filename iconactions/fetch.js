@@ -19,11 +19,23 @@
     });
     superFetchHook.eventHook.addTplFn = {
         ...superFetchHook.eventHook.addTplFn,
-        replacement(data, ev) {
+        replacement(data, ev, el) {
+            if (el) {
+                data = actions.handlers.replacement.getSingleItem(el);
+                return actions.handlers.replacement.getReplacementItem({
+                    'replacement-items': [data],
+                    from: ev.target.parentElement.dataset.from
+                })[0];
+            }
             data.from = ev.target.parentElement.dataset.from;
             return actions.handlers.replacement.getReplacementItem(data);
         },
-        fetch(data) {
+        fetch(data, ev, el) {
+            if (el) {
+                const item = actions.handlers.fetch.getSingleItem(el);
+                data['super-fetch-items'] = [item];
+                return actions.handlers.fetch.getFetchItem(data)[0];
+            }
             data.from = 'fetch-fetch';
             return actions.handlers.fetch.getFetchItem(data);
         }
@@ -939,12 +951,15 @@
                     }
                     data['super-fetch-items'] = [];
                     el.querySelectorAll('.super-fetch-item')?.forEach(item => {
-                        const selector = ':where(input,select,textarea):not(.fetch-replacement-item :where(input,select,textarea))';
-                        const dat = formProcessor.getFormValue(item, {}, selector);
-                        actions.handlers.replacement.form(item, dat);
-                        data['super-fetch-items'].push(dat);
+                        data['super-fetch-items'].push(this.getSingleItem(item));
                     });
                     return data;
+                },
+                getSingleItem(el) {
+                    const selector = ':where(input,select,textarea):not(.fetch-replacement-item :where(input,select,textarea))';
+                    const dat = formProcessor.getFormValue(el, {}, selector);
+                    actions.handlers.replacement.form(el, dat);
+                    return dat;
                 },
                 // self helper
                 getFetchItem(data) {
@@ -1062,18 +1077,20 @@
                     this.getReplacementItem(data);
                     return templateHelper.buildTemplateHTML('replacement', data);
                 },
+                getSingleItem(li) {
+                    const datum = formProcessor.getFormValue(li, {}, 'input,textarea,select');
+                    valueHandlers?.[datum.handleType]?.form?.(li, datum);
+                    return datum;
+                },
                 form(el, data) {
                     if (el.querySelector('.super-fetch-item')) {
                         return data;
                     }
-                    const selector = 'input,textarea,select';
                     data['replacement-items'] = [];
-                    el.querySelectorAll('.fetch-replacement-item').forEach(li => {
-                            const datum = formProcessor.getFormValue(li, {}, selector);
-                            valueHandlers?.[datum.handleType]?.form?.(li, datum);
-                            data['replacement-items'].push(datum);
-                        }
+                    el.querySelectorAll('.fetch-replacement-item').forEach(li => data['replacement-items']
+                        .push(this.getSingleItem(li))
                     );
+
                     return data;
                 },
                 opType: {},
