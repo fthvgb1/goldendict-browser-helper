@@ -158,13 +158,13 @@
     superFetchHook.hookLang({
         'executeActions': '执行操作',
         'actionNames': '执行的操作名',
-        'shareVars': '共享当前操作的符号表',
+        'useSeparateVars': '使用独立的符号表',
         'async': '异步执行',
     });
     superFetchHook.valueHandlers.executeActions = {
         async handle(item, value, param) {
-            await superFetchHook.executeActions(...item?.actionNames, item.shareVars ? param.vars : {}, item.async);
-            if (item.async || !item.shareVars) {
+            await superFetchHook.executeActions(...item?.actionNames, item.useSeparateVars ? {} : param.vars, item.async);
+            if (item.async || item.useSeparateVars) {
                 return value
             }
             return param.vars[param.rule['super-fetch-name']]
@@ -225,7 +225,7 @@
                         className: 'actionNames', multiple: 'multiple'
                     }
                 },
-                shareVars: {
+                useSeparateVars: {
                     type: 'checkbox'
                 },
                 async: {
