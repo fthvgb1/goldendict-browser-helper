@@ -241,7 +241,8 @@
     PushHookAnkiChange('.fetch-file', ev => eventFn.importFn(ev));
     PushExpandAnkiInputButton('fetch-copy', '', (e) => {
         const item = findParent(e.target, '.fetch-item');
-        const copyItem = item.cloneNode(true);
+        const data = formProcessor.convertFetchParam(item);
+        const copyItem = actionHelper.buildFetchItem(data);
         copyItem.querySelector('.fetch-active').checked = false;
         item.insertAdjacentElement('afterend', copyItem);
     });
