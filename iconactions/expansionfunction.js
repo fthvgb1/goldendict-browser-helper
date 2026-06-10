@@ -150,9 +150,6 @@
                 ele[m[item.insertElementType]](item.position, insertedElement);
                 return value;
             },
-            show(li) {
-                li.style.maxWidth = '31vw';
-            },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
