@@ -213,7 +213,7 @@
                 });
                 select2.val(vars.actionNames).trigger('change');
             };
-            ev ? fn() : this.afterRender.push(fn);
+            (ev || vars?.['$clone']) ? fn() : this.afterRender.push(fn);
         },
         renderHookX: superFetchHook.simpleValueHandlerHelper.buildFieldRender({
             mountElementSelector: '.handleType',

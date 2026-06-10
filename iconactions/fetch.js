@@ -24,6 +24,7 @@
                 data = actions.handlers.replacement.getSingleItem(el);
                 return actions.handlers.replacement.getReplacementItem({
                     'replacement-items': [data],
+                    '$clone': true,
                     from: ev.target.parentElement.dataset.from
                 })[0];
             }
@@ -34,6 +35,7 @@
             if (el) {
                 const item = actions.handlers.fetch.getSingleItem(el);
                 data['super-fetch-items'] = [item];
+                data['$clone'] = true;
                 return actions.handlers.fetch.getFetchItem(data)[0];
             }
             data.from = 'fetch-fetch';
@@ -939,7 +941,7 @@
                     return templateHelper.buildTemplateHTML('fetch', data);
                 },
                 // optional
-                form(el, data) {
+                form(el, data = {}) {
                     data['selector-items'] = [];
                     el.querySelectorAll('.selector-chain .selector-item').forEach(li => {
                         const item = formProcessor.getFormValue(li, {}, 'input');
@@ -955,11 +957,11 @@
                     });
                     return data;
                 },
-                getSingleItem(el) {
+                getSingleItem(el, data = {}) {
                     const selector = ':where(input,select,textarea):not(.fetch-replacement-item :where(input,select,textarea))';
-                    const dat = formProcessor.getFormValue(el, {}, selector);
-                    actions.handlers.replacement.form(el, dat);
-                    return dat;
+                    formProcessor.getFormValue(el, data, selector);
+                    actions.handlers.replacement.form(el, data);
+                    return data;
                 },
                 // self helper
                 getFetchItem(data) {
@@ -967,8 +969,9 @@
                     return data['super-fetch-item-html'] = (data?.['super-fetch-items'] ?? [{}]).map(item => {
                             item.htmlType = htmlType;
                             item.operations = operations;
-                            item.from = 'fetch-' + (item.operation ?? 'fetch');
-                            item['replacement-item-html'] = actions.handlers.replacement.getReplacementItem(item);
+                        item.from = 'fetch-' + (item.operation ?? 'fetch');
+                        item['$clone'] = data?.['$clone'] ?? false;
+                        item['replacement-item-html'] = actions.handlers.replacement.getReplacementItem(item);
                             return templateHelper.buildTemplateHTML('fetch-item', item);
                         }
                     );
@@ -1077,12 +1080,12 @@
                     this.getReplacementItem(data);
                     return templateHelper.buildTemplateHTML('replacement', data);
                 },
-                getSingleItem(li) {
-                    const datum = formProcessor.getFormValue(li, {}, 'input,textarea,select');
-                    valueHandlers?.[datum.handleType]?.form?.(li, datum);
-                    return datum;
+                getSingleItem(li, data = {}) {
+                    formProcessor.getFormValue(li, data, 'input,textarea,select');
+                    valueHandlers?.[data.handleType]?.form?.(li, data);
+                    return data;
                 },
-                form(el, data) {
+                form(el, data = {}) {
                     if (el.querySelector('.super-fetch-item')) {
                         return data;
                     }
@@ -1145,6 +1148,7 @@
                     return data['replacement-item-html'] = data['replacement-items'].map(item => {
                         item.opType = actions.handlers.replacement.getHandlers(data.from);
                         item.from = data.from;
+                        item['$clone'] = data?.['$clone'] ?? false;
                         return templateHelper.buildTemplateHTML('replacement-item', item)
                     });
                 },

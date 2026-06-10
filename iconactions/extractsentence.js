@@ -242,6 +242,7 @@
     PushExpandAnkiInputButton('fetch-copy', '', (e) => {
         const item = findParent(e.target, '.fetch-item');
         const data = formProcessor.convertFetchParam(item);
+        data['$clone'] = true;
         const copyItem = actionHelper.buildFetchItem(data);
         copyItem.querySelector('.fetch-active').checked = false;
         item.insertAdjacentElement('afterend', copyItem);
