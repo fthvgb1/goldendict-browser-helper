@@ -443,8 +443,6 @@
         'no file': '没有文件！',
         'handleValue': '对值进行处理',
         'fold-or-unfold': '折叠或展开子项',
-        'handleElement': '处理元素',
-        'handleElement-desc': '只作用于富文本字段，处理指定选择器对应的元素',
         'childUseIndependentSymbol': '所有子项使用独立的符号表',
         'handle': '处理',
         'concatenation': '拼接',
@@ -670,7 +668,6 @@
         'log': mapTitle['log'],
         'none': mapTitle['none']
     };
-    const operations = {fetch: mapTitle['fetch'], handle: mapTitle['handle']};
     const htmlType = {
         'text': mapTitle['text'],
         'innerHTML': mapTitle['innerHTML'],
@@ -1056,7 +1053,7 @@
             mergeMap: (obj, newObj) => iterateObjByKey(newObj, (k, v) => obj[k] = v, false),
             hookLang: langKV => iterateObjByKey(langKV, (k, v) => mapTitle[k] = htmlSpecial(v), false),
             lang: name => allowFn.lang(name) ?? name,
-            allowFn, htmlType, handleOp, operations,
+            allowFn, htmlType, handleOp,
             templateHelper,
         }
     }

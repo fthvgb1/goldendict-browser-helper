@@ -143,10 +143,7 @@ input[name=parent-selector], input[name=child-selector] {
     border: 1px dashed #ccc;
 }
 
-.fetch-item:has(.operate-type>option[value=handleElement]:checked) .super-fetch-item:has(.operation>option[value=handle]:checked) :where(.value-selector ~ *,.parent-super-name,.default-value,.fetch-data-type>option[value=htmlElement]),
-.fetch-item:has(.operate-type>option[value=fetch]:checked) .operation,
-    /*.fetch-dd:has(option[value=htmlElement]:checked) ~ .fetch-dd,
-    .fetch-dd:has(option[value=htmlElement]:checked) .default-value,*/
+
 .handleType:has(option[value="remove element"]:checked) ~ :not(.fetch-replacement-target,button),
 .handleType:has(option:where([value=simpleValueHandlers],[value=codeRelate]):checked) ~ :not(.fetch-replacement-target,button) {
     display: none;

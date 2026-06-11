@@ -2,7 +2,7 @@
 
     const rightTrim = superFetchHook.allowFn.rightTrim;
     const {
-        htmlType, operations, formProcessor,
+        htmlType, formProcessor,
         templateHelper, mapTitle,
         log, getVarVal, anchorFn, handleOp, eventHook: eventFn,
     } = superFetchHook;
@@ -967,9 +967,8 @@
                 getFetchItem(data) {
                     data['handleOp'] = handleOp;
                     return data['super-fetch-item-html'] = (data?.['super-fetch-items'] ?? [{}]).map(item => {
-                            item.htmlType = htmlType;
-                            item.operations = operations;
-                        item.from = 'fetch-' + (item.operation ?? 'fetch');
+                        item.htmlType = htmlType;
+                        item.from = 'fetch-fetch';
                         item['$clone'] = data?.['$clone'] ?? false;
                         item['replacement-item-html'] = actions.handlers.replacement.getReplacementItem(item);
                             return templateHelper.buildTemplateHTML('fetch-item', item);
@@ -991,73 +990,6 @@
                 scope: 'html',
                 getTemplate: (data) => {
                     return templateHelper.buildTemplateHTML('tag', data);
-                }
-            },
-            handleElement: {
-                async action(param, from, target, vars = {}) {
-                    const fetchItems = [], handleItems = [];
-                    vars = {...vars, ...actionHelper.global};
-                    param['super-fetch-items'].forEach(item => item?.operation === 'handle' ? handleItems.push(item) : fetchItems.push(item));
-                    const rule = actionHelper.parseFetchRule(fetchItems);
-                    if (rule) {
-                        await actionHelper.getMultiVars(from, rule, param, vars);
-                    }
-                    for (const item of handleItems) {
-                        const attr = item['fetch-data-type'] === 'text' ? 'innerText' : item['fetch-data-type'],
-                            name = item['super-fetch-name'];
-                        const selector = item['value-selector'];
-                        if ('spell' === selector) {
-                            await this.handlerHelper(item, target, attr, vars)
-                            if (item?.['fetch-format']) {
-                                target[attr] = actionHelper.replaceVars2Format(vars, item['fetch-format']);
-                                name && (vars[name] = target[attr]);
-                            }
-                            continue
-                        }
-                        let i = -1;
-                        for (const ele of target.querySelectorAll(item['value-selector'])) {
-                            ++i;
-                            vars['@i@'] = i;
-                            await this.handlerHelper(item, ele, attr, vars);
-                            if (!item?.['fetch-format']) {
-                                continue;
-                            }
-                            ele[attr] = actionHelper.replaceVars2Format(vars, item['fetch-format']);
-                            name && (vars[name] = ele[attr]);
-                        }
-                    }
-                },
-                singleRun: true,
-                async handlerHelper(rule, ele, attr, vars) {
-                    if (!rule.handleValue) {
-                        return
-                    }
-
-                    const param = {vars, rule, handlers: [...rule['replacement-items']], fetchType: 'handle'};
-                    while (true) {
-                        const item = param.handlers.shift();
-                        if (!item) {
-                            break;
-                        }
-                        if (this.handlers?.[item.handleType]) {
-                            this.handlers?.[item.handleType](item, ele, param);
-                            continue;
-                        }
-                        ele[attr] = await valueHandlers[item.handleType].handle(item, ele[attr], param);
-                    }
-                },
-                scope: 'html',
-                text: mapTitle['handleElement'],
-                desc: mapTitle['handleElement-desc'],
-                form: (el, data) => actions.handlers.fetch.form(el, data),
-                getTemplate: (data) => {
-                    actions.handlers.fetch.getFetchItem(data);
-                    return templateHelper.buildTemplateHTML('handleElement', data);
-                },
-                handlers: {
-                    'remove element': (item, target) => {
-                        target.querySelectorAll(item.searchValue).forEach(el => el.remove());
-                    }
                 }
             },
             replacement: {
@@ -1172,7 +1104,7 @@
                 .map(el => [el, formProcessor.convertFetchParam(el)]);
             items.forEach(item => {
                 const el = item[0];
-                const rules = actionHelper.parseFetchRule(item[1]['super-fetch-items'].filter(v => v?.operation !== 'handle'));
+                const rules = actionHelper.parseFetchRule(item[1]['super-fetch-items']);
                 rules?.forEach(rule => this.calculateWidth(el, rule, 0));
             });
             if (this.maxDeep > old) {
@@ -1282,13 +1214,6 @@
         ...simpleValueHandlerHelper.build(codeRelateHandlers)
     };
 
-    PushHookAnkiChange('.operation', ev => {
-        const el = findParent(ev.target, '.super-fetch-item').querySelector('.fetch-replacement-items');
-        const data = actions.handlers.replacement.form(el, {});
-        data.from = 'fetch-' + ev.target.value;
-        const lis = actions.handlers.replacement.getReplacementItem(data);
-        [...el.children].forEach((child, i) => child.replaceWith(lis[i]))
-    });
 
     PushHookAnkiHtml(div => {
         setting = div.querySelector('.select-setting');
