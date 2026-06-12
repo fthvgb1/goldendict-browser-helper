@@ -335,10 +335,20 @@
 
     PushHookAnkiChange('.fetch-active', fetchActive);
 
-    ['swal2-cancel swal2-styled',
-        'swal2-confirm swal2-styled',
-        'swal2-container swal2-center swal2-backdrop-hide'].forEach(className => {
-        PushExpandAnkiInputButton(className, '', saveFetchItems);
+    const saveFn = ev => {
+        for (const selector of ['.swal2-cancel', '.swal2-confirm', '.swal2-backdrop-show']) {
+            if (ev.target.matches(selector)) {
+                saveFetchItems();
+                return;
+            }
+        }
+    }
+    PushHookAnkiDidRender(() => {
+        document.addEventListener('click', saveFn, true);
+    });
+
+    PushHookAnkiClose(() => {
+        document.removeEventListener('click', saveFn, true);
     });
 
 
