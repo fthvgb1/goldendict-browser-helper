@@ -656,4 +656,44 @@
         scope: {fetch: {fetch: '*'}}
     });
 
+    superFetchHook.openExtractionFns.push((show, setting) => {
+        if (!show) {
+            return
+        }
+        setting.addEventListener('dblclick', evt => {
+            if (!evt.target.matches('input[type=text]')) {
+                return;
+            }
+            const i = evt => textarea.value = evt.target.value;
+            const input = evt.target;
+            const fn = () => {
+                input.nextElementSibling.remove();
+                input.removeEventListener('input', i);
+            }
+            if (input.nextElementSibling?.name === input.name) {
+                fn(input, input.nextElementSibling);
+                return;
+            }
+            input.addEventListener('input', i);
+            const textarea = superFetchHook.templateHelper.createElement('textarea', {
+                value: evt.target.value,
+                name: evt.target.name,
+                className: 'show valueHelper',
+                rows: 8,
+                cols: 50,
+                placeholder: input.placeholder,
+                title: input.title,
+            });
+            evt.target.insertAdjacentElement('afterend', textarea);
+            textarea.addEventListener('input', () => input.value = textarea.value)
+            textarea.addEventListener('dblclick', fn);
+            textarea.focus();
+        });
+    });
+
+    superFetchHook.simpleValueHandlerHelper.addHandlers('anki', {
+        openDiag: {},
+        closeDiag: {}
+    });
+
 })();

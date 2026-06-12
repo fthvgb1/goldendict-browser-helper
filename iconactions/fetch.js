@@ -1231,6 +1231,7 @@
     const show = evtFn.showProcessor;
     evtFn.showProcessor = ev => {
         show(ev);
+        superFetchHook.openExtractionFns.forEach(fn => fn(ev.target.checked, setting));
         if (!ev.target.checked) {
             return;
         }

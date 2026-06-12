@@ -164,6 +164,24 @@ select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAtt
     display: none;
 }
 
+:has(> .valueHelper) {
+    position: relative;
+}
+
+.valueHelper {
+    position: absolute;
+    bottom: 2vw;
+    z-index: 1;
+}
+
+.fetch-replacement-item .valueHelper {
+    right: 0;
+}
+
+.fetch-box .valueHelper {
+    left: 0;
+}
+
 .fetch-fold {
     left: -2.5vw;
     top: 2vw;

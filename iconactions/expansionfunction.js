@@ -428,7 +428,10 @@
                     className: 'show',
                     innerHTML: buildOption(Object.keys(o.valueType).map(v => [v, lang(v)]), vars?.valueType, 0, 1),
                 });
-                const pattern = superFetchHook.templateHelper.buildFormElement.input('regPattern', vars?.pattern ?? '', {className: 'show'});
+                const pattern = superFetchHook.templateHelper.buildFormElement.input('regPattern', vars?.pattern ?? '', {
+                    className: 'show',
+                    type: 'text'
+                });
                 const handleRange = superFetchHook.templateHelper.buildFormElement.input('rangeHandle', rangeHandle, {
                     className: 'hidden',
                     type: 'text'
