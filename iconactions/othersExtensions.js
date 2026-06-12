@@ -689,9 +689,47 @@
         });
     });
 
+    superFetchHook.hookLang({
+        openDiag: '打开anki制卡',
+        closeDiag: '关闭anki制卡',
+        endScope: '结束作用域',
+    });
     superFetchHook.simpleValueHandlerHelper.addHandlers('anki', {
-        openDiag: {},
-        closeDiag: {}
+        openDiag: {
+            fn(value, item, param) {
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endScope');
+                PushHookAnkiDidRender(() => fn(value));
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+            }
+        },
+        closeDiag: {
+            fn(value, item, param) {
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endScope');
+                PushHookAnkiClose(() => fn(value));
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+            }
+        },
+        endScope: {
+            fn: v => v,
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: {
+                        type: 'text',
+                        attrs: {
+                            className: 'hidden',
+                            value: 'endScope'
+                        }
+                    },
+                }
+            }
+        }
     });
 
 })();

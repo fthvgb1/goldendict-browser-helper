@@ -101,6 +101,10 @@
         replaceElement: '替换元素',
         neededReplaceElement: '需要被替换的元素,为空表示当前值',
         replaceElementName: '替换的元素,可使用{变量}，不使用则将创建',
+        cloneElement: '克隆元素',
+        cloneTarget: '要克隆的元素名,可使用{变量}',
+        cloneDeep: '深度克隆',
+        cloneTo: '克隆后赋值给',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('htmlFns', {
         stringToElement: {
@@ -236,6 +240,32 @@
                         type: 'text',
                         width: '8vw',
                     }
+                }
+            }
+        },
+
+        cloneElement: {
+            fn(value, item, param) {
+                const target = superFetchHook.fetchActionHelper.getVar(item.cloneTarget, param, true);
+                const name = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.elementVarName);
+                param.vars[name] = target.cloneNode(item.cloneDeep);
+                return param.vars[param.rule['super-fetch-name']];
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    cloneTarget: {
+                        type: 'text',
+                        width: '5vw',
+                    },
+                    cloneDeep: {
+                        type: 'checkbox',
+                    },
+                    elementVarName: {
+                        title: lang('cloneTo'),
+                        type: 'text',
+                        width: '5vw',
+                    },
                 }
             }
         },
