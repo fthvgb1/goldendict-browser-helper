@@ -656,10 +656,8 @@
         scope: {fetch: {fetch: '*'}}
     });
 
-    superFetchHook.openExtractionFns.push((show, setting) => {
-        if (!show) {
-            return
-        }
+    PushHookAnkiHtml(html => {
+        const setting = html.querySelector('.select-setting');
         setting.addEventListener('dblclick', evt => {
             if (!evt.target.matches('input[type=text]')) {
                 return;
