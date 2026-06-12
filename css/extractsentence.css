@@ -235,7 +235,7 @@ select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAtt
     width: 4.7vw;
 }
 
-.fetch-replacement-item:has(.fetch-replacement-target >option[value=insertElement]:checked) {
+.fetch-replacement-item:has(.fetch-replacement-target >option:where([value=insertElement],[value=for]):checked) {
     max-width: 31.2vw;
 }
 

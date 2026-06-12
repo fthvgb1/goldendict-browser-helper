@@ -19,7 +19,7 @@
         'str2Array-desc': '此时替换值项为分隔符',
         'array2str': '数组转字符串',
         'array2str-desc': '此时替换值项为分隔符',
-        'executeCmd': '执行命令',
+        'executeCmd': '执行外部程序',
         'executeCmd-desc': '替换项为程序路径，模式项为参数，可使用{变量名}，会解析替换成变量值',
         'haveReturn': '有结果值返回调用',
         'haveReturn-desc': '替换值项为程序路径，模式项为参数,[arg1,arg2],{}使用变量',
@@ -605,45 +605,80 @@
             completeFalse: v => v === false,
         },
     });
+
+    superFetchHook.hookLang({
+        commandPath: '程序路径,可使用{变量}',
+        arguments: '参数,可使用{变量},默认格式同常见shell命令行字符串参数',
+        argvUseVariable: '参数使用一个变量',
+        returnPid: '返回pid',
+    });
     superFetchHook.simpleValueHandlerHelper.addHandlers('executeCmd', {
         haveReturn: {
             fn: async (value, item, param) => {
                 const req = superFetchHook.valueHandlers.executeCmd.req;
-                item.pattern = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.pattern);
-                //const args = JSON.parse(item.pattern)
-                const r = await req({cmd: item.replaceValue, args: shellQuote.parse(item.pattern)}, 'cmd');
-                //console.log(r.response);
+                const r = await req({
+                    cmd: superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.commandPath),
+                    args: item.argvUseVariable ?
+                        superFetchHook.fetchActionHelper.getVar(item.arguments, param, true) :
+                        shellQuote.parse(superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.arguments))
+                }, 'cmd');
                 return r.response;
             },
-            showInput: 'replaceValue,pattern',
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    commandPath: {
+                        type: 'text',
+                        width: '5vw',
+                    },
+                    arguments: {
+                        type: 'text',
+                        width: '6vw',
+                    },
+                    argvUseVariable: {
+                        type: 'checkbox'
+                    }
+                }
+            },
         },
         cmdNoReturn: {
-            fn(value, item, param) {
-                const req = superFetchHook.valueHandlers.executeCmd.req;
-                item.pattern = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.pattern);
-                req({
-                    cmd: item.replaceValue,
-                    res: 0,
-                    args: shellQuote.parse(item.pattern)
-                }, 'cmd');
-                return value;
-            },
-            showInput: 'replaceValue,pattern',
-        },
-        cmdNoReturnWithPid: {
             async fn(value, item, param) {
                 const req = superFetchHook.valueHandlers.executeCmd.req;
-                item.pattern = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.pattern);
-                const r = await req({
-                    cmd: item.replaceValue,
+                const argv = {
                     res: 0,
-                    getPid: 1,
-                    args: shellQuote.parse(item.pattern)
-                }, 'cmd');
-                return r.response;
+                    cmd: superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.commandPath),
+                    args: item.argvUseVariable ?
+                        superFetchHook.fetchActionHelper.getVar(item.arguments, param, true) :
+                        shellQuote.parse(superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.arguments))
+                }
+                if (item.returnPid) {
+                    argv.getPid = 1;
+                    const r = await req(argv, 'cmd');
+                    return r.response;
+                }
+                req(argv, 'cmd');
+                return value;
             },
-            showInput: 'replaceValue,pattern',
-        }
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    commandPath: {
+                        type: 'text',
+                        width: '5vw',
+                    },
+                    arguments: {
+                        type: 'text',
+                        width: '5vw',
+                    },
+                    argvUseVariable: {
+                        type: 'checkbox'
+                    },
+                    returnPid: {
+                        type: 'checkbox'
+                    }
+                }
+            },
+        },
     }, {
         scope: {fetch: {fetch: '*'}},
         async req(data, path) {

@@ -403,11 +403,100 @@
 
     superFetchHook.hookLang({
         foreach: '循环遍历',
-        iterator: '循环的变量',
-        iteratorElement: '循环子变量',
-        breakforof: '中断forof',
+        iterator: '要循环的变量名',
+        iteratorElement: '循环时子变量名',
+        breakforof: '中断for和forof',
+        iteratorVariable: '循环时使用的变量名',
+        startNumber: '开始的数',
+        handleTypeOperator: '循环时比较操作',
+        iteratorNumber: '要循环的数或变量名',
+        useVariable: '使用变量',
+        addNumber: '每次循环时增减量',
     })
     superFetchHook.simpleValueHandlerHelper.addHandlers('foreach', {
+        for: {
+            async fn(value, item, param) {
+                const iterator = item.useVariable ? superFetchHook.fetchActionHelper.getVar(item.iterator, param, true) : item.iterator;
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['for', 'endfor']);
+                for (let i = item.start; superFetchHook.valueHandlers.foreach.handlers.for.operate[item.handleTypeOperator](i, iterator); i += item.addNumber) {
+                    param.vars[item.iteratorVariable] = i;
+                    value = await fn(value);
+                    if (param?.breakforof) {
+                        delete param.breakforof;
+                        break;
+                    }
+                }
+                return value;
+            },
+            operate: {
+                '>': (i, v) => i > v,
+                '>=': (i, v) => i >= v,
+                '<': (i, v) => i < v,
+                '<=': (i, v) => i <= v,
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    iteratorVariable: {
+                        type: 'text',
+                        width: '5vw',
+                    },
+                    start: {
+                        title: lang('startNumber'),
+                        type: 'number',
+                        width: '4vw',
+                    },
+                    handleTypeOperator: {
+                        type: 'select',
+                        getOptions(value) {
+                            return buildOption(['>', '>=', '<', '<='], value);
+                        },
+                        width: '4vw',
+                    },
+                    iterator: {
+                        title: lang('iteratorNumber'),
+                        type: 'text',
+                        width: '5vw',
+                    },
+                    useVariable: {
+                        type: 'checkbox',
+                        afterInsertDoc(el, v) {
+                            el.previousElementSibling.type = v ? 'text' : 'number';
+                        },
+                        attrs: {
+                            onchange: ev => ev.target.previousElementSibling.type = ev.target.checked ? 'text' : 'number'
+                        }
+                    },
+                    addNumber: {
+                        type: 'number',
+                        width: '4vw',
+                    },
+                    rangeHandle: {
+                        type: 'text',
+                        hook: el => el.value = 'for',
+                        attrs: {
+                            className: 'hidden',
+                        }
+                    },
+                }
+            }
+        },
+
+        endfor: {
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: {
+                        type: 'text',
+                        attrs: {
+                            className: 'hidden',
+                            value: 'endfor',
+                        }
+                    }
+                }
+            }
+        },
+
         forof: {
             async fn(value, item, param) {
                 const iterator = superFetchHook.getVariable(param.vars, item.iterator);
@@ -693,8 +782,9 @@
         openDiag: '打开anki制卡',
         closeDiag: '关闭anki制卡',
         endScope: '结束作用域',
+        makeAnkiCard: 'anki制卡',
     });
-    superFetchHook.simpleValueHandlerHelper.addHandlers('anki', {
+    superFetchHook.simpleValueHandlerHelper.addHandlers('makeAnkiCard', {
         openDiag: {
             fn(value, item, param) {
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endScope');
