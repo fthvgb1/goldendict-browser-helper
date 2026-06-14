@@ -80,14 +80,15 @@
         'simpleType-desc': '替换即为快捷键',
         'typeCopyType': '输入所快捷键扣复制，然后再输入快捷键',
         'typeCopyType-desc': '替换项为前一个快捷键，pattern项为后一个快捷键',
-        'delay': '延时执行',
-        'delayOrInterval': '延时或超时执行',
-        'delayTime': '延时时间',
-        'delayTime-desc': '延时时间,单位毫秒',
-        'interval': '定时执行',
+        'delay': '延时执行sleep',
+        'delayOrInterval': '延时或定时执行',
+        'time-desc': '时间,单位毫秒',
+        'setTimeout': '定时执行一次setTimeout',
+        'interval': '定时执行setInterval',
         'interval-desc': '定时执行此项后面对值处理的所有操作',
+        'intervalName': '定时标识，用于清除该定时器',
         'intervalTime-desc': '定时时间，单位毫秒',
-        'clearInterval': '停止前一个定时器',
+        'clearInterval': '停止定时器clearInterval',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('typeKeys', {
         simpleType: {
@@ -112,13 +113,34 @@
     superFetchHook.simpleValueHandlerHelper.addHandlers('delayOrInterval', {
         delay: {
             async fn(value, item) {
-                const timber = time => new Promise(resolve => setTimeout(resolve, time));
-                await timber(item.delayTime);
+                const sleeper = time => new Promise(resolve => setTimeout(resolve, time));
+                await sleeper(item.delayTime);
                 return value
             },
             param: {
                 fields: {
                     delayTime: {
+                        title: lang('time-desc'),
+                        type: 'number',
+                        width: '7vw',
+                    },
+                },
+                mountElementSelector: '.fetch-replacement-target',
+            }
+        },
+        setTimeout: {
+            fn(value, item, param) {
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param);
+                const t = setTimeout(async () => {
+                    value = await fn(value, item, param);
+                    clearTimeout(t);
+                }, item.time);
+                return value;
+            },
+            param: {
+                fields: {
+                    time: {
+                        title: lang('time-desc'),
                         type: 'number',
                         width: '7vw',
                     },
@@ -129,14 +151,19 @@
         interval: {
             fn(value, item, param) {
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param);
-                param.interval = setInterval(async () => {
+                param.vars[item.intervalName] = setInterval(async () => {
                     value = await fn(value, item, param);
                 }, item.intervalTime);
                 return value;
             },
             param: {
                 fields: {
+                    intervalName: {
+                        type: 'text',
+                        width: '5vw',
+                    },
                     intervalTime: {
+                        title: lang('time-desc'),
                         type: 'number',
                         width: '7vw',
                     },
@@ -146,10 +173,16 @@
         },
         clearInterval: {
             fn(value, item, param) {
-                param.interval && clearInterval(param.interval);
+                param.vars[item.intervalName] && clearInterval(param.vars[item.intervalName]);
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    intervalName: {
+                        type: 'text',
+                        width: '5vw',
+                    }
+                },
             }
         }
     }, {scope: {fetch: {fetch: '*'}}});
@@ -793,6 +826,15 @@
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: {
+                        type: 'text',
+                        attrs: {
+                            className: 'hidden',
+                            value: 'openDiag'
+                        }
+                    },
+                }
             }
         },
         closeDiag: {
@@ -803,6 +845,18 @@
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
+                param: {
+                    mountElementSelector: '.fetch-replacement-target',
+                    fields: {
+                        rangeHandle: {
+                            type: 'text',
+                            attrs: {
+                                className: 'hidden',
+                                value: 'closeDiag'
+                            }
+                        },
+                    }
+                }
             }
         },
         endScope: {

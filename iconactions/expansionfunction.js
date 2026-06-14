@@ -186,7 +186,14 @@
 
         deleteElement: {
             fn(value, item, param) {
-                const ele = getValue(param.vars, item.elementVarName ? item.elementVarName : param.rule['super-fetch-name']);
+                const name = item.elementVarName ? item.elementVarName : param.rule['super-fetch-name'];
+                const ele = superFetchHook.fetchActionHelper.getVar(name, param);
+                if ('string' === typeof ele && ele) {
+                    const el = superFetchHook.templateHelper.createElement('div', value);
+                    el.querySelectorAll(item.deleteElementSelector).forEach(el => el.remove());
+                    param.vars[name] = el.innerHTML;
+                    return param.vars[param.rule['super-fetch-name']];
+                }
                 if (!(ele instanceof Element)) {
                     console.log('can parse element', value, item);
                     return value;
@@ -203,7 +210,7 @@
                     },
                     deleteElementSelector: {
                         type: 'text',
-                        width: '4vw',
+                        width: '7vw',
                     }
                 }
             }

@@ -1,31 +1,48 @@
 ;(() => {
     superFetchHook.hookLang({
         'embolden': `加粗英文单词`,
-        'bold': `{word}语法，悬念到选项上看对应模式说明`,
-        'specificValue': '具体值',
+        'emboldenFormat': `html语法，{word}为固定值表示要加粗的单词，为空默认格式为<b>{word}</b>`,
+        'specificValue': '具体某个单词',
+        'emboldenMod': '要加粗的单词为',
+        'emboldenTarget': '加粗目标',
     });
 
     superFetchHook.valueHandlers.embolden = {
         text: superFetchHook.lang('embolden'),
         title: superFetchHook.lang('embolden'),
         handle(item, value, param = {}) {
-            if (!item['searchValue'] || !value) {
+            if (!item.emboldenTarget || !value) {
                 return value;
             }
             const words = parseWords(item, param).replace(/&nbsp;/g, ' ');
             if (!words) {
                 return value;
             }
-            const format = item?.replaceValue ? item.replaceValue : '<b>{word}</b>';
+            const format = item?.emboldenFormat ? item.emboldenFormat : '<b>{word}</b>';
             return embolden(value, words, format);
         },
-        form(li, data) {
-            //superFetchHook.log(li,data);
-        },
-        renderHook(html, vars) {
-            const input = html.querySelector('.pattern');
-            input.replaceWith(buildSelect(vars?.['pattern'] ?? ''))
-        },
+        renderHook: superFetchHook.simpleValueHandlerHelper.buildFieldRender({
+            mountElementSelector: '.handleType',
+            fields: {
+                emboldenMod: {
+                    type: 'select',
+                    width: '4vw',
+                    getOptions(v) {
+                        return buildOption(
+                            Object.keys(modeFn).map(k => [k, title[k][0]]), v, 0, 1, k => ` title="${title[k[0]][1]}" `
+                        )
+                    },
+                },
+                emboldenTarget: {
+                    type: 'text',
+                    width: '4vw',
+                },
+                emboldenFormat: {
+                    type: 'text',
+                    width: '10vw',
+                },
+            }
+        }),
         scope: 'fetch',
     }
 
@@ -38,20 +55,10 @@
         specificValue: ['具体值', '具体值']
     }
 
-    function buildSelect(sel = '') {
-        const select = document.createElement('select');
-        select.name = 'pattern';
-        select.title = superFetchHook.lang('bold');
-        select.className = 'pattern';
-        select.innerHTML = buildOption(
-            Object.keys(modeFn).map(k => [k, title[k][0]]), sel, 0, 1, k => ` title="${title[k[0]][1]}" `
-        );
-        return select
-    }
 
     const modeFn = {
         variable(f, s, item, param) {
-            return param.vars[superFetchHook.allowFn.trims(item.searchValue, '{}')] ?? '';
+            return param.vars[superFetchHook.allowFn.trims(item.emboldenTarget, '{}')] ?? '';
         },
         field(field) {
             return document.querySelector(`.field-name[value=${field}]+input`)?.value;
@@ -60,7 +67,7 @@
             return document.querySelector(`.field-name[value=${field}]+.spell .spell-content ${selector}`)?.innerText;
         },
         anchor(f, s, item, param) {
-            const rule = {...param.rule, 'value-selector': item['searchValue']}
+            const rule = {...param.rule, 'value-selector': item['emboldenTarget']}
             const ele = superFetchHook.fetchActionHelper.anchor2Ele(rule, param.beforeQueryEle, param.fetchParam);
             if (!ele) {
                 return '';
@@ -68,14 +75,14 @@
             return superFetchHook.fetchActionHelper.isTextNode(ele) ? ele.value : ele.innerText;
         },
         specificValue(f, s, item) {
-            return item.searchValue;
+            return item.emboldenTarget;
         }
     };
 
     function parseWords(item, param) {
-        const arr = item['searchValue'].split('@');
+        const arr = item['emboldenTarget'].split('@');
         const field = arr[0], selector = arr?.[1] ?? '';
-        const mode = item['pattern'] ? item['pattern'] : 'field';
+        const mode = item['emboldenMod'] ? item['emboldenMod'] : 'field';
         if (!modeFn?.[mode]) {
             return '';
         }

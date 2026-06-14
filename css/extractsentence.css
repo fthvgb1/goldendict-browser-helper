@@ -251,6 +251,10 @@ select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAtt
     width: 2vw;
 }
 
+li:has( input[name=rangeHandle]) {
+    background-color: #ebd0e7;
+}
+
 
 .fetch-opera, .fetch-dd {
 

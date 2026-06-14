@@ -80,7 +80,7 @@
             };
             let type = attr.type;
             if ('select' === attr.type) {
-                value = attr.getOptions?.(value) ?? '';
+                value = attr.getOptions?.(value, vars) ?? '';
             } else {
                 'textarea' !== attr.type && (type = 'input');
                 attr.attrs.type = attr.type;
@@ -235,17 +235,6 @@
                     }
                 }
             )
-        },
-
-        'remove element': {
-            text: mapTitle['remove element'],
-            title: mapTitle['remove element'],
-            handle(item, value) {
-                const el = templateHelper.createElement('div', value);
-                el.querySelectorAll(item.searchValue).forEach(el => el.remove());
-                return el.innerHTML;
-            },
-            scope: 'fetch',
         },
 
         parseTemplate: {

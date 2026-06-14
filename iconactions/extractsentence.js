@@ -604,8 +604,9 @@
             return value ? ' checked ' : '';
         },
         buildOption,
-        lang(name) {
-            return htmlSpecial(mapTitle?.[name] ?? name);
+        lang(name, escape = true) {
+            const v = mapTitle?.[name] ?? name;
+            return escape ? htmlSpecial(v) : v;
         }
     };
 
@@ -1061,7 +1062,7 @@
             mapTitle, fetchActions: actions,
             fetchActionHelper: actionHelper,
             mergeMap: (obj, newObj) => iterateObjByKey(newObj, (k, v) => obj[k] = v, false),
-            hookLang: langKV => iterateObjByKey(langKV, (k, v) => mapTitle[k] = htmlSpecial(v), false),
+            hookLang: langKV => iterateObjByKey(langKV, (k, v) => mapTitle[k] = v, false),
             lang: name => allowFn.lang(name) ?? name,
             allowFn, htmlType, handleOp, openExtractionFns: [],
             templateHelper,
