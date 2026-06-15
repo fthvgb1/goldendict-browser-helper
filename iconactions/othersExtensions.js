@@ -508,7 +508,7 @@
                         type: 'text',
                         hook: el => el.value = 'for',
                         attrs: {
-                            className: 'hidden',
+                            className: 'hidden needStretch',
                         }
                     },
                 }
@@ -656,7 +656,7 @@
                     rangeHandle: {
                         type: 'text',
                         attrs: {
-                            className: 'hidden',
+                            className: 'hidden needStretch',
                             value: 'startEventScope'
                         }
                     },
@@ -681,7 +681,6 @@
                             return buildOption([], val)
                         },
                         afterInsertDoc(select, value) {
-                            select.parentElement.style.maxWidth = '31vw';
                             const select2 = $(select);
                             let selected = false;
                             const data = iterateObjByKey(superFetchHook.valueHandlers.simpleEvent.eventSet, (k, v) => (
@@ -816,6 +815,8 @@
         closeDiag: '关闭anki制卡',
         endScope: '结束作用域',
         makeAnkiCard: 'anki制卡',
+        ankiTag: '标签名,多个用,隔开',
+        AddTag: '打标签',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('makeAnkiCard', {
         openDiag: {
@@ -870,6 +871,22 @@
                             className: 'hidden',
                             value: 'endScope'
                         }
+                    },
+                }
+            }
+        },
+        AddTag: {
+            fn(value, item) {
+                superFetchHook.fetchActionHelper.tagForAnki(item.tagName.replaceAll('，', ',').trim());
+                return value
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    tagName: {
+                        title: lang('ankiTag'),
+                        type: 'text',
+                        width: '13vw',
                     },
                 }
             }

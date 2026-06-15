@@ -179,6 +179,9 @@
                     insertedElement: {
                         type: 'text',
                         width: '23vw',
+                        attrs: {
+                            className: 'show needStretch'
+                        }
                     }
                 }
             }
