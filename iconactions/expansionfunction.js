@@ -451,40 +451,50 @@
                 }
                 return value;
             },
-            show(li, vars, rangeHandle = 'if') {
-                const o = superFetchHook.valueHandlers['ifBranch'];
-                const compare = superFetchHook.templateHelper.createElement('select', {
-                    name: 'compareType',
-                    className: 'show',
-                    innerHTML: buildOption(Object.keys(o.compareFn).map(v => [v, superFetchHook.mapTitle[v]]), vars?.compareType, 0, 1)
-                });
-                const v1 = o.createInput('v1', {value: vars?.['v1'] ?? ''}),
-                    v2 = o.createInput('v2', {value: vars?.['v2'] ?? ''});
-                li.querySelectorAll('.fetch-replacement-target ~ :not(button)').forEach(el => el.remove());
-                const replaceSelect = li.querySelector('.fetch-replacement-target');
-                [v1, compare].reduce((pre, cur) => pre.insertAdjacentElement('afterend', cur), replaceSelect);
-                const valueType = superFetchHook.templateHelper.createElement('select', {
-                    name: 'valueType',
-                    className: 'show',
-                    innerHTML: buildOption(Object.keys(o.valueType).map(v => [v, lang(v)]), vars?.valueType, 0, 1),
-                });
-                const pattern = superFetchHook.templateHelper.buildFormElement.input('regPattern', vars?.pattern ?? '', {
-                    className: 'show',
-                    type: 'text'
-                });
-                const handleRange = superFetchHook.templateHelper.buildFormElement.input('rangeHandle', rangeHandle, {
-                    className: 'hidden',
-                    type: 'text'
-                });
-                [v2, pattern, valueType, handleRange].reduce((pre, cur) => pre.insertAdjacentElement('afterend', cur), compare);
-            }
+            show: superFetchHook.simpleValueHandlerHelper.buildFieldRender({
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    v1: {
+                        type: 'text'
+                    },
+                    compareType: {
+                        type: 'select',
+                        getOptions(v) {
+                            const o = superFetchHook.valueHandlers['ifBranch'];
+                            return buildOption(Object.keys(o.compareFn).map(v => [v, superFetchHook.mapTitle[v]]), v, 0, 1)
+                        },
+                    },
+                    v2: {
+                        type: 'text'
+                    },
+                    regPattern: {
+                        type: 'text'
+                    },
+                    valueType: {
+                        type: 'select',
+                        getOptions(v) {
+                            const o = superFetchHook.valueHandlers['ifBranch'];
+                            return buildOption(Object.keys(o.valueType).map(v => [v, lang(v)]), v, 0, 1);
+                        }
+                    },
+                    rangeHandle: {
+                        type: 'text',
+                        afterInsertDoc(el) {
+                            el.value = el.parentElement.querySelector('.fetch-replacement-target').value;
+                        },
+                        attrs: {
+                            className: 'hidden',
+                        }
+                    }
+                }
+            }),
         },
         elseif: {
             async fn(value, item, param) {
                 return await superFetchHook.valueHandlers.ifBranch.handlers.if.fn(value, item, param)
             },
             show: (li, vars) => {
-                superFetchHook.valueHandlers.ifBranch.handlers.if.show(li, vars, 'elseif');
+                superFetchHook.valueHandlers.ifBranch.handlers.if.show(li, vars);
             }
         },
         else: {
@@ -501,9 +511,9 @@
                 fields: {
                     rangeHandle: {
                         type: 'text',
-                        hook: el => el.value = 'else',
                         attrs: {
                             className: 'hidden',
+                            value: 'else',
                         }
                     }
                 }

@@ -75,11 +75,10 @@
 
     superFetchHook.hookLang({
         typeKeys: '输入快捷键',
-        'typeKeys-desc': '组合键用空格隔开，多组用,逗号隔开',
-        'simpleType': '简单输入快捷键',
-        'simpleType-desc': '替换即为快捷键',
-        'typeCopyType': '输入所快捷键扣复制，然后再输入快捷键',
-        'typeCopyType-desc': '替换项为前一个快捷键，pattern项为后一个快捷键',
+        'simpleType': '输入快捷键',
+        'simpleTypeKeys': '快捷键,组合使用时用空格隔开，多组用,逗号隔开',
+        'typeCopyType': '先输入一次快捷键后复制，然后再输入一次快捷键',
+        'afterCopyType': '复制后输入的快捷键',
         'delay': '延时执行sleep',
         'delayOrInterval': '延时或定时执行',
         'time-desc': '时间,单位毫秒',
@@ -93,22 +92,45 @@
     superFetchHook.simpleValueHandlerHelper.addHandlers('typeKeys', {
         simpleType: {
             fn(value, item) {
-                request('keys=' + parseKey(item.replaceValue));
+                request('keys=' + parseKey(item.keys));
                 return value;
             },
-            showInput: 'replaceValue',
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    keys: {
+                        title: lang('simpleTypeKeys'),
+                        type: 'text',
+                        width: '13vw',
+                    }
+                }
+            }
         },
         typeCopyType: {
             fn(value, item) {
                 request({
-                    prev: parseKey(item.replaceValue),
-                    next: parseKey(item.pattern),
+                    prev: parseKey(item.keys),
+                    next: parseKey(item.afterCopyType),
                 }, 'aca')
                 return value;
             },
-            showInput: 'replaceValue,pattern',
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    keys: {
+                        title: lang('simpleTypeKeys'),
+                        type: 'text',
+                        width: '6.4vw',
+
+                    },
+                    afterCopyType: {
+                        type: 'text',
+                        width: '6.4vw',
+                    }
+                }
+            }
         }
-    }, {scope: {fetch: {fetch: '*'}},})
+    });
 
     superFetchHook.simpleValueHandlerHelper.addHandlers('delayOrInterval', {
         delay: {
