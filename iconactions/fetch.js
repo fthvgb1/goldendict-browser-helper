@@ -238,8 +238,6 @@
         },
 
         parseTemplate: {
-            text: mapTitle['parseTemplate'],
-            title: mapTitle['parseTemplate'],
             handle(item, value, eleParam) {
                 item.templateVar = actionHelper.replaceVars2Format(eleParam.vars, item.templateVar, true);
                 item.replaceValue = actionHelper.replaceVars2Format(eleParam.vars, item.replaceValue, true);
@@ -247,6 +245,13 @@
                     return value;
                 }
                 return actionHelper.replaceString(item, item.templateVar, eleParam.vars);
+            },
+            renderHook(li, vars) {
+                li.querySelector('.handleType').insertAdjacentElement('afterend',
+                    templateHelper.buildFormElement.input('templateVar', vars.templateVar ?? '', {
+                        className: 'show templateVar'
+                    })
+                );
             },
             scope: 'fetch',
         },

@@ -729,11 +729,6 @@
                 return _;
             },
             show(li, vars) {
-                const t = li.querySelector('.templateVar');
-                if (!t || 'INPUT' !== t.nodeName) {
-                    return
-                }
-                li.querySelector('.fetch-replacement-value').insertAdjacentElement('afterend', t);
                 const v = superFetchHook.valueHandlers.valueRelation;
                 const select = superFetchHook.templateHelper.createElement('select', {
                     name: 'variableType',
@@ -742,7 +737,7 @@
                         v, lang(v), `title="${superFetchHook.mapTitle?.[v + '-desc'] ?? lang(v)}"`
                     ]), vars?.variableType, 0, 1, 2)
                 });
-                t.replaceWith(select);
+                li.querySelector('.fetch-replacement-value').insertAdjacentElement('afterend', select);
             },
             showInput: 'replaceValue,pattern,variableType',
         },
