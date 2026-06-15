@@ -9,16 +9,19 @@
         'getComputedStyle-desc': '获取元素样式，此时替换为属性名，模式为伪类',
         'valueRelation': '值相关',
         'getVal': '取值',
+        'valueExpression': '变量名, format:(name,name|g,name|p)',
         'setValue': '设置值',
-        'setValue-desc': '此时替换项为要设置的变量名，为空表示设置当前值，正则项为设置的值或变量，当用函数时语法为{变量}.函数名|参数1,参数2...',
-        'getVal-desc': '从符号表中取值，替换项为变量名，无需{}',
+        'leftValue': '左值名',
+        'rightValue': '右值名',
+        'setValue-desc': '将右值赋给左值，当用函数时语法为{变量}.函数名|参数1,参数2...',
+        'getVal-desc': '从符号表中取值，无需{}',
         'toNumber': '转为数字',
         'o2Array': 'iterator转数组',
+        'o2Array-desc': 'currentValue=[...currentValue]',
         'toArrays': '单体转数组',
+        'toArrays-desc': 'currentValue=[currentValue]',
         'str2Array': '字符转数组',
-        'str2Array-desc': '此时替换值项为分隔符',
         'array2str': '数组转字符串',
-        'array2str-desc': '此时替换值项为分隔符',
         'executeCmd': '执行外部程序',
         'executeCmd-desc': '替换项为程序路径，模式项为参数，可使用{变量名}，会解析替换成变量值',
         'haveReturn': '有结果值返回调用',
@@ -53,8 +56,14 @@
         'bool': '布尔',
         'object': '对象',
         'variable': '变量',
+        'arrayUnshift': '向数组开开始位置添加一个值',
+        'arrayUnshift-desc': 'arr.unshift(value)',
         'pushArrayValue': '向数组末尾添加一个值',
+        'pushArrayValue-desc': 'arr.push(value)',
         'pushArrayArray': '向数组末尾添加一个数组内的值',
+        'pushArrayArray-desc': 'arrA.push(...arrB)',
+        'deleteVariable': '删除一个变量',
+        'varName': '变量名',
         'func': '函数',
         'breakIterator': '中断子项查queryAll或遍历',
         'breakChildrenHandle': '中断后续子项',
@@ -712,13 +721,21 @@
 
     superFetchHook.simpleValueHandlerHelper.addHandlers('valueRelation', {
         getVal: {
-            fn: (val, item, param) => getValue(param.vars, item.replaceValue),
-            showInput: 'replaceValue', // replaceValue|pattern
+            fn: (val, item, param) => superFetchHook.fetchActionHelper.getVar(item.valueExpression, param, true),
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    valueExpression: {
+                        type: 'text',
+                        width: '10vw',
+                    },
+                }
+            }
         },
         setValue: {
             fn(_, item, param) {
                 const v = superFetchHook.valueHandlers.valueRelation.buildValue(item, param);
-                const [name, g] = item.replaceValue.split('|');
+                const [name, g] = item.leftValue.split('|');
                 const m = {g: param.globalVars, p: param.parentVars};
                 const vars = m?.[g] ?? param.vars;
                 if (!name) {
@@ -726,62 +743,128 @@
                 }
                 const names = name.split('.').map(vv => getValue(param.vars, vv, vv, true)).join('.')
                 setMapVal(names, v, vars);
+                return param.vars[param.rule['super-fetch-name']];
+            },
+            show: superFetchHook.simpleValueHandlerHelper.buildFieldRender({
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    leftValue: {
+                        type: 'text',
+                        width: '5vw',
+                    },
+                    variableType: {
+                        type: 'select',
+                        getOptions(val) {
+                            const va = superFetchHook.valueHandlers.valueRelation;
+                            return buildOption(Object.keys(va.valueType).map(v => [
+                                v, lang(v), `title="${superFetchHook.mapTitle?.[v + '-desc'] ?? lang(v)}"`
+                            ]), val, 0, 1, 2)
+                        }
+                    },
+                    rightValue: {
+                        type: 'text',
+                        width: '5vw',
+                    },
+                }
+            })
+        },
+        deleteVariable: {
+            fn(value, item, param) {
+                let [express, scope] = item.varName.split('|');
+                const s = {g: param.globalVars, p: param.parentVars};
+                const varsMap = s[scope] ?? param.vars;
+                express = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, express);
+                delete varsMap[express];
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    varName: {
+                        type: 'text',
+                    }
+                }
+            }
+        },
+        arrayUnshift: {
+            fn(_, item, param) {
+                const v = superFetchHook.valueHandlers.valueRelation.buildValue(item, param);
+                const arr = superFetchHook.fetchActionHelper.getVar(item.leftValue, param, true);
+                arr.unshift(v);
                 return _;
             },
             show(li, vars) {
-                const v = superFetchHook.valueHandlers.valueRelation;
-                const select = superFetchHook.templateHelper.createElement('select', {
-                    name: 'variableType',
-                    className: 'variableType show',
-                    innerHTML: buildOption(Object.keys(v.valueType).map(v => [
-                        v, lang(v), `title="${superFetchHook.mapTitle?.[v + '-desc'] ?? lang(v)}"`
-                    ]), vars?.variableType, 0, 1, 2)
-                });
-                li.querySelector('.fetch-replacement-value').insertAdjacentElement('afterend', select);
+                superFetchHook.valueHandlers.valueRelation.handlers.setValue.show(li, vars);
             },
-            showInput: 'replaceValue,pattern,variableType',
         },
         pushArrayValue: {
             fn(_, item, param) {
                 const v = superFetchHook.valueHandlers.valueRelation.buildValue(item, param);
-                const arr = superFetchHook.fetchActionHelper.getVar(item.replaceValue, param, true);
+                const arr = superFetchHook.fetchActionHelper.getVar(item.leftValue, param, true);
                 arr.push(v);
                 return _;
             },
             show(li, vars) {
                 superFetchHook.valueHandlers.valueRelation.handlers.setValue.show(li, vars);
             },
-            showInput: 'replaceValue,pattern,variableType',
-            extraShowInput: '[name=variableType]',
         },
         pushArrayArray: {
             fn(_, item, param) {
-                const v = superFetchHook.valueHandlers.valueRelation.buildValue(item, param);
-                const arr = superFetchHook.fetchActionHelper.getVar(item.replaceValue, param, true);
+                const v = superFetchHook.fetchActionHelper.getVar(item.rightValue, param, true);
+                const arr = superFetchHook.fetchActionHelper.getVar(item.leftValue, param, true);
                 arr.push(...v);
                 return _;
             },
             show(li, vars) {
                 superFetchHook.valueHandlers.valueRelation.handlers.setValue.show(li, vars);
-                li.querySelector('.variableType').classList.remove('show');
+                li.querySelector('.variableType').remove();
             },
-            showInput: 'replaceValue,pattern',
         },
-        toNumber: Number,
+        toNumber: {
+            fn: Number,
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+            }
+        },
         str2Array: {
-            fn: (s, item) => Array.isArray(s) ? s : s.split(item.replaceValue),
-            showInput: 'replaceValue',
+            fn: (s, item) => Array.isArray(s) ? s : s.split(item.separator),
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    separator: {
+                        type: 'text',
+                        width: '7vw',
+                    },
+                }
+            }
         },
-        o2Array: arr => [...arr],
-        toArrays: arr => [arr],
+        o2Array: {
+            fn: arr => [...arr],
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+            }
+        },
+        toArrays: {
+            fn: arr => [arr],
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+            }
+        },
         array2str: {
-            fn: (arr, item) => arr.join(item.replaceValue),
-            showInput: 'replaceValue',
+            fn: (arr, item) => arr.join(item.separator),
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    separator: {
+                        type: 'text',
+                        width: '7vw',
+                    },
+                }
+            }
         },
     }, {
-        scope: {fetch: {fetch: '*', handle: 'getVal'}, replacement: 'setValue'},
         buildValue(item, param) {
-            const value = item.pattern;
+            const value = item.rightValue;
             return this.valueType[item.variableType](value, param.vars);
         },
 

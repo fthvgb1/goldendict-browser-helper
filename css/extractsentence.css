@@ -119,7 +119,7 @@ input[name=parent-selector], input[name=child-selector] {
 }
 
 .default-value, .parent-super-name, .variableType {
-    width: 5vw;
+    width: 4vw;
 }
 
 .fetch-bold-field, .fetch-html-replacement, .fetch-value-replacement {
@@ -239,7 +239,7 @@ select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAtt
     font-size: 1.2vw;
 }
 
-.fetch-replacement-item:has(.fetch-replacement-target>option:is([value=setValue],[value=pushArrayValue]):checked) :where(.fetch-replacement-target, .fetch-replacement-value) {
+.fetch-replacement-item:has(.fetch-replacement-target>option:is([value=setValue],[value=pushArrayValue],[value=arrayUnshift]):checked) :where(.fetch-replacement-target) {
     width: 4.7vw;
 }
 

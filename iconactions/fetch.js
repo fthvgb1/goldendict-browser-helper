@@ -158,11 +158,10 @@
                 return optionsArr = simpleValueHandlerHelper.buildOptions(handlers);
             }
 
-            let showHook, extraInput = '', show = {};
+            let showHook, show = {};
             const fn = () => {
                 iterateObjByKey(handlers, (k, handler) => {
-                    (handler?.show || handler?.showInput || handler?.param) && (showHook = true);
-                    handler?.extraShowInput && (extraInput += ',' + handler.extraShowInput);
+                    (handler?.show || handler?.param) && (showHook = true);
                     handler?.param && (show[k] = simpleValueHandlerHelper.buildFieldRender(handler.param));
                 }, false);
 
@@ -181,18 +180,9 @@
                         const select = html.querySelector('.fetch-replacement-target');
                         let handle = select.value;
                         show?.[handle]?.(html, vars);
-                        const selector = 'input[name=replaceValue],input[name=pattern]' + extraInput;
-                        let inputs = html.querySelectorAll(selector);
-                        const forEach = inputs.forEach;
-                        handlers?.[handle]?.showInput && forEach
-                            .bind(inputs)(el => handlers[handle].showInput.includes(el.name) && el.classList.add('show'));
                         handlers?.[handle]?.show?.(html, vars);
-
                         select.addEventListener('change', ev => {
-                            inputs = ev.target.parentElement.querySelectorAll(selector);
                             handle = select.value;
-                            forEach.bind(inputs)(el => handlers[handle]?.showInput?.includes?.(el.name) ?
-                                el.classList.add('show') : el.classList.remove('show'));
                             handlers?.[handle]?.show?.(ev.target.parentElement, vars);
                             show?.[handle]?.(ev.target.parentElement, vars);
                         });
@@ -543,7 +533,7 @@
                         value = param.vars[name] = await item(value, {}, param);
                         continue;
                     }
-                    const handler = {currVarName: name, ...item};
+                    const handler = {currentVarName: name, ...item};
                     value = param.vars[name] = await valueHandlers[handler.handleType].handle(handler, value, param);
                     if (handler?.break) {
                         break;

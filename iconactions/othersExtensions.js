@@ -898,8 +898,9 @@
             }
         },
         AddTag: {
-            fn(value, item) {
-                superFetchHook.fetchActionHelper.tagForAnki(item.tagName.replaceAll('，', ',').trim());
+            fn(value, item, param) {
+                const tags = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.tagName.replaceAll('，', ',').trim())
+                superFetchHook.fetchActionHelper.tagForAnki(tags);
                 return value
             },
             param: {
