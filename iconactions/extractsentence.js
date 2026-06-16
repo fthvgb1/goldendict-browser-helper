@@ -134,7 +134,8 @@
                 ev.target.parentElement.querySelectorAll(eventFn.selector).forEach(btn => btn.classList.add('fetch-hidden'))
                 return
             }
-            let fetchItems = GM_getValue('fetch-items', [{}]);
+            let fetchItems = GM_getValue('fetch-items', []);
+            fetchItems.length < 1 && fetchItems.push({});
             fetchItems.forEach(item => setting.appendChild(actionHelper.buildFetchItem(item)));
             if (GM_getValue('fetch-display-type', 1) === 2) {
                 const arr = Object.groupBy(fetchItems, item => buttonField(item)) ?? [];

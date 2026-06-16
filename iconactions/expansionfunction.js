@@ -199,7 +199,7 @@
         deleteElement: {
             fn(value, item, param) {
                 const name = item.elementVarName ? item.elementVarName : param.rule['super-fetch-name'];
-                const ele = superFetchHook.fetchActionHelper.getVar(name, param);
+                const ele = superFetchHook.fetchActionHelper.getVar(name, param, true);
                 if ('string' === typeof ele && ele) {
                     const el = superFetchHook.templateHelper.createElement('div', value);
                     el.querySelectorAll(item.deleteElementSelector).forEach(el => el.remove());

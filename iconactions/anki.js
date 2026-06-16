@@ -884,7 +884,7 @@
                     enableImageResizeInDiv(editor.querySelector('.spell-content'))
                 }
 
-                let {result: tags} = await anki('getTags');
+                let {result: tags} = await anki('getTags').catch(e => console.log(e)) ?? {result: []};
                 tags = tags.map(v => {
                     ankTags.add(v);
                     return {id: v, text: v}
