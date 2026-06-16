@@ -433,14 +433,18 @@
     superFetchHook.simpleValueHandlerHelper.addHandlers('ifBranch', {
         if: {
             identifier: new Set(['if', 'elseif', 'else', 'endif']),
-            fn: async (value, item, param) => {
+            async fn(value, item, param) {
+                param.handlers.unshift(async () => await superFetchHook.valueHandlers.ifBranch.handlers.if.ifFn(value, item, param));
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['if', 'endif']);
+                return await fn(value);
+            },
+            ifFn: async (value, item, param) => {
                 const o = superFetchHook.valueHandlers['ifBranch'];
                 const v1 = superFetchHook.fetchActionHelper.getVar(item['v1'], param);
                 const compareType = item.compareType, compareFn = o.compareFn[compareType];
                 const v2 = superFetchHook.fetchActionHelper.getVar(item['v2'], param);
                 const valFn = o.valueType[item.valueType];
                 const r = o.noType.has(compareType) ? compareFn(v1, v2, item) : compareFn(valFn(v1), valFn(v2), item);
-                // todo nest
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param, p => {
                     let i = -1;
                     for (const handler of param.handlers) {
@@ -774,8 +778,20 @@
                 const s = {g: param.globalVars, p: param.parentVars};
                 const varsMap = s[scope] ?? param.vars;
                 express = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, express);
-                delete varsMap[express];
-                return value;
+                const arr = express.split('.');
+                let n = '', o = varsMap;
+                while (true) {
+                    n = arr.shift();
+                    if (!o.hasOwnProperty(n)) {
+                        break;
+                    }
+                    if (arr.length < 1) {
+                        delete o[n];
+                        break;
+                    }
+                    o = o[n];
+                }
+                return param.vars[item.currentVarName];
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',

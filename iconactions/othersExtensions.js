@@ -55,7 +55,7 @@
             while ((r = this.reg.exec(express)) !== null) {
                 arr.push(express.slice(i, r.index));
                 i = r.index + r[0].length;
-                const v = '$vars' === r[1] ? vars : superFetchHook.getVariable(vars, r[1], r[0]);
+                const v = '$vars' === r[1] ? vars : superFetchHook.getVariable(vars, r[1], undefined);
                 arr.push(v);
             }
             i < express.length && arr.push(express.slice(i));
