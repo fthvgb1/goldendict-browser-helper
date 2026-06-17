@@ -460,7 +460,7 @@
         foreach: '循环遍历',
         iterator: '要循环的变量名',
         iteratorElement: '循环时子变量名',
-        breakforof: '中断for和forof',
+        breakforof: '中断for,forof,while(true)',
         iteratorVariable: '循环时使用的变量名',
         startNumber: '开始的数',
         handleTypeOperator: '循环时比较操作',
@@ -528,9 +528,9 @@
                     },
                     rangeHandle: {
                         type: 'text',
-                        hook: el => el.value = 'for',
                         attrs: {
                             className: 'hidden needStretch',
+                            value: 'for',
                         }
                     },
                 }
@@ -579,9 +579,62 @@
                     },
                     rangeHandle: {
                         type: 'text',
-                        hook: el => el.value = 'forof',
                         attrs: {
                             className: 'hidden',
+                            value: 'forof',
+                        }
+                    }
+                }
+            }
+        },
+        endforof: {
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: {
+                        type: 'text',
+                        attrs: {
+                            className: 'hidden',
+                            value: 'endforof',
+                        }
+                    }
+                }
+            }
+        },
+        'while(true)': {
+            async fn(value, item, param) {
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['while', 'endwhile']);
+                while (true) {
+                    value = await fn(value, item, param);
+                    if (param?.breakforof) {
+                        delete param.breakforof;
+                        break;
+                    }
+                }
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: {
+                        type: 'text',
+                        attrs: {
+                            className: 'hidden',
+                            value: 'while',
+                        }
+                    }
+                }
+            }
+        },
+        endwhile: {
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: {
+                        type: 'text',
+                        attrs: {
+                            className: 'hidden',
+                            value: 'endwhile',
                         }
                     }
                 }
@@ -598,28 +651,14 @@
                 fields: {
                     rangeHandle: {
                         type: 'text',
-                        hook: el => el.value = 'breakforof',
                         attrs: {
                             className: 'hidden',
+                            value: 'breakforof',
                         }
                     }
                 }
             }
         },
-        endforof: {
-            param: {
-                mountElementSelector: '.fetch-replacement-target',
-                fields: {
-                    rangeHandle: {
-                        type: 'text',
-                        hook: el => el.value = 'endforof',
-                        attrs: {
-                            className: 'hidden',
-                        }
-                    }
-                }
-            }
-        }
     }, {scope: {fetch: {fetch: '*'}}});
 
     superFetchHook.hookLang({

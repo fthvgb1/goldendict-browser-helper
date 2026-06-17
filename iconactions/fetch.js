@@ -610,6 +610,9 @@
         async handleVars(rule, name, vars, param) {
             vars[name] = vars[name] ?? this.getDefVars(rule['default-value'], vars);
             vars[name] = await this.handItems(rule['replacement-items'], vars[name], param);
+            if (param?.break) {
+                delete param.break;
+            }
             if (param?.stopProcess) {
                 return vars[name];
             }
@@ -823,6 +826,10 @@
                 const handlerss = param.handlers;
                 param.handlers = handlers;
                 value = await superFetchHook.fetchActionHelper.handItems(handlers, value, param);
+                if (param?.break) {
+                    param.handlers = [];
+                    return value;
+                }
                 param.handlers = handlerss;
                 return value;
             }

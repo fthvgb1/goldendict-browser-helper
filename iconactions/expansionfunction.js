@@ -39,7 +39,7 @@
         'strRegexTest': '字符串正则测试',
         'v1': '值1,可为变量',
         'v2': '值2,可为变量',
-        'eq': '=',
+        'eq': '===',
         'gt': '>',
         'gte': '>=',
         'lt': '<',
@@ -504,7 +504,7 @@
         },
         elseif: {
             async fn(value, item, param) {
-                return await superFetchHook.valueHandlers.ifBranch.handlers.if.fn(value, item, param)
+                return await superFetchHook.valueHandlers.ifBranch.handlers.if.ifFn(value, item, param)
             },
             show: (li, vars) => {
                 superFetchHook.valueHandlers.ifBranch.handlers.if.show(li, vars);
@@ -548,7 +548,7 @@
             }
         },
         break: {
-            fn: (value, item) => (item.break = true, value),
+            fn: (value, item, param) => (item.break = true, param.break = true, value),
             param: {
                 mountElementSelector: '.fetch-replacement-target',
             }
