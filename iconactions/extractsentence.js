@@ -42,7 +42,7 @@
      * @param a arr
      * @param b arr
      * @param fn
-     * @returns {*} a's item not in b
+     * @returns {*} items in a not in b
      */
     function diff(a, b, fn) {
         if (b.length <= 2 || (a.length <= b.length)) {
@@ -1063,7 +1063,7 @@
             fetchActionHelper: actionHelper,
             mergeMap: (obj, newObj) => iterateObjByKey(newObj, (k, v) => obj[k] = v, false),
             hookLang: langKV => iterateObjByKey(langKV, (k, v) => mapTitle[k] = v, false),
-            lang: name => allowFn.lang(name) ?? name,
+            lang: (name, escape = true) => allowFn.lang(name, escape),
             allowFn, htmlType, handleOp, openExtractionFns: [],
             templateHelper,
         }

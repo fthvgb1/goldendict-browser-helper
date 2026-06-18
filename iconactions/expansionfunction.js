@@ -31,7 +31,8 @@
         'ifBranch': '简单的if和中断',
         'else-desc': '前一个if判断为false时执行该项后面的所有操作',
         'endIf-desc': '可以断续执行该项后面的操作',
-        'break': '结束当前项的后续值操作',
+        'break': '中断当前作用域',
+        'breaks': '中断当前整个值操作',
         'stopProcess': '结束当前整个操作',
         'throwException': '抛出异常信息',
         'exceptionMessage': '异常消息，格式同打印到控制台',
@@ -53,8 +54,11 @@
         'completeTrue': '是否完全为真',
         'completeFalse': '是否完全为假',
         'array': '数组',
+        'array-desc': 'item1,item2, {varName}',
         'bool': '布尔',
+        'bool-desc': 'true: 1, false: 0',
         'object': '对象',
+        'object-desc': '{attr:attr,attr:{varName},{varName}:attr,{varName}:{varName},"attr":"attr"}',
         'variable': '变量',
         'arrayUnshift': '向数组开开始位置添加一个值',
         'arrayUnshift-desc': 'arr.unshift(value)',
@@ -65,6 +69,7 @@
         'deleteVariable': '删除一个变量',
         'varName': '变量名',
         'func': '函数',
+        'func-desc': 'obj.attr.attr|arg,{argvName},  functionName|arg,{argvName}',
         'breakIterator': '中断子项查queryAll或遍历',
         'breakChildrenHandle': '中断后续子项',
         'endRangeHandle': '结束前一个作用域',
@@ -548,6 +553,12 @@
             }
         },
         break: {
+            fn: (value, item) => (item.break = true, value),
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+            }
+        },
+        breaks: {
             fn: (value, item, param) => (item.break = true, param.break = true, value),
             param: {
                 mountElementSelector: '.fetch-replacement-target',
@@ -761,8 +772,8 @@
                         getOptions(val) {
                             const va = superFetchHook.valueHandlers.valueRelation;
                             return buildOption(Object.keys(va.valueType).map(v => [
-                                v, lang(v), `title="${superFetchHook.mapTitle?.[v + '-desc'] ?? lang(v)}"`
-                            ]), val, 0, 1, 2)
+                                v, lang(v), `title="${superFetchHook.mapTitle?.[v + '-desc'] ? lang(v + '-desc') : lang(v)}"`
+                            ]), val, 0, 1, 2);
                         }
                     },
                     rightValue: {
@@ -881,15 +892,15 @@
     }, {
         buildValue(item, param) {
             const value = item.rightValue;
-            return this.valueType[item.variableType](value, param.vars);
+            return this.valueType[item.variableType](value, param.vars, param);
         },
 
         valueType: {
-            variable: (value, vars) => getValue(vars, value),
+            variable: (value, vars, param) => superFetchHook.fetchActionHelper.getVar(value, param, true),
             ...superFetchHook.valueHandlers.ifBranch.valueType,
             func: (v, vars) => {
                 let [fn, param] = v.split('|');
-                if (superFetchHook.fetchActionHelper.reg.test(v)) {
+                if (superFetchHook.fetchActionHelper.reg.test(fn)) {
                     const f = fn.split('.');
                     const value = f.slice(0, f.length - 1).join('.');
                     const o = getValue(vars, value, value, true);
@@ -913,6 +924,25 @@
                     args = param.split(',').map(a => getValue(vars, a, a, true))
                 }
                 return args ? fn(...args) : fn();
+            },
+            eval(express, vars, dest = globalThis) {
+                const keys = Object.keys(vars);
+                const hasValue = {};
+                iterateObjByKey(vars, (k, v) => {
+                    if (dest.hasOwnProperty(k)) {
+                        hasValue[k] = dest[k];
+                    }
+                    dest[k] = v;
+                }, false);
+                const r = eval(createScript(express));
+                for (const key of keys) {
+                    if (hasValue.hasOwnProperty(key)) {
+                        dest[key] = hasValue[key];
+                    } else {
+                        delete dest[key];
+                    }
+                }
+                return r;
             },
             array: (v, vars) => {
                 if (!v) {

@@ -82,12 +82,15 @@
         'delay': '延时执行sleep',
         'delayOrInterval': '延时或定时执行',
         'time-desc': '时间,单位毫秒',
-        'setTimeout': '定时执行一次setTimeout',
+        'setTimeout': '单次定时器setTimeout',
+        'setTimeoutEnd': '结束setTimeout作用域',
+        'clearTimeout': '停止单次定时器clearTimeout',
         'interval': '定时执行setInterval',
         'interval-desc': '定时执行此项后面对值处理的所有操作',
         'intervalName': '定时标识，用于清除该定时器',
         'intervalTime-desc': '定时时间，单位毫秒',
         'clearInterval': '停止定时器clearInterval',
+        'timeoutName': 'setTimeout标识符，用于clearSetTimeout',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('typeKeys', {
         simpleType: {
@@ -152,22 +155,65 @@
         },
         setTimeout: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['setTimeoutStart', 'setTimeoutEnd']);
                 const t = setTimeout(async () => {
                     value = await fn(value, item, param);
                     clearTimeout(t);
                 }, item.time);
-                return value;
+                param.vars[item.identifier] = t;
+                return param.vars[item.currentVarName];
             },
             param: {
                 fields: {
+                    identifier: {
+                        title: lang('timeoutName'),
+                        type: 'text',
+                        width: '5vw',
+                    },
                     time: {
                         title: lang('time-desc'),
                         type: 'number',
                         width: '7vw',
                     },
+                    rangeHandle: {
+                        type: 'text',
+                        attrs: {
+                            className: 'hidden',
+                            value: 'setTimeoutStart',
+                        }
+                    }
                 },
                 mountElementSelector: '.fetch-replacement-target',
+            }
+        },
+        clearTimeout: {
+            fn(value, item, param) {
+                clearTimeout(param.vars[item.identifier]);
+                return value
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    identifier: {
+                        title: lang('timeoutName'),
+                        type: 'text',
+                        width: '5vw',
+                    },
+                },
+            }
+        },
+        setTimeoutEnd: {
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: {
+                        type: 'text',
+                        attrs: {
+                            className: 'hidden',
+                            value: 'setTimeoutEnd',
+                        }
+                    }
+                },
             }
         },
         interval: {
