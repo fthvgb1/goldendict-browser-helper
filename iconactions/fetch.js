@@ -74,7 +74,7 @@
 
         buildElement(field, value, vars, attr, pre) {
             const placeholder = attr?.title ?? superFetchHook.mapTitle[field] ?? field;
-            const title = superFetchHook.mapTitle[`${field}-desc`] ?? placeholder;
+            const title = placeholder;
             attr.attrs = {
                 placeholder, title, className: field + ' show', ...attr?.attrs,
             };

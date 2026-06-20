@@ -506,13 +506,18 @@
         foreach: '循环遍历',
         iterator: '要循环的变量名',
         iteratorElement: '循环时子变量名',
-        breakforof: '中断for,forof,while(true)',
+        breakforof: '中断for,forof,while(true)和遍历对象',
         iteratorVariable: '循环时使用的变量名',
         startNumber: '开始的数',
         handleTypeOperator: '循环时比较操作',
         iteratorNumber: '要循环的数或变量名',
         useVariable: '使用变量',
         addNumber: '每次循环时增减量',
+        iterateObject: '遍历对象',
+        endIterateObject: '结束遍历对象',
+        objectKey: '对象键名，用于后续访问',
+        objectValue: '对象值名,用于后续访问',
+        objectName: '要遍历的对象名',
     })
     superFetchHook.simpleValueHandlerHelper.addHandlers('foreach', {
         for: {
@@ -681,6 +686,63 @@
                         attrs: {
                             className: 'hidden',
                             value: 'endwhile',
+                        }
+                    }
+                }
+            }
+        },
+        iterateObject: {
+            async fn(value, item, param) {
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['iterateObject', 'endIterateObject']);
+                const o = superFetchHook.fetchActionHelper.getVar(item.object, param, true);
+                for (const [k, v] of Object.entries(o)) {
+                    param.vars[item.key] = k;
+                    param.vars[item.value] = v;
+                    value = await fn(value, item, param);
+                    if (param?.breakforof) {
+                        delete param.breakforof;
+                        break;
+                    }
+                }
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    object: {
+                        title: lang("objectName"),
+                        type: 'text',
+                        width: '3.9vw',
+                    },
+                    key: {
+                        title: lang("objectKey"),
+                        type: 'text',
+                        width: '4vw',
+                    },
+                    value: {
+                        title: lang("objectValue"),
+                        type: 'text',
+                        width: '4vw',
+                    },
+                    rangeHandle: {
+                        type: 'text',
+                        attrs: {
+                            className: 'hidden',
+                            value: 'iterateObject',
+                        }
+                    }
+                }
+            }
+        },
+        endIterateObject: {
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: {
+                        type: 'text',
+                        attrs: {
+                            className: 'hidden',
+                            value: 'endIterateObject',
                         }
                     }
                 }

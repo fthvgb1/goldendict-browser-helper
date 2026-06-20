@@ -58,7 +58,7 @@
         'bool': '布尔',
         'bool-desc': 'true: 1, false: 0',
         'object': '对象',
-        'object-desc': '{attr:attr,attr:{varName},{varName}:attr,{varName}:{varName},"attr":"attr"}',
+        'object-desc': '{attr:attr,attr:{attr:attr},"{varName}":attr,"{varName}":"{varName}","attr":"attr"}',
         'variable': '变量',
         'arrayUnshift': '向数组开开始位置添加一个值',
         'arrayUnshift-desc': 'arr.unshift(value)',
@@ -954,14 +954,13 @@
             object: (v, vars) => {
                 const o = new Function('return ' + v)();
                 iterateObjByKey(o, (k, v) => {
-                    if ('string' !== typeof v) {
-                        return
+                    if ('string' === typeof v) {
+                        const vv = getValue(vars, v, v, true);
+                        if (v !== vv) {
+                            o[k] = vv;
+                        }
                     }
-                    const kk = getValue(vars, k, k, true);
-                    const vv = getValue(vars, v, v, true);
-                    if (v !== vv) {
-                        o[k] = vv;
-                    }
+                    const kk = superFetchHook.fetchActionHelper.replaceVars2Format(vars, k);
                     if (k !== kk) {
                         o[kk] = o[k];
                         delete o[k];
