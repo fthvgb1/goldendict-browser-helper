@@ -259,12 +259,15 @@
     superFetchHook.hookLang({
         'executeActions': '执行操作',
         'actionNames': '执行的操作名',
+        'shareVars': '共享符号表',
         'useSeparateVars': '使用独立的符号表',
+        'copyVars': '复制符号表',
         'async': '异步执行',
     });
     superFetchHook.valueHandlers.executeActions = {
         async handle(item, value, param) {
-            await superFetchHook.executeActions(...item?.actionNames, item.useSeparateVars ? {} : param.vars, item.async);
+            const vars = this.varsType[item.varsType](param.vars);
+            await superFetchHook.executeActions(...item?.actionNames, vars, item.async);
             if (item.async || item.useSeparateVars) {
                 return value
             }
@@ -272,6 +275,12 @@
         },
         form(li, datum) {
             datum.actionNames = $(li.querySelector('.actionNames')).val();
+        },
+        varsType: {
+            shareVars: vars => vars,
+            useSeparateVars: () => {
+            },
+            copyVars: vars => ({...vars})
         },
         afterRender: [],
         renderHook(li, vars, ev) {
@@ -321,13 +330,19 @@
             fields: {
                 actionNames: {
                     type: 'select',
-
                     attrs: {
                         className: 'actionNames', multiple: 'multiple'
                     }
                 },
-                useSeparateVars: {
-                    type: 'checkbox'
+                varsType: {
+                    type: 'select',
+                    getOptions(v) {
+                        const keys = Object.keys(superFetchHook.valueHandlers.executeActions.varsType)
+                            .map(k => [k, lang(k)])
+                        ;
+                        return buildOption(keys, v, 0, 1);
+                    },
+                    width: '3vw'
                 },
                 async: {
                     type: 'checkbox',
