@@ -99,9 +99,9 @@
             let fn = iterateObjByKey(param?.fields ?? {}, (field, attr) => {
                 return (pre, html, vars) => {
                     const value = vars[field] ?? '';
-                    const diff = attr?.diff ?? (el => el.nextElementSibling.matches(attr?.diffSelector ?? `[name=${field}]`));
+                    const diff = attr?.diff ?? (el => el.matches(attr?.diffSelector ?? `[name=${field}]`));
                     if (diff(pre.nextElementSibling)) {
-                        pre.nextElementSibling.value = value;
+                        value && (pre.nextElementSibling.value = value);
                         return pre.nextElementSibling;
                     }
                     const ele = superFetchHook.simpleValueHandlerHelper.buildElement(field, value, vars, attr, pre);

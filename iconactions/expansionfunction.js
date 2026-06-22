@@ -16,12 +16,18 @@
         'setValue-desc': '将右值赋给左值，当用函数时语法为{变量}.函数名|参数1,参数2...',
         'getVal-desc': '从符号表中取值，无需{}',
         'toNumber': '转为数字',
+        'toNumber-desc': '将右值转为数字赋给左值，左值和右值为空都默认为当前值',
         'o2Array': 'iterator转数组',
-        'o2Array-desc': 'currentValue=[...currentValue]',
+        'o2Array-desc': 'leftValue=[...rightValue]',
         'toArrays': '单体转数组',
-        'toArrays-desc': 'currentValue=[currentValue]',
+        'toArrays-desc': 'leftValue=[rightValue]',
         'str2Array': '字符转数组',
         'array2str': '数组转字符串',
+        'arrayShift': '取出数组第一个元素',
+        'arrayPop': '取出数组最后一个元素',
+        'arraySplice': '取出数组指定个元素',
+        'copyObject': '复制对象',
+        'copyObject-desc': 'leftValue={...rightValue}',
         'executeCmd': '执行外部程序',
         'executeCmd-desc': '替换项为程序路径，模式项为参数，可使用{变量名}，会解析替换成变量值',
         'haveReturn': '有结果值返回调用',
@@ -750,20 +756,50 @@
         setValue: {
             fn(_, item, param) {
                 const v = superFetchHook.valueHandlers.valueRelation.buildValue(item, param);
-                const [name, g] = item.leftValue.split('|');
-                const m = {g: param.globalVars, p: param.parentVars};
-                const vars = m?.[g] ?? param.vars;
-                if (!name) {
-                    return v;
-                }
-                const names = name.split('.').map(vv => getValue(param.vars, vv, vv, true)).join('.')
-                setMapVal(names, v, vars);
+                superFetchHook.valueHandlers.valueRelation.handlers.setValue.parseVal(item, param).set(v);
                 return param.vars[param.rule['super-fetch-name']];
+            },
+            parseVal(item, param) {
+                const o = {
+                    getLeftName() {
+                        return item.leftValue ? item.leftValue : item.currentVarName;
+                    },
+                    getLeftValue() {
+                        return o.get(o.getLeftName());
+                    },
+                    getRightName() {
+                        return item.rightValue ? item.rightValue : item.currentVarName;
+                    },
+                    getRightValue() {
+                        return o.get(o.getRightName());
+                    },
+                    get(express) {
+                        return superFetchHook.fetchActionHelper.getVar(express, param, true);
+                    },
+                    set(v, k = item.leftValue) {
+                        const [name, g] = k.split('|');
+                        const m = {g: param.globalVars, p: param.parentVars};
+                        const vars = m?.[g] ?? param.vars;
+                        if (!name) {
+                            setMapVal(item.currentVarName, v, vars)
+                            return;
+                        }
+                        const names = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, name);
+                        setMapVal(names, v, vars);
+                    },
+                    setFn(fn) {
+                        const rightValue = o.getRightValue();
+                        fn(rightValue, o, item, param);
+                        return param.vars[item.currentVarName];
+                    }
+                }
+                return o;
             },
             show: superFetchHook.simpleValueHandlerHelper.buildFieldRender({
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
                     leftValue: {
+                        diffSelector: 'xx',
                         type: 'text',
                         width: '5vw',
                     },
@@ -777,6 +813,7 @@
                         }
                     },
                     rightValue: {
+                        diffSelector: 'xx',
                         type: 'text',
                         width: '5vw',
                     },
@@ -816,9 +853,10 @@
         arrayUnshift: {
             fn(_, item, param) {
                 const v = superFetchHook.valueHandlers.valueRelation.buildValue(item, param);
-                const arr = superFetchHook.fetchActionHelper.getVar(item.leftValue, param, true);
+                const o = superFetchHook.valueHandlers.valueRelation.handlers.setValue.parseVal(item, param);
+                const arr = o.get(o.getLeftName());
                 arr.unshift(v);
-                return _;
+                return param.vars[item.currentVarName];
             },
             show(li, vars) {
                 superFetchHook.valueHandlers.valueRelation.handlers.setValue.show(li, vars);
@@ -827,9 +865,9 @@
         pushArrayValue: {
             fn(_, item, param) {
                 const v = superFetchHook.valueHandlers.valueRelation.buildValue(item, param);
-                const arr = superFetchHook.fetchActionHelper.getVar(item.leftValue, param, true);
-                arr.push(v);
-                return _;
+                return superFetchHook.valueHandlers.valueRelation.handlers.setValue
+                    .parseVal(item, param)
+                    .setFn((_, o) => o.getLeftValue().push(v));
             },
             show(li, vars) {
                 superFetchHook.valueHandlers.valueRelation.handlers.setValue.show(li, vars);
@@ -837,58 +875,230 @@
         },
         pushArrayArray: {
             fn(_, item, param) {
-                const v = superFetchHook.fetchActionHelper.getVar(item.rightValue, param, true);
-                const arr = superFetchHook.fetchActionHelper.getVar(item.leftValue, param, true);
-                arr.push(...v);
-                return _;
+                return superFetchHook.valueHandlers.valueRelation.handlers.setValue
+                    .parseVal(item, param)
+                    .setFn((arr, o) => o.getLeftValue().push(...arr));
             },
             show(li, vars) {
                 superFetchHook.valueHandlers.valueRelation.handlers.setValue.show(li, vars);
                 li.querySelector('.variableType').remove();
             },
         },
-        toNumber: {
-            fn: Number,
-            param: {
-                mountElementSelector: '.fetch-replacement-target',
-            }
-        },
-        str2Array: {
-            fn: (s, item) => Array.isArray(s) ? s : s.split(item.separator),
+        arrayShift: {
+            fn(value, item, param) {
+                return superFetchHook.valueHandlers.valueRelation.handlers.setValue
+                    .parseVal(item, param)
+                    .setFn((arr, o) => o.set(arr.shift()));
+            },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
+                    leftValue: {
+                        diffSelector: 'xx',
+                        type: 'text',
+                        width: '5vw',
+                    },
+                    rightValue: {
+                        diffSelector: 'xx',
+                        type: 'text',
+                        width: '5vw',
+                    },
+                }
+            }
+        },
+        arrayPop: {
+            fn(value, item, param) {
+                return superFetchHook.valueHandlers.valueRelation.handlers.setValue
+                    .parseVal(item, param)
+                    .setFn((arr, o) => o.set(arr.pop()));
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    leftValue: {
+                        diffSelector: 'xx',
+                        type: 'text',
+                        width: '5vw',
+                    },
+                    rightValue: {
+                        diffSelector: 'xx',
+                        type: 'text',
+                        width: '5vw',
+                    },
+                }
+            }
+        },
+        arraySplice: {
+            fn(value, item, param) {
+                return superFetchHook.valueHandlers.valueRelation.handlers.setValue
+                    .parseVal(item, param)
+                    .setFn((arr, o) => o.set(arr.splice(item.start, item.deleteCount)));
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    leftValue: {
+                        diffSelector: 'xx',
+                        type: 'text',
+                        width: '3vw',
+                    },
+                    rightValue: {
+                        diffSelector: 'xx',
+                        type: 'text',
+                        width: '3vw',
+                    },
+                    start: {
+                        type: 'number',
+                        width: '2.4vw',
+                    },
+                    deleteCount: {
+                        type: 'number',
+                        width: '2.4vw',
+                    }
+                }
+            }
+        },
+        toNumber: {
+            fn(value, item, param) {
+                return superFetchHook.valueHandlers.valueRelation.handlers.setValue
+                    .parseVal(item, param)
+                    .setFn((v, o) => o.set(Number(v)));
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    leftValue: {
+                        diffSelector: 'xx',
+                        type: 'text',
+                        width: '5vw',
+                    },
+                    rightValue: {
+                        diffSelector: 'xx',
+                        type: 'text',
+                        width: '5vw',
+                    },
+                }
+            }
+        },
+        str2Array: {
+            fn: (value, item, param) => {
+                return superFetchHook.valueHandlers.valueRelation.handlers.setValue
+                    .parseVal(item, param)
+                    .setFn((v, o) => o.set(v.split(item.separator)));
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    leftValue: {
+                        diffSelector: 'xx',
+                        type: 'text',
+                        width: '4.2vw',
+                    },
+                    rightValue: {
+                        diffSelector: 'xx',
+                        type: 'text',
+                        width: '4.2vw',
+                    },
                     separator: {
                         type: 'text',
-                        width: '7vw',
+                        width: '3vw',
                     },
                 }
             }
         },
         o2Array: {
-            fn: arr => [...arr],
-            param: {
-                mountElementSelector: '.fetch-replacement-target',
-            }
-        },
-        toArrays: {
-            fn: arr => [arr],
-            param: {
-                mountElementSelector: '.fetch-replacement-target',
-            }
-        },
-        array2str: {
-            fn: (arr, item) => arr.join(item.separator),
+            fn(value, item, param) {
+                return superFetchHook.valueHandlers.valueRelation.handlers.setValue
+                    .parseVal(item, param)
+                    .setFn((v, o) => o.set([...v]));
+            },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
-                    separator: {
+                    leftValue: {
+                        diffSelector: 'xx',
                         type: 'text',
-                        width: '7vw',
+                        width: '5vw',
+                    },
+                    rightValue: {
+                        diffSelector: 'xx',
+                        type: 'text',
+                        width: '5vw',
                     },
                 }
             }
         },
+        toArrays: {
+            fn(value, item, param) {
+                return superFetchHook.valueHandlers.valueRelation.handlers.setValue
+                    .parseVal(item, param)
+                    .setFn((v, o) => o.set([v]));
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    leftValue: {
+                        diffSelector: 'xx',
+                        type: 'text',
+                        width: '5vw',
+                    },
+                    rightValue: {
+                        diffSelector: 'xx',
+                        type: 'text',
+                        width: '5vw',
+                    },
+                }
+            }
+        },
+        array2str: {
+            fn(value, item, param) {
+                return superFetchHook.valueHandlers.valueRelation.handlers.setValue
+                    .parseVal(item, param)
+                    .setFn((v, o) => o.set(v.join(item.separator)));
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    leftValue: {
+                        diffSelector: 'xx',
+                        type: 'text',
+                        width: '4.2vw',
+                    },
+                    rightValue: {
+                        diffSelector: 'xx',
+                        type: 'text',
+                        width: '4.2vw',
+                    },
+                    separator: {
+                        type: 'text',
+                        width: '3vw',
+                    },
+                }
+            }
+        },
+        copyObject: {
+            fn(value, item, param) {
+                return superFetchHook.valueHandlers.valueRelation.handlers.setValue
+                    .parseVal(item, param)
+                    .setFn((v, o) => o.set({...v}));
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    leftValue: {
+                        diffSelector: 'xx',
+                        type: 'text',
+                        width: '5vw',
+                    },
+                    rightValue: {
+                        diffSelector: 'xx',
+                        type: 'text',
+                        width: '5vw',
+                    },
+                }
+            }
+        },
+
     }, {
         buildValue(item, param) {
             const value = item.rightValue;
