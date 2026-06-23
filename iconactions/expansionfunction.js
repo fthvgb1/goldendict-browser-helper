@@ -799,7 +799,6 @@
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
                     leftValue: {
-                        diffSelector: 'xx',
                         type: 'text',
                         width: '5vw',
                     },
@@ -813,7 +812,7 @@
                         }
                     },
                     rightValue: {
-                        diffSelector: 'xx',
+
                         type: 'text',
                         width: '5vw',
                     },
@@ -894,12 +893,10 @@
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
                     leftValue: {
-                        diffSelector: 'xx',
                         type: 'text',
                         width: '5vw',
                     },
                     rightValue: {
-                        diffSelector: 'xx',
                         type: 'text',
                         width: '5vw',
                     },
@@ -916,12 +913,10 @@
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
                     leftValue: {
-                        diffSelector: 'xx',
                         type: 'text',
                         width: '5vw',
                     },
                     rightValue: {
-                        diffSelector: 'xx',
                         type: 'text',
                         width: '5vw',
                     },
@@ -938,12 +933,10 @@
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
                     leftValue: {
-                        diffSelector: 'xx',
                         type: 'text',
                         width: '3vw',
                     },
                     rightValue: {
-                        diffSelector: 'xx',
                         type: 'text',
                         width: '3vw',
                     },
@@ -968,12 +961,10 @@
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
                     leftValue: {
-                        diffSelector: 'xx',
                         type: 'text',
                         width: '5vw',
                     },
                     rightValue: {
-                        diffSelector: 'xx',
                         type: 'text',
                         width: '5vw',
                     },
@@ -990,12 +981,10 @@
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
                     leftValue: {
-                        diffSelector: 'xx',
                         type: 'text',
                         width: '4.2vw',
                     },
                     rightValue: {
-                        diffSelector: 'xx',
                         type: 'text',
                         width: '4.2vw',
                     },
@@ -1016,12 +1005,10 @@
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
                     leftValue: {
-                        diffSelector: 'xx',
                         type: 'text',
                         width: '5vw',
                     },
                     rightValue: {
-                        diffSelector: 'xx',
                         type: 'text',
                         width: '5vw',
                     },
@@ -1038,12 +1025,10 @@
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
                     leftValue: {
-                        diffSelector: 'xx',
                         type: 'text',
                         width: '5vw',
                     },
                     rightValue: {
-                        diffSelector: 'xx',
                         type: 'text',
                         width: '5vw',
                     },
@@ -1060,12 +1045,10 @@
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
                     leftValue: {
-                        diffSelector: 'xx',
                         type: 'text',
                         width: '4.2vw',
                     },
                     rightValue: {
-                        diffSelector: 'xx',
                         type: 'text',
                         width: '4.2vw',
                     },
@@ -1086,12 +1069,10 @@
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
                     leftValue: {
-                        diffSelector: 'xx',
                         type: 'text',
                         width: '5vw',
                     },
                     rightValue: {
-                        diffSelector: 'xx',
                         type: 'text',
                         width: '5vw',
                     },
@@ -1211,7 +1192,6 @@
                                 .map(k => [k, lang(k)]);
                             return buildOption(o, val, 0, 1)
                         },
-                        diffSelector: '[name=operator]:has(option[name=adds])',
                     },
                     operatedTarget: {
                         type: 'select',

@@ -99,11 +99,6 @@
             let fn = iterateObjByKey(param?.fields ?? {}, (field, attr) => {
                 return (pre, html, vars) => {
                     const value = vars[field] ?? '';
-                    const diff = attr?.diff ?? (el => el.matches(attr?.diffSelector ?? `[name=${field}]`));
-                    if (diff(pre.nextElementSibling)) {
-                        value && (pre.nextElementSibling.value = value);
-                        return pre.nextElementSibling;
-                    }
                     const ele = superFetchHook.simpleValueHandlerHelper.buildElement(field, value, vars, attr, pre);
                     attr?.width && (ele.style.width = attr.width);
                     pre.nextElementSibling.matches('.replacement-add') ? pre.insertAdjacentElement('afterend', ele) : pre.nextElementSibling.replaceWith(ele);

@@ -26,7 +26,6 @@
                 ...calculator.handlers.calculator.param.fields,
                 operator: {
                     ...calculator.handlers.calculator.param.fields.operator,
-                    diffSelector: '[name=operator]:has(option[name=leftDisplacement])',
                     getOptions(val) {
                         const o = Object.keys(calculator.displacementOperate)
                             .map(k => [k, superFetchHook.mapTitle[k] ?? k]);
