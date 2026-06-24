@@ -11,6 +11,7 @@
         'getVal': '取值',
         'valueExpression': '变量名, format:(name,name|g,name|p)',
         'setValue': '设置值',
+        'getValue': '获取值',
         'leftValue': '左值名',
         'rightValue': '右值名',
         'setValue-desc': '将右值赋给左值，当用函数时语法为{变量}.函数名|参数1,参数2...',
@@ -74,7 +75,7 @@
         'pushArrayArray-desc': 'arrA.push(...arrB)',
         'deleteVariable': '删除一个变量',
         'varName': '变量名',
-        'func': '函数',
+        'func': '执行函数的结果',
         'func-desc': 'obj.attr.attr|arg,{argvName},  functionName|arg,{argvName}',
         'breakIterator': '中断子项查queryAll或遍历',
         'breakChildrenHandle': '中断后续子项',
@@ -812,7 +813,6 @@
                         }
                     },
                     rightValue: {
-
                         type: 'text',
                         width: '5vw',
                     },
@@ -1081,9 +1081,8 @@
         },
 
     }, {
-        buildValue(item, param) {
-            const value = item.rightValue;
-            return this.valueType[item.variableType](value, param.vars, param);
+        buildValue(item, param, name = item.rightValue) {
+            return this.valueType[item.variableType](name, param.vars, param);
         },
 
         valueType: {

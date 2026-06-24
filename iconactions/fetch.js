@@ -88,6 +88,7 @@
             const ele = templateHelper.buildFormElement[type](field, value, attr.attrs);
             attr?.width && (ele.style.width = attr.width);
             'checkbox' === attr.type && (ele.checked = value);
+            attr?.nodes && (iterateObjByKey(attr.nodes, (k, v) => ele.setAttribute(k, v), false));
             attr?.hook && (attr.hook(ele, value, vars, attr, pre));
             return ele;
         },
@@ -102,6 +103,7 @@
                     const ele = superFetchHook.simpleValueHandlerHelper.buildElement(field, value, vars, attr, pre);
                     attr?.width && (ele.style.width = attr.width);
                     pre.nextElementSibling.matches('.replacement-add') ? pre.insertAdjacentElement('afterend', ele) : pre.nextElementSibling.replaceWith(ele);
+                    attr?.pbgc && (pre.parentElement.dataset.color = attr.pbgc);
                     return attr?.afterInsertDoc?.(ele, value, vars, attr, pre) ?? ele;
                 };
             });
@@ -273,21 +275,21 @@
     const actionHelper = {
         ...superFetchHook.fetchActionHelper,
 
-        getVar(v, param, getVar = false) {
+        getVar(v, param, getVar = false, defaultValue = undefined) {
             const scopes = {p: param.parentVars, g: param.globalVars};
             let [express, scope] = v.split('|');
             if (!actionHelper.reg.test(express)) {
                 return getVar ? superFetchHook.getVarVal(scopes[scope] ?? param.vars, express) : express;
             }
             if (!scopes[scope]) {
-                return superFetchHook.getVariable(param.vars, express, undefined);
+                return superFetchHook.getVariable(param.vars, express, defaultValue);
             }
             express = this.replaceVars2Format(param.vars, express, true);
             if (!express) {
                 return '';
             }
             const vars = scopes[scope] ?? param.vars;
-            return superFetchHook.getVariable(vars, express, undefined);
+            return superFetchHook.getVariable(vars, express, defaultValue);
         },
         getVarName(v, vars) {
             return v.split('.').map(vv => superFetchHook.getVariable(vars, vv, vv, true)).join('.');

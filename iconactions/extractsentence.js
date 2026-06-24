@@ -119,9 +119,13 @@
 
         export(params = getAnkiFetchParams('', false)) {
             const data = JSON.stringify(params);
-            const current = new Date();
+            const current = new Date(), type = "text/json";
             // wtf time format
-            download(`fetch-rule.${current.getFullYear()}-${current.getMonth() + 1}-${current.getDate()}.${current.getHours()}.${current.getMinutes()}.${current.getSeconds()}.total.${params.length}.rows.json`, data);
+            const filename = `fetch-rule.${current.getFullYear()}-${current.getMonth() + 1}-${current.getDate()}.${current.getHours()}.${current.getMinutes()}.${current.getSeconds()}.total.${params.length}.rows.json`;
+            const u = window.URL.createObjectURL(
+                new Blob([data], {type})
+            );
+            GM_download(u, filename);
         },
         selector: '.fetch-import,.fetch-export',
         showProcessor(ev) {
@@ -256,28 +260,6 @@
 
     PushHookAnkiDidRender(() => setting.addEventListener('dblclick', settingItemSwitchDisplay));
     PushHookAnkiClose(() => setting.removeEventListener('dblclick', settingItemSwitchDisplay));
-
-    function download(filename, text, type = "text/plain") {
-        // Create an invisible A element
-        const a = document.createElement("a");
-        a.style.display = "none";
-        document.body.appendChild(a);
-
-        // Set the HREF to a Blob representation of the data to be downloaded
-        a.href = window.URL.createObjectURL(
-            new Blob([text], {type})
-        );
-
-        // Use download attribute to set set desired file name
-        a.setAttribute("download", filename);
-
-        // Trigger the download by simulating click
-        a.click();
-
-        // Cleanup
-        window.URL.revokeObjectURL(a.href);
-        a.remove();
-    }
 
     function settingItemSwitchDisplay(ev) {
         if (!ev.target.classList.contains('fetch-item')) {

@@ -383,7 +383,15 @@
                     urlWatcherName: {
                         type: 'text',
                         width: '7vw'
-                    }
+                    },
+                    rangeHandle: {
+                        type: 'text',
+                        attrs: {
+                            className: 'hidden',
+                            value: 'startUrlWatcher'
+                        },
+                        pbgc: '#9def9d',
+                    },
                 }
             }
         },
@@ -406,7 +414,7 @@
 
         elementObserve: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'startElementObserve');
                 const selector = superFetchHook.getVariable(param.vars, item.querySelector, item.querySelector, true);
                 const ele = selector instanceof Element ? selector : document.querySelector(selector);
                 if (!ele) {
@@ -444,7 +452,15 @@
                     },
                     attributes: {
                         type: 'checkbox',
-                    }
+                    },
+                    rangeHandle: {
+                        type: 'text',
+                        attrs: {
+                            className: 'hidden',
+                            value: 'startElementObserve',
+                        },
+                        pbgc: 'green',
+                    },
                 }
             }
         },
@@ -462,16 +478,36 @@
                     },
                 }
             }
-        }
+        },
+        endScope: {
+            fn: v => v,
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: {
+                        type: 'text',
+                        attrs: {
+                            className: 'hidden',
+                            value: 'endRangeHandle'
+                        }
+                    },
+                }
+            }
+        },
     }, {scope: {fetch: {fetch: '*'}}});
 
     superFetchHook.hookLang({
-        'handleMenu': 'tampermonkey菜单',
+        'handleMenu': 'tampermonkey相关',
         'addMenu': '添加菜单',
         'addMenu-desc': '此项后面的操作为点击菜单的操作',
         'removeMenu': '删除菜单',
         'menuTitle': '菜单标题,可使用{变量}',
         'accessKey': '快捷键，可选',
+        'defaultValue': '默认值',
+        'saveFilename': '保存的文件名(需包括后缀名)',
+        'requestHeaders': '请求头',
+        'saveAs': '弹出保存路径提示框',
+        'download': '下载',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('handleMenu', {
         addMenu: {
@@ -514,6 +550,100 @@
                 }
             }
         },
+        setValue: {
+            fn(value, item, param) {
+                const v = superFetchHook.valueHandlers.valueRelation.buildValue(item, param);
+                const name = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.leftValue);
+                GM_setValue(name, v);
+                return value;
+            },
+            show: superFetchHook.valueHandlers.valueRelation.handlers.setValue.show,
+        },
+        getValue: {
+            fn(value, item, param) {
+                const key = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.rightValue);
+                const defaultValue = superFetchHook.valueHandlers.valueRelation.buildValue(item, param, item.defaultValue);
+                const v = GM_getValue(key, defaultValue);
+                superFetchHook.valueHandlers.valueRelation.handlers.setValue.parseVal(item, param).set(v);
+                return param.vars[item.currentVarName];
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    leftValue: {
+                        type: 'text',
+                        width: '2.7vw',
+                    },
+                    rightValue: {
+                        type: 'text',
+                        width: '2.7vw',
+                    },
+                    variableType: {
+                        type: 'select',
+                        width: '3vw',
+                        getOptions(val) {
+                            const va = superFetchHook.valueHandlers.valueRelation;
+                            return buildOption(Object.keys(va.valueType).map(v => [
+                                v, lang(v), `title="${superFetchHook.mapTitle?.[v + '-desc'] ? lang(v + '-desc') : lang(v)}"`
+                            ]), val, 0, 1, 2);
+                        }
+                    },
+                    defaultValue: {
+                        type: 'text',
+                        width: '2.6vw',
+                    },
+                }
+            }
+        },
+        deleteVariable: {
+            fn(value, item, param) {
+                const express = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.varName);
+                GM_deleteValue(express);
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    varName: {
+                        type: 'text',
+                    }
+                }
+            }
+        },
+        download: {
+            fn(value, item, param) {
+                const url = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.url);
+                const name = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.filename);
+                const headers = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.headers);
+                GM_download({
+                    url, name, headers, saveAs: item.saveAs, conflictAction: 'prompt',
+                    onerror: console.log,
+                });
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    url: {
+                        type: 'text',
+                        width: '3.5vw',
+                    },
+                    filename: {
+                        title: lang('saveFilename'),
+                        type: 'text',
+                        width: '3.5vw',
+                    },
+                    headers: {
+                        title: lang('requestHeaders'),
+                        type: 'text',
+                        width: '3vw'
+                    },
+                    saveAs: {
+                        type: 'checkbox',
+                    }
+                }
+            }
+        }
     }, {scope: {fetch: {fetch: '*'}}});
 
     superFetchHook.hookLang({
