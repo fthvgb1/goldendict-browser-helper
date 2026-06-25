@@ -76,7 +76,7 @@
         'deleteVariable': '删除一个变量',
         'varName': '变量名',
         'func': '执行函数的结果',
-        'func-desc': 'obj.attr.attr|arg,{argvName},  functionName|arg,{argvName}',
+        'func-desc': '{obj.attr}|args, obj.attr.attr|arg,{argvName}, functionName|arg,{argvName}',
         'breakIterator': '中断子项查queryAll或遍历',
         'breakChildrenHandle': '中断后续子项',
         'endRangeHandle': '结束前一个作用域',
@@ -1091,11 +1091,14 @@
             func: (v, vars) => {
                 let [fn, param] = v.split('|');
                 if (superFetchHook.fetchActionHelper.reg.test(fn)) {
-                    const f = fn.split('.');
-                    const value = f.slice(0, f.length - 1).join('.');
-                    const o = getValue(vars, value, value, true);
-                    const fnName = f[f.length - 1];
-                    fn = getValue(o, fnName, fnName).bind(o)
+                    const f = superFetchHook.allowFn.trims(fn, '{}').split('.');
+                    const fnName = f.pop()
+                    if (f.length > 0) {
+                        const o = f.reduce((pre, cur) => pre[cur], vars);
+                        fn = o[fnName].bind(o);
+                    } else {
+                        fn = getValue(vars, fnName);
+                    }
                 } else {
                     if (fn.includes('.')) {
                         const f = fn.split('.');
