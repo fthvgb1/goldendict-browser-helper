@@ -358,17 +358,19 @@
         'subtree': 'subtree 监听元素的整个子树属性变化',
         'childList': 'childList 元素发生的节点的新增与删除',
         'attributes': 'attributes 节点属性值的变化',
-        'elementObserve': '元素监听',
+        'elementObserve': '元素改动监听',
+        'endUrlWatcher': '结束url变化作用域',
+        'endElementObserve': '结束元素改动监听作用域',
         'observe-desc': '将执行此项后面对值处理的所有操作',
-        'disconnectObserve': '元素停止监听',
+        'disconnectObserve': '解除元素改动监听',
         'urlWatcherName': 'watcher名,用于结束监听',
-        'cancelUrlWatcher': '取消Url监听',
+        'cancelUrlWatcher': '解除Url变化监听',
         'elementObserveName': 'observe名称，用于取消observe',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('simpleWatcher', {
         urlWatcher: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startUrlWatcher', 'endUrlWatcher']);
                 const urlWatcher = async e => {
                     param.vars.navigateEvt = e;
                     value = await fn(value);
@@ -384,17 +386,11 @@
                         type: 'text',
                         width: '7vw'
                     },
-                    rangeHandle: {
-                        type: 'text',
-                        attrs: {
-                            className: 'hidden',
-                            value: 'startUrlWatcher'
-                        },
-                        pbgc: '#9def9d',
-                    },
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('startUrlWatcher', '#9def9d'),
                 }
             }
         },
+        endUrlWatcher: superFetchHook.simpleValueHandlerHelper.endScope('endUrlWatcher', '#9def9d'),
         cancelUrlWatcher: {
             fn(value, item) {
                 const watcher = superFetchHook.getVarVal(window, `urlWatcher.${item.urlWatcherName}`);
@@ -414,7 +410,7 @@
 
         elementObserve: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'startElementObserve');
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startElementObserve', 'endElementObserve']);
                 const selector = superFetchHook.getVariable(param.vars, item.querySelector, item.querySelector, true);
                 const ele = selector instanceof Element ? selector : document.querySelector(selector);
                 if (!ele) {
@@ -453,17 +449,11 @@
                     attributes: {
                         type: 'checkbox',
                     },
-                    rangeHandle: {
-                        type: 'text',
-                        attrs: {
-                            className: 'hidden',
-                            value: 'startElementObserve',
-                        },
-                        pbgc: 'green',
-                    },
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('startElementObserve', '#96bcd7'),
                 }
             }
         },
+        endElementObserve: superFetchHook.simpleValueHandlerHelper.endScope('endElementObserve', '#96bcd7'),
         disconnectObserve: {
             fn(value, item) {
                 superFetchHook.getVarVal(window, `elementObserve.${item.elementObserveName}`)?.disconnect?.();
@@ -475,21 +465,6 @@
                     elementObserveName: {
                         type: 'text',
                         width: '5vw',
-                    },
-                }
-            }
-        },
-        endScope: {
-            fn: v => v,
-            param: {
-                mountElementSelector: '.fetch-replacement-target',
-                fields: {
-                    rangeHandle: {
-                        type: 'text',
-                        attrs: {
-                            className: 'hidden',
-                            value: 'endRangeHandle'
-                        }
                     },
                 }
             }

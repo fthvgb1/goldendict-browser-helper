@@ -189,6 +189,34 @@
                     return simpleValueHandlerHelper.execute(item, value, handlers, param);
                 }
             }
+        },
+        startScope(name, color = '#ebd0e7') {
+            return {
+                type: 'text',
+                attrs: {
+                    className: 'hidden',
+                    value: name
+                },
+                pbgc: color,
+            }
+        },
+        endScope(name, color = '#ebd0e7') {
+            return {
+                fn: v => v,
+                param: {
+                    mountElementSelector: '.fetch-replacement-target',
+                    fields: {
+                        rangeHandle: {
+                            type: 'text',
+                            attrs: {
+                                className: 'hidden',
+                                value: name
+                            },
+                            pbgc: color,
+                        },
+                    }
+                }
+            }
         }
     };
 
