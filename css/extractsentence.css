@@ -202,7 +202,7 @@ select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAtt
     background-color: attr(data-color type(<color>));
 }*/
 li.fetch-replacement-item[data-color]:has([name=rangeHandle]) {
-    background-color: attr(data-color type(< color >));
+    background-color: attr(data-color type(<color>));
 }
 
 .super-fetch-item[data-fold] .fetch-fold {
