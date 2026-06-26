@@ -85,6 +85,7 @@
         'setTimeoutEnd': '结束setTimeout作用域',
         'clearTimeout': '停止单次定时器clearTimeout',
         'interval': '定时执行setInterval',
+        'endInterVal': '结束定时执行setInterval作用域',
         'interval-desc': '定时执行此项后面对值处理的所有操作',
         'intervalName': '定时标识，用于清除该定时器',
         'intervalTime-desc': '定时时间，单位毫秒',
@@ -174,13 +175,7 @@
                         type: 'number',
                         width: '7vw',
                     },
-                    rangeHandle: {
-                        type: 'text',
-                        attrs: {
-                            className: 'hidden',
-                            value: 'setTimeoutStart',
-                        }
-                    }
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('setTimeoutStart', '#c5bd63')
                 },
                 mountElementSelector: '.fetch-replacement-target',
             }
@@ -201,26 +196,14 @@
                 },
             }
         },
-        setTimeoutEnd: {
-            param: {
-                mountElementSelector: '.fetch-replacement-target',
-                fields: {
-                    rangeHandle: {
-                        type: 'text',
-                        attrs: {
-                            className: 'hidden',
-                            value: 'setTimeoutEnd',
-                        }
-                    }
-                },
-            }
-        },
+        setTimeoutEnd: superFetchHook.simpleValueHandlerHelper.endScope('setTimeoutEnd', '#c5bd63'),
         interval: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param);
-                param.vars[item.intervalName] = setInterval(async () => {
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startInterval', 'endInterVal']);
+                const t = setInterval(async () => {
                     value = await fn(value, item, param);
                 }, item.intervalTime);
+                setMapVal(`_interValMap.${item.intervalName}`, t, window);
                 return value;
             },
             param: {
@@ -234,13 +217,17 @@
                         type: 'number',
                         width: '7vw',
                     },
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('startInterval', '#f1dc20')
                 },
                 mountElementSelector: '.fetch-replacement-target',
             }
         },
+        endInterVal: superFetchHook.simpleValueHandlerHelper.endScope('endInterVal', '#f1dc20'),
         clearInterval: {
-            fn(value, item, param) {
-                param.vars[item.intervalName] && clearInterval(param.vars[item.intervalName]);
+            fn(value, item) {
+                const t = superFetchHook.getVarVal(window, `_interValMap.${item.intervalName}`, undefined);
+                t && clearInterval(t);
+                delete window['_interValMap'][item.intervalName];
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
