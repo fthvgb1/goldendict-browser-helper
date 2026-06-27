@@ -308,25 +308,34 @@
         queryElement: {
             fn(value, item, param) {
                 const ele = item.elementVarName ? getValue(param.vars, item.elementVarName) : document;
+                let v;
                 if (item.anchorMode) {
-                    return superFetchHook.fetchActionHelper.anchor2Ele({
+                    v = superFetchHook.fetchActionHelper.anchor2Ele({
                         'value-selector': item.elementSelector,
                         'multiple_child': item.queryAll
                     }, ele);
+                } else {
+                    v = item.queryAll ? ele.querySelectorAll(item.elementSelector) : ele.querySelector(item.elementSelector);
                 }
-                return item.queryAll ? ele.querySelectorAll(item.elementSelector) : ele.querySelector(item.elementSelector);
+                const o = superFetchHook.valueHandlers.valueRelation.handlers.setValue.parseVal(item, param);
+                o.set(v, o.getLeftName());
+                return param.vars[item.currentVarName];
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
+                    leftValue: {
+                        type: 'text',
+                        width: '3vw',
+                    },
                     elementVarName: {
                         type: 'text',
                         title: lang('queryElementVarName'),
-                        width: '4vw',
+                        width: '3vw',
                     },
                     elementSelector: {
                         type: 'text',
-                        width: '6.4vw',
+                        width: '3.4vw',
                     },
                     queryAll: {
                         type: 'checkbox',

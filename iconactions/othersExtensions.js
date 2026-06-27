@@ -459,7 +459,6 @@
     }, {scope: {fetch: {fetch: '*'}}});
 
     superFetchHook.hookLang({
-        'handleMenu': 'tampermonkey相关',
         'addMenu': '添加菜单',
         'addMenu-desc': '此项后面的操作为点击菜单的操作',
         'removeMenu': '删除菜单',
@@ -471,7 +470,7 @@
         'saveAs': '弹出保存路径提示框',
         'download': '下载',
     });
-    superFetchHook.simpleValueHandlerHelper.addHandlers('handleMenu', {
+    superFetchHook.simpleValueHandlerHelper.addHandlers('Tampermonkey', {
         addMenu: {
             fn(value, item, param) {
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param);
@@ -612,7 +611,7 @@
         foreach: '循环遍历',
         iterator: '要循环的变量名',
         iteratorElement: '循环时子变量名',
-        breakforof: '中断for,forof,while(true)和遍历对象',
+        breakforof: 'break',
         iteratorVariable: '循环时使用的变量名',
         startNumber: '开始的数',
         handleTypeOperator: '循环时比较操作',
@@ -688,26 +687,13 @@
                         attrs: {
                             className: 'hidden needStretch',
                             value: 'for',
-                        }
+                        },
+                        pbgc: '#8491a4',
                     },
                 }
             }
         },
-
-        endfor: {
-            param: {
-                mountElementSelector: '.fetch-replacement-target',
-                fields: {
-                    rangeHandle: {
-                        type: 'text',
-                        attrs: {
-                            className: 'hidden',
-                            value: 'endfor',
-                        }
-                    }
-                }
-            }
-        },
+        endfor: superFetchHook.simpleValueHandlerHelper.endScope('endfor', '#8491a4'),
 
         forof: {
             async fn(value, item, param) {
@@ -734,30 +720,11 @@
                         type: 'text',
                         width: '4vw',
                     },
-                    rangeHandle: {
-                        type: 'text',
-                        attrs: {
-                            className: 'hidden',
-                            value: 'forof',
-                        }
-                    }
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('forof', '#ca88cf')
                 }
             }
         },
-        endforof: {
-            param: {
-                mountElementSelector: '.fetch-replacement-target',
-                fields: {
-                    rangeHandle: {
-                        type: 'text',
-                        attrs: {
-                            className: 'hidden',
-                            value: 'endforof',
-                        }
-                    }
-                }
-            }
-        },
+        endforof: superFetchHook.simpleValueHandlerHelper.endScope('endforof', '#ca88cf'),
         'while(true)': {
             async fn(value, item, param) {
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['while', 'endwhile']);
@@ -773,30 +740,11 @@
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
-                    rangeHandle: {
-                        type: 'text',
-                        attrs: {
-                            className: 'hidden',
-                            value: 'while',
-                        }
-                    }
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('while', '#9cbef1'),
                 }
             }
         },
-        endwhile: {
-            param: {
-                mountElementSelector: '.fetch-replacement-target',
-                fields: {
-                    rangeHandle: {
-                        type: 'text',
-                        attrs: {
-                            className: 'hidden',
-                            value: 'endwhile',
-                        }
-                    }
-                }
-            }
-        },
+        endwhile: superFetchHook.simpleValueHandlerHelper.endScope('endwhile', '#9cbef1'),
         iterateObject: {
             async fn(value, item, param) {
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['iterateObject', 'endIterateObject']);
@@ -830,30 +778,11 @@
                         type: 'text',
                         width: '4vw',
                     },
-                    rangeHandle: {
-                        type: 'text',
-                        attrs: {
-                            className: 'hidden',
-                            value: 'iterateObject',
-                        }
-                    }
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('iterateObject', '#bce4d9')
                 }
             }
         },
-        endIterateObject: {
-            param: {
-                mountElementSelector: '.fetch-replacement-target',
-                fields: {
-                    rangeHandle: {
-                        type: 'text',
-                        attrs: {
-                            className: 'hidden',
-                            value: 'endIterateObject',
-                        }
-                    }
-                }
-            }
-        },
+        endIterateObject: superFetchHook.simpleValueHandlerHelper.endScope('endIterateObject', '#bce4d9'),
         breakforof: {
             fn(value, item, param) {
                 param.breakforof = true;
@@ -928,13 +857,12 @@
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
-                    rangeHandle: {
-                        type: 'text',
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('startEventScope', '#a569ff', {
                         attrs: {
                             className: 'hidden needStretch',
-                            value: 'startEventScope'
+                            value: 'startEventScope',
                         }
-                    },
+                    }),
                     elementVarName: {
                         type: 'text',
                         width: '5vw'
@@ -1030,20 +958,7 @@
             });
             return o;
         })(),
-        endEventScope: {
-            param: {
-                mountElementSelector: '.fetch-replacement-target',
-                fields: {
-                    rangeHandle: {
-                        type: 'text',
-                        attrs: {
-                            className: 'hidden',
-                            value: 'endEventScope'
-                        }
-                    },
-                }
-            }
-        }
+        endEventScope: superFetchHook.simpleValueHandlerHelper.endScope('endEventScope', '#a569ff'),
     }, {
         eventSet: {
             mouseEvent: ['click', 'mousedown', 'mouseup', 'dblclick', 'contextmenu', 'mouseenter', 'mouseout',

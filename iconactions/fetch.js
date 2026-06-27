@@ -190,7 +190,7 @@
                 }
             }
         },
-        startScope(name, color = '#ebd0e7') {
+        startScope(name, color = '#ebd0e7', attr = {}) {
             return {
                 type: 'text',
                 attrs: {
@@ -198,9 +198,10 @@
                     value: name
                 },
                 pbgc: color,
+                ...attr
             }
         },
-        endScope(name, color = '#ebd0e7') {
+        endScope(name, color = '#ebd0e7', attr = {}) {
             return {
                 fn: v => v,
                 param: {
@@ -215,7 +216,8 @@
                             pbgc: color,
                         },
                     }
-                }
+                },
+                ...attr
             }
         }
     };
@@ -983,10 +985,10 @@
                 getFetchItem(data) {
                     data['handleOp'] = handleOp;
                     return data['super-fetch-item-html'] = (data?.['super-fetch-items'] ?? [{}]).map(item => {
-                        item.htmlType = htmlType;
-                        item.from = 'fetch-fetch';
-                        item['$clone'] = data?.['$clone'] ?? false;
-                        item['replacement-item-html'] = actions.handlers.replacement.getReplacementItem(item);
+                            item.htmlType = htmlType;
+                            item.from = 'fetch-fetch';
+                            item['$clone'] = data?.['$clone'] ?? false;
+                            item['replacement-item-html'] = actions.handlers.replacement.getReplacementItem(item);
                             return templateHelper.buildTemplateHTML('fetch-item', item);
                         }
                     );
