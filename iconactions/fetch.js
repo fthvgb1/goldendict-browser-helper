@@ -522,25 +522,25 @@
             if (!str) {
                 return str;
             }
+            const fn = (v, name) => typeof v === 'string' ? v : name;
             return str.replace(this.templateVarself, (substring, name) => {
                 if (!vars?.[name]) {
                     return substring
                 }
                 return this.replaceVars2Format(vars, vars[name]);
             }).replace(this.fetchReplaceVarsRex, (substring, name) => {
-                name = name.replace('@i@', vars['@i@']);
                 if (name.endsWith('?')) {
                     name = rightTrim(name, '?');
                     if (name.includes('.')) {
-                        return getVarVal(vars, name, '');
+                        return fn(getVarVal(vars, name, ''), name);
                     }
-                    return vars?.[name] ?? '';
+                    return fn(vars?.[name] ?? '', name);
                 }
                 const d = empty ? '' : substring;
                 if (name.includes('.')) {
-                    return getVarVal(vars, name, d);
+                    return fn(getVarVal(vars, name, d), name);
                 }
-                return vars?.[name] ?? d;
+                return fn(vars?.[name] ?? d, name);
             });
         },
 

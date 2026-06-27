@@ -47,6 +47,8 @@
         'strRegexTest': '字符串正则测试',
         'v1': '值1,可为变量',
         'v2': '值2,可为变量',
+        'and': '&&',
+        'or': '||',
         'eq': '===',
         'gt': '>',
         'gte': '>=',
@@ -76,11 +78,12 @@
         'deleteVariable': '删除一个变量',
         'varName': '变量名',
         'func': '执行函数的结果',
-        'func-desc': '{obj.attr}|args, obj.attr.attr|arg,{argvName}, functionName|arg,{argvName}',
+        'func-desc': '{obj.attr}|args, obj.attr.attr|arg,{argvName}',
         'breakIterator': '中断子项查queryAll或遍历',
         'breakChildrenHandle': '中断后续子项',
         'endRangeHandle': '结束前一个作用域',
         'endRangeHandle-desc': '用于结束如url，元素监听等',
+        'jsonDecodeX': 'use new Function parse',
     });
     const lang = superFetchHook.lang, getValue = superFetchHook.getVariable;
     superFetchHook.mergeMap(superFetchHook.valueHandlers.simpleValueHandlers.handlers, {
@@ -89,6 +92,7 @@
     superFetchHook.mergeMap(superFetchHook.valueHandlers.codeRelate.handlers, {
         jsonEncode: JSON.stringify,
         jsonDecode: JSON.parse,
+        jsonDecodeX: s => new Function(`return ${s}`)(),
     });
 
     superFetchHook.hookLang({
@@ -456,7 +460,7 @@
                 const compareType = item.compareType, compareFn = o.compareFn[compareType];
                 const v2 = superFetchHook.fetchActionHelper.getVar(item['v2'], param);
                 const valFn = o.valueType[item.valueType];
-                const r = o.noType.has(compareType) ? compareFn(v1, v2, item) : compareFn(valFn(v1), valFn(v2), item);
+                const r = o.noType.has(compareType) ? compareFn(v1, v2, item) : compareFn(valFn(v1, param), valFn(v2, param), item);
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param, p => {
                     let i = -1;
                     for (const handler of param.handlers) {
@@ -626,24 +630,20 @@
         }
     }, {
         scope: {fetch: {fetch: '*'}},
-        createInput(name, attr = {}) {
-            const title = superFetchHook.mapTitle[`${name}-desc`] ?? superFetchHook.mapTitle[name] ?? name;
-            return superFetchHook.templateHelper.createElement('input', {
-                name: name, placeholder: title, title: title,
-                type: 'text', className: 'show', ...attr
-            });
-        },
         valueType: {
             string: String,
             number: Number,
         },
-        noType: new Set(['include', 'strRegexTest', 'isTrue', 'isFalse', 'completeTrue', 'completeFalse']),
+        noType: new Set(['include', 'strRegexTest', 'isTrue', 'isFalse',
+            'completeTrue', 'completeFalse', 'and', 'or']),
         compareFn: {
             include: (v1, v2) => v1?.includes ? v1.includes(v2) : v1.hasOwnProperty(v2),
             strRegexTest: (v1, v2, item) => {
                 v2 = new RegExp(v2, item?.regPattern ?? '');
                 return v2.test(v1)
             },
+            and: (v1, v2) => v1 && v2,
+            or: (v1, v2) => v1 || v2,
             eq: (v1, v2) => v1 === v2,
             gt: (v1, v2) => v1 > v2,
             gte: (v1, v2) => v1 >= v2,
@@ -1090,27 +1090,13 @@
             ...superFetchHook.valueHandlers.ifBranch.valueType,
             func: (v, vars) => {
                 let [fn, param] = v.split('|');
-                if (superFetchHook.fetchActionHelper.reg.test(fn)) {
-                    const f = superFetchHook.allowFn.trims(fn, '{}').split('.');
-                    const fnName = f.pop()
-                    if (f.length > 0) {
-                        const o = f.reduce((pre, cur) => pre[cur], vars);
-                        fn = o[fnName].bind(o);
-                    } else {
-                        fn = getValue(vars, fnName);
-                    }
+                const f = superFetchHook.fetchActionHelper.replaceVars2Format(vars, fn).split('.');
+                const fnName = f.pop();
+                if (f.length > 0) {
+                    const o = getValue(vars, f.join('.'));
+                    fn = o[fnName].bind(o);
                 } else {
-                    if (fn.includes('.')) {
-                        const f = fn.split('.');
-                        const value = f.slice(0, f.length - 1).join('.');
-                        const o = getValue(superFetchHook.fetchActionHelper.global.$eval, value);
-                        fn = o[f[f.length - 1]].bind(o);
-                    } else {
-                        fn = superFetchHook.fetchActionHelper.global.$eval[fn]
-                        if ('function' !== typeof fn) {
-                            return fn;
-                        }
-                    }
+                    fn = getValue(vars, fnName);
                 }
                 let args;
                 if (param) {
