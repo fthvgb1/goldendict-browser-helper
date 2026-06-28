@@ -608,7 +608,6 @@
                 }
             }
         },
-        endRangeHandle: superFetchHook.simpleValueHandlerHelper.endScope('endRangeHandle')
     }, {
         scope: {fetch: {fetch: '*'}},
         valueType: {

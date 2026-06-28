@@ -643,6 +643,9 @@
                         delete param.break;
                         break;
                     }
+                    if (param?.break) {
+                        break;
+                    }
                 }
                 return value;
             },
@@ -739,6 +742,9 @@
                         delete param.break;
                         break;
                     }
+                    if (param?.break) {
+                        break;
+                    }
                 }
                 return value;
             },
@@ -771,6 +777,9 @@
                         delete param.break;
                         break;
                     }
+                    if (param?.break) {
+                        break;
+                    }
                 }
                 return value;
             },
@@ -796,6 +805,9 @@
                     if (param?.breakforof) {
                         delete param.breakforof;
                         delete param.break;
+                        break;
+                    }
+                    if (param?.break) {
                         break;
                     }
                 }
