@@ -900,16 +900,17 @@
                     h.push([handler]);
                     arr.push(handler.rangeHandle);
                 }
-                if (h[0].length < 1) {
-                    return v => v;
-                }
-                return actionHelper.buildHandlers(h[0], param)
+                return h;
             }
         },
 
         extractHandlers(param, option = 'endRangeHandle') {
             if (Array.isArray(option)) {
-                return actionHelper.buildHandlersMap.array(param, option);
+                const h = actionHelper.buildHandlersMap.array(param, option);
+                if (h[0].length < 1) {
+                    return v => v;
+                }
+                return actionHelper.buildHandlers(h[0], param);
             }
             return actionHelper.buildHandlersMap[typeof option]?.(param, option) ?? actionHelper.buildHandlers(param.handlers);
         }
