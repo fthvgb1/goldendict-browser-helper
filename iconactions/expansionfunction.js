@@ -130,6 +130,7 @@
         cloneTarget: '要克隆的元素名,可使用{变量}',
         cloneDeep: '深度克隆',
         cloneTo: '克隆后赋值给',
+        handleThisValue: '后续没有指定变量名的操作都作用到该变量',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('htmlFns', {
         stringToElement: {
@@ -158,7 +159,7 @@
         },
         insertElement: {
             fn(value, item, param) {
-                const ele = getValue(param.vars, item.elementVarName ? item.elementVarName : param.rule['super-fetch-name']);
+                const ele = getValue(param.vars, item.elementVarName ? item.elementVarName : item.currentVarName);
                 if (!(ele instanceof Element)) {
                     console.log('can parse element', value, item);
                     return value;
@@ -214,13 +215,13 @@
 
         deleteElement: {
             fn(value, item, param) {
-                const name = item.elementVarName ? item.elementVarName : param.rule['super-fetch-name'];
+                const name = item.elementVarName ? item.elementVarName : item.currentVarName;
                 const ele = superFetchHook.fetchActionHelper.getVar(name, param, true);
                 if ('string' === typeof ele && ele) {
                     const el = superFetchHook.templateHelper.createElement('div', value);
                     el.querySelectorAll(item.deleteElementSelector).forEach(el => el.remove());
                     param.vars[name] = el.innerHTML;
-                    return param.vars[param.rule['super-fetch-name']];
+                    return param.vars[item.currentVarName];
                 }
                 if (!(ele instanceof Element)) {
                     console.log('can parse element', value, item);
@@ -284,7 +285,7 @@
                 const target = superFetchHook.fetchActionHelper.getVar(item.cloneTarget, param, true);
                 const name = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.elementVarName);
                 param.vars[name] = target.cloneNode(item.cloneDeep);
-                return param.vars[param.rule['super-fetch-name']];
+                return param.vars[item.currentVarName];
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
@@ -357,7 +358,7 @@
 
         editElementAttribute: {
             fn(value, item, param) {
-                const ele = getValue(param.vars, item.elementVarName ? item.elementVarName : param.rule['super-fetch-name']);
+                const ele = getValue(param.vars, item.elementVarName ? item.elementVarName : item.currentVarName);
                 if (!(ele instanceof Element)) {
                     console.log('can parse element', value, item);
                     return value;
@@ -397,7 +398,7 @@
 
         getElementAttribute: {
             fn(value, item, param) {
-                const ele = getValue(param.vars, item.elementVarName ? item.elementVarName : param.rule['super-fetch-name']);
+                const ele = getValue(param.vars, item.elementVarName ? item.elementVarName : item.currentVarName);
                 if (!(ele instanceof Element)) {
                     console.log('can parse element', value, item);
                     return value;
@@ -430,7 +431,7 @@
         },
         getComputedStyle: {
             fn(value, item, param) {
-                const ele = superFetchHook.getVariable(param.vars, item.elementVarName ? item.elementVarName : param.rule['super-fetch-name']);
+                const ele = superFetchHook.getVariable(param.vars, item.elementVarName ? item.elementVarName : item.currentVarName);
                 if (!(value instanceof Element)) {
                     console.log('can parse element', value, item);
                     return value;
@@ -737,8 +738,12 @@
         setValue: {
             fn(_, item, param) {
                 const v = superFetchHook.valueHandlers.valueRelation.buildValue(item, param);
-                superFetchHook.valueHandlers.valueRelation.handlers.setValue.parseVal(item, param).set(v);
-                return param.vars[param.rule['super-fetch-name']];
+                const o = superFetchHook.valueHandlers.valueRelation.handlers.setValue.parseVal(item, param);
+                o.set(v);
+                if (item.handleThisValue) {
+                    item.currentVarName = o.getLeftName();
+                }
+                return param.vars[item.currentVarName];
             },
             parseVal(item, param) {
                 const o = {
@@ -776,12 +781,23 @@
                 }
                 return o;
             },
-            show: superFetchHook.simpleValueHandlerHelper.buildFieldRender({
+            show(li, vars) {
+                this.showX(li, vars);
+                if (li.querySelector('.fetch-replacement-target').value === 'setValue') {
+                    const el = superFetchHook.templateHelper.buildFormElement.input('handleThisValue', '', {
+                        type: 'checkbox', className: 'show',
+                    });
+                    el.style.width = '1vw';
+                    el.checked = vars?.handleThisValue ?? false;
+                    li.querySelector('.rightValue').insertAdjacentElement('afterend', el);
+                }
+            },
+            showX: superFetchHook.simpleValueHandlerHelper.buildFieldRender({
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
                     leftValue: {
                         type: 'text',
-                        width: '5vw',
+                        width: '4.7vw',
                     },
                     variableType: {
                         type: 'select',
@@ -794,10 +810,25 @@
                     },
                     rightValue: {
                         type: 'text',
-                        width: '5vw',
+                        width: '4.7vw',
                     },
+
                 }
             })
+        },
+        handleThisValue: {
+            fn(value, item, param) {
+                item.currentVarName = item.varName;
+                return param.vars[item.currentVarName];
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    varName: {
+                        type: 'text',
+                    }
+                }
+            }
         },
         deleteVariable: {
             fn(value, item, param) {

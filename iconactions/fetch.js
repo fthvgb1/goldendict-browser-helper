@@ -550,7 +550,7 @@
             if (param.rule.handleValue) {
                 param.handlers = [...items];
                 param.fetchType = 'fetch';
-                const name = param.rule['super-fetch-name'];
+                let name = param.rule['super-fetch-name'];
                 while (true) {
                     const item = param.handlers.shift();
                     if (!item) {
@@ -561,13 +561,15 @@
                         continue;
                     }
                     const handler = {currentVarName: name, ...item};
-                    value = param.vars[name] = await valueHandlers[handler.handleType].handle(handler, value, param);
+                    value = await valueHandlers[handler.handleType].handle(handler, value, param);
+                    name = handler.currentVarName;
+                    param.vars[name] = value;
                     if (handler?.break || param?.break) {
                         break;
                     }
                 }
             }
-            return value;
+            return param.vars[param.rule['super-fetch-name']];
         },
         defaultReg: /\{(.*?)}/,
         getDefVars(defaultVal, vars) {

@@ -257,7 +257,7 @@
             if (item.async || item.useSeparateVars) {
                 return value
             }
-            return param.vars[param.rule['super-fetch-name']]
+            return param.vars[item.currentVarName];
         },
         form(li, datum) {
             datum.actionNames = $(li.querySelector('.actionNames')).val();
@@ -897,7 +897,7 @@
     superFetchHook.simpleValueHandlerHelper.addHandlers('simpleEvent', {
         addEvent: {
             fn(value, item, param) {
-                const ele = superFetchHook.getVariable(param.vars, item.elementVarName ? item.elementVarName : param.rule['super-fetch-name']);
+                const ele = superFetchHook.getVariable(param.vars, item.elementVarName ? item.elementVarName : item.currentVarName);
                 const handle = superFetchHook.fetchActionHelper.extractHandlers(param, ['startEvenScopet', 'endEventScope']);
                 const eventIdentifier = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.eventIdentifier);
                 const fn = async ev => {
