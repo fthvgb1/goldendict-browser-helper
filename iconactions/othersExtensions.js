@@ -727,6 +727,9 @@
             async fn(value, item, param) {
                 const iterator = superFetchHook.getVariable(param.vars, item.iterator);
                 const fn = superFetchHook.valueHandlers.foreach.handlers.for.continueHook(param, ['forof', 'endforof']);
+                if (!fn) {
+                    return value
+                }
                 for (const iteratorElement of iterator) {
                     param.vars[item.iteratorElement] = iteratorElement;
                     value = await fn(value);
@@ -756,6 +759,9 @@
         'while(true)': {
             async fn(value, item, param) {
                 const fn = superFetchHook.valueHandlers.foreach.handlers.for.continueHook(param, ['while', 'endwhile']);
+                if (!fn) {
+                    return value
+                }
                 while (true) {
                     value = await fn(value, item, param);
                     if (param?.breakforof) {
@@ -776,6 +782,9 @@
         iterateObject: {
             async fn(value, item, param) {
                 const fn = superFetchHook.valueHandlers.foreach.handlers.for.continueHook(param, ['iterateObject', 'endIterateObject']);
+                if (!fn) {
+                    return value
+                }
                 const o = superFetchHook.fetchActionHelper.getVar(item.object, param, true);
                 for (const [k, v] of Object.entries(o)) {
                     param.vars[item.key] = k;
