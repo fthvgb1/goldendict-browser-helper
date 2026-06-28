@@ -640,6 +640,7 @@
                     value = await fn(value);
                     if (param?.breakforof) {
                         delete param.breakforof;
+                        delete param.break;
                         break;
                     }
                 }
@@ -651,15 +652,15 @@
                     return null;
                 }
                 const handlers = h[0];
+                const handlerss = param.handlers;
                 return async value => {
-                    const handlerss = param.handlers;
                     param.handlers = handlers;
                     if (param?.continue) {
                         delete param.continue;
                         delete param.break;
                     }
                     value = await superFetchHook.fetchActionHelper.handItems(handlers, value, param);
-                    if (param?.break) {
+                    if (!param?.breakforof && param?.break) {
                         param.handlers = [];
                         return value;
                     }
@@ -735,6 +736,7 @@
                     value = await fn(value);
                     if (param?.breakforof) {
                         delete param.breakforof;
+                        delete param.break;
                         break;
                     }
                 }
@@ -766,6 +768,7 @@
                     value = await fn(value, item, param);
                     if (param?.breakforof) {
                         delete param.breakforof;
+                        delete param.break;
                         break;
                     }
                 }
@@ -792,6 +795,7 @@
                     value = await fn(value, item, param);
                     if (param?.breakforof) {
                         delete param.breakforof;
+                        delete param.break;
                         break;
                     }
                 }
@@ -837,6 +841,7 @@
         breakforof: {
             fn(value, item, param) {
                 param.breakforof = true;
+                param.break = true;
                 item.break = true;
                 return value;
             },

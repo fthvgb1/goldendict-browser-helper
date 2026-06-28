@@ -562,7 +562,7 @@
                     }
                     const handler = {currentVarName: name, ...item};
                     value = param.vars[name] = await valueHandlers[handler.handleType].handle(handler, value, param);
-                    if (handler?.break) {
+                    if (handler?.break || param?.break) {
                         break;
                     }
                 }
