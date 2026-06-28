@@ -557,21 +557,7 @@
                 }
             }
         },
-        endif: {
-            fn: v => v,
-            param: {
-                mountElementSelector: '.fetch-replacement-target',
-                fields: {
-                    rangeHandle: {
-                        type: 'text',
-                        hook: el => el.value = 'endif',
-                        attrs: {
-                            className: 'hidden',
-                        }
-                    }
-                }
-            }
-        },
+        endif: superFetchHook.simpleValueHandlerHelper.endScope('endif', '#ebd0e7', {fn: v => v}),
         break: {
             fn: (value, item) => (item.break = true, value),
             param: {
@@ -622,21 +608,7 @@
                 }
             }
         },
-        endRangeHandle: {
-            fn: v => v,
-            param: {
-                mountElementSelector: '.fetch-replacement-target',
-                fields: {
-                    rangeHandle: {
-                        type: 'text',
-                        hook: el => el.value = 'endRangeHandle',
-                        attrs: {
-                            className: 'hidden',
-                        }
-                    }
-                }
-            }
-        }
+        endRangeHandle: superFetchHook.simpleValueHandlerHelper.endScope('endRangeHandle')
     }, {
         scope: {fetch: {fetch: '*'}},
         valueType: {

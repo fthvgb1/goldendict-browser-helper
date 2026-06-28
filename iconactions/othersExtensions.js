@@ -460,6 +460,7 @@
 
     superFetchHook.hookLang({
         'addMenu': '添加菜单',
+        'endAddMenu': '结束添加菜单作用域',
         'addMenu-desc': '此项后面的操作为点击菜单的操作',
         'removeMenu': '删除菜单',
         'menuTitle': '菜单标题,可使用{变量}',
@@ -473,7 +474,7 @@
     superFetchHook.simpleValueHandlerHelper.addHandlers('Tampermonkey', {
         addMenu: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startAddMenu', 'endAddMenu']);
                 const menu = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.menuTitle);
                 window.userJSMenu[menu] = GM_registerMenuCommand(menu, async () => {
                     value = await fn(value, item, param);
@@ -491,10 +492,12 @@
                     accessKey: {
                         type: 'text',
                         width: '4vw',
-                    }
+                    },
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('startAddMenu', '#858d9d')
                 }
             }
         },
+        endAddMenu: superFetchHook.simpleValueHandlerHelper.endScope('endAddMenu', '#858d9d'),
         removeMenu: {
             fn(value, item, param) {
                 GM_unregisterMenuCommand(window.userJSMenu[superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.menuTitle)]);
@@ -609,7 +612,7 @@
 
     superFetchHook.hookLang({
         foreach: '循环遍历',
-        iterator: '要循环的变量名',
+        iterator: '比较的数',
         iteratorElement: '循环时子变量名',
         breakforof: 'break',
         iteratorVariable: '循环时使用的变量名',
@@ -783,6 +786,19 @@
             }
         },
         endIterateObject: superFetchHook.simpleValueHandlerHelper.endScope('endIterateObject', '#bce4d9'),
+        continue: {
+            fn(value, item, param) {
+                item.break = true;
+                param.continue = true;
+                return value
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('continue')
+                }
+            }
+        },
         breakforof: {
             fn(value, item, param) {
                 param.breakforof = true;
@@ -792,13 +808,7 @@
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
-                    rangeHandle: {
-                        type: 'text',
-                        attrs: {
-                            className: 'hidden',
-                            value: 'breakforof',
-                        }
-                    }
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('breakforof')
                 }
             }
         },
@@ -1050,21 +1060,7 @@
                 }
             }
         },
-        endScope: {
-            fn: v => v,
-            param: {
-                mountElementSelector: '.fetch-replacement-target',
-                fields: {
-                    rangeHandle: {
-                        type: 'text',
-                        attrs: {
-                            className: 'hidden',
-                            value: 'endScope'
-                        }
-                    },
-                }
-            }
-        },
+        endScope: superFetchHook.simpleValueHandlerHelper.endScope('endScope'),
         AddTag: {
             fn(value, item, param) {
                 const tags = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.tagName.replaceAll('，', ',').trim())

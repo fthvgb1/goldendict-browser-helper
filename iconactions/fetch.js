@@ -852,8 +852,11 @@
             return async value => {
                 const handlerss = param.handlers;
                 param.handlers = handlers;
+                if (param?.continue) {
+                    delete param.continue;
+                }
                 value = await superFetchHook.fetchActionHelper.handItems(handlers, value, param);
-                if (param?.break) {
+                if (param?.break || param?.continue) {
                     param.handlers = [];
                     return value;
                 }
