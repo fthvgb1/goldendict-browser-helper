@@ -131,6 +131,7 @@
         cloneDeep: '深度克隆',
         cloneTo: '克隆后赋值给',
         handleThisValue: '后续没有指定变量名的操作都作用到该变量',
+        'handleThisValue-desc': '只对当前作用域有效',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('htmlFns', {
         stringToElement: {

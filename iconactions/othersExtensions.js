@@ -1057,7 +1057,7 @@
             });
             evt.target.insertAdjacentElement('afterend', textarea);
             textarea.addEventListener('input', () => input.value = textarea.value)
-            textarea.addEventListener('dblclick', fn);
+            //textarea.addEventListener('dblclick', fn);
             textarea.focus();
         });
     });
@@ -1132,4 +1132,7 @@
         }
     });
 
+    PushHookAnkiHtml(html => {
+        setEleDrag(html.querySelector('#shadowFields > ol'), '#shadowFields > ol > .form-item');
+    });
 })();
