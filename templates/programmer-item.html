@@ -1,0 +1,26 @@
+<div class="super-fetch-item" draggable="true">
+  <div class="fetch-dd">
+    <input class="codeBlockName" name="codeBlockName" placeholder="{{codeBlockName|lang}}" required
+           title="{{codeBlockName|lang}}" type="text"
+           value="{{codeBlockName}}">
+    <select class="codeBlockType" name="codeBlockType" title="{{codeBlockType|lang}}">
+      {{codeBlockTypes|buildOption(codeBlockType,0,1)}}
+    </select>
+    <button class="add-super-fetch-item" data-op="add" data-target=".super-fetch-item" data-tpl-fn="fetch"
+            title="{{add|lang}}">+
+    </button>
+    <button class="remove-super-fetch-item" data-op="remove" data-target=".super-fetch-item">-</button>
+  </div>
+
+  <div class="fetch-dd">
+    <input class="super-fetch-name" name="super-fetch-name" placeholder="{{varName|lang}}" required
+           title="{{varName|lang}}" type="text"
+           value="{{super-fetch-name}}">
+  </div>
+
+  <div class="fetch-dd">
+    <ul class="fetch-replacement-items" data-batch>
+      <template>replacement-item-html</template>
+    </ul>
+  </div>
+</div>

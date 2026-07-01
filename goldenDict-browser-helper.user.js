@@ -46,6 +46,7 @@
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/expansionfunction.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/imagesize.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/othersExtensions.js
+// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/programmer.js
 
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/contextmenuactions/menus.js
 
@@ -57,6 +58,8 @@
 // @resource replacement https://github.com/fthvgb1/goldendict-browser-helper/blob/master/templates/replacement.html?raw=true
 // @resource replacement-item https://github.com/fthvgb1/goldendict-browser-helper/blob/master/templates/replacement-item.html?raw=true
 // @resource fetch-form https://github.com/fthvgb1/goldendict-browser-helper/blob/master/templates/form.html?raw=true
+// @resource programmer https://github.com/fthvgb1/goldendict-browser-helper/blob/master/templates/programmer.html?raw=true
+// @resource programmer-item https://github.com/fthvgb1/goldendict-browser-helper/blob/master/templates/programmer-item.html?raw=true
 
 // @resource icon-anki https://github.com/fthvgb1/goldendict-browser-helper/blob/master/icon/anki.png?raw=true
 // @resource icon-copy https://github.com/fthvgb1/goldendict-browser-helper/blob/master/icon/copy.png?raw=true
