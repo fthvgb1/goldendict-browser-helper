@@ -421,7 +421,7 @@
         },
         convertFetchParam(item) {
             const data = formProcessor.getFormValue(item), t = data['operate-type'];
-            actions.handlers[t]?.form?.(item, data);
+            actions[t]?.form?.(item, data);
             return data;
         }
     };
@@ -738,12 +738,12 @@
                     }
                     return;
                 }
-                const name = t.split('|');
-                if (name.length < 2) {
-                    tpl.replaceWith(this.buildTemplateHTML(name[0]))
+                const [templateName, variables] = t.split('|');
+                if (!variables) {
+                    tpl.replaceWith(this.buildTemplateHTML(templateName));
                     return
                 }
-                tpl.replaceWith(this.buildTemplateHTML(name[0], name[1] === '.' ? vars : getVarVal(vars, name[1], null)));
+                tpl.replaceWith(this.buildTemplateHTML(templateName, variables === '.' ? vars : getVarVal(vars, variables, null)));
             });
             if (this.templateFnHook?.[template]) {
                 this.templateFnHook[template](ele, vars);
@@ -782,7 +782,7 @@
         };
         const evenFn = {
             dragstart(e) {
-                if (!e.target.matches(selector)) {
+                if (!e.target?.matches(selector)) {
                     return
                 }
                 e.stopImmediatePropagation();
@@ -826,10 +826,6 @@
                     }
                 }
                 param.target = tarEle;
-                /* seem not necessary
-                tarIndex > curIndex ?tarEle.parentElement.moveBefore(tarEle,param.currentMovingEle):
-                    param.currentMovingEle.parentElement.moveBefore(param.currentMovingEle,tarEle)
-                return;*/
                 tarEle.insertAdjacentElement(tarIndex > curIndex ? 'afterend' : 'beforebegin', param.currentMovingEle);
 
             },
@@ -851,7 +847,7 @@
                 e.stopPropagation();
             },
             mousedown(ev) {
-                if (actionHelper.isTextNode(ev.target)) {
+                if (actionHelper.isTextNode(ev.target) || ev.target.contentEditable === 'true') {
                     turnDrag(false);
                     param.flag = true
                 }
@@ -875,19 +871,16 @@
     });
 
 
-    const actions = {
-        // execute action
-        async dispatchAction(param, from = null, target = null, vars = {}) {
-            await this.handlers?.[param?.['operate-type']]?.action?.(param, from, target, vars);
-        },
-
-    };
+    const actions = {};
     const actionHelper = {
-
         async executeAction(param, from = null, target = null, triggerEle = null, vars = {}) {
+            if (!actions[param?.['operate-type']]?.scope) {
+                await actions[param?.['operate-type']].action(param, vars);
+                return;
+            }
             from = from ? from : this.getFromEle(param, triggerEle);
             target = target ? target : this.getDestEle(param, triggerEle);
-            await actions.dispatchAction(param, from, target, vars);
+            await actions[param?.['operate-type']].action(param, from, target, vars);
         },
 
         elementCache: {},
@@ -927,7 +920,10 @@
 
         filterButton(isText) {
             return item => {
-                const type = actions.handlers[item['operate-type']].scope;
+                const type = actions[item['operate-type']]?.scope;
+                if (!type) {
+                    return false;
+                }
                 if (type !== 'all' && ((isText && type !== 'text')) || (!isText && type === 'text')) {
                     return false;
                 }
@@ -956,9 +952,9 @@
             const data = o?.[v] ?? {};
             o[v] = this.getSwitchData(e.target);
             const fetchItem = findParent(e.target, '.fetch-item');
-            fetchItem.querySelectorAll('[data-single-run]').forEach(el => el.dataset.singleRun = actions.handlers[v]?.singleRun ?? false);
+            fetchItem.querySelectorAll('[data-single-run]').forEach(el => el.dataset.singleRun = actions[v]?.singleRun ?? false);
             const container = fetchItem.querySelector('.fetch-action-container');
-            container.replaceWith(actions.handlers[v].getTemplate(data));
+            container.replaceWith(actions[v].getTemplate(data));
         },
 
         parseFetchRule(arr, rule = {}) {
@@ -995,9 +991,9 @@
 
         buildFetchItem(data = {}) {
             data['operate-type'] = data['operate-type'] ?? 'fetch';
-            data.singleRun = actions.handlers[data['operate-type']]?.singleRun ?? false;
-            const handler = actions.handlers[data['operate-type']];
-            data['op'] = Object.keys(actions.handlers).map(k => [k, actions.handlers[k].text, {title: actions.handlers[k].desc}]);
+            data.singleRun = actions[data['operate-type']]?.singleRun ?? false;
+            const handler = actions[data['operate-type']];
+            data['op'] = Object.keys(actions).map(k => [k, actions[k].text, {title: actions[k].desc}]);
             data['fetch-operator'] = handler.getTemplate(data);
             return templateHelper.buildTemplateHTML('fetch-base', data);
         },

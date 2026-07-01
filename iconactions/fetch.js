@@ -21,25 +21,25 @@
         ...superFetchHook.eventHook.addTplFn,
         replacement(data, ev, el) {
             if (el) {
-                data = actions.handlers.replacement.getSingleItem(el);
-                return actions.handlers.replacement.getReplacementItem({
+                data = actions.replacement.getSingleItem(el);
+                return actions.replacement.getReplacementItem({
                     'replacement-items': [data],
                     '$clone': true,
                     from: ev.target.parentElement.dataset.from
                 })[0];
             }
             data.from = ev.target.parentElement.dataset.from;
-            return actions.handlers.replacement.getReplacementItem(data);
+            return actions.replacement.getReplacementItem(data);
         },
         fetch(data, ev, el) {
             if (el) {
-                const item = actions.handlers.fetch.getSingleItem(el);
+                const item = actions.fetch.getSingleItem(el);
                 data['super-fetch-items'] = [item];
                 data['$clone'] = true;
-                return actions.handlers.fetch.getFetchItem(data)[0];
+                return actions.fetch.getFetchItem(data)[0];
             }
             data.from = 'fetch-fetch';
-            return actions.handlers.fetch.getFetchItem(data);
+            return actions.fetch.getFetchItem(data);
         }
     };
 
@@ -917,8 +917,6 @@
 
 
     const actions = {
-
-        handlers: {
             fetch: {
                 async action(param, from, target, vars = {}) {
                     if (param['selector-items'].length < 1 || param?.['super-fetch-items']?.length < 1) {
@@ -981,7 +979,7 @@
                 getSingleItem(el, data = {}) {
                     const selector = ':where(input,select,textarea):not(.fetch-replacement-item :where(input,select,textarea))';
                     formProcessor.getFormValue(el, data, selector);
-                    actions.handlers.replacement.form(el, data);
+                    actions.replacement.form(el, data);
                     return data;
                 },
                 // self helper
@@ -990,8 +988,8 @@
                     return data['super-fetch-item-html'] = (data?.['super-fetch-items'] ?? [{}]).map(item => {
                             item.htmlType = htmlType;
                             item.from = 'fetch-fetch';
-                            item['$clone'] = data?.['$clone'] ?? false;
-                            item['replacement-item-html'] = actions.handlers.replacement.getReplacementItem(item);
+                        item['$clone'] = data?.['$clone'] ?? false;
+                        item['replacement-item-html'] = actions.replacement.getReplacementItem(item);
                             return templateHelper.buildTemplateHTML('fetch-item', item);
                         }
                     );
@@ -1099,14 +1097,13 @@
                 getReplacementItem(data = {}) {
                     data['replacement-items'] = data?.['replacement-items'] ? data['replacement-items'] : [{}];
                     return data['replacement-item-html'] = data['replacement-items'].map(item => {
-                        item.opType = actions.handlers.replacement.getHandlers(data.from);
+                        item.opType = actions.replacement.getHandlers(data.from);
                         item.from = data.from;
                         item['$clone'] = data?.['$clone'] ?? false;
                         return templateHelper.buildTemplateHTML('replacement-item', item)
                     });
                 },
             }
-        },
     };
 
     let setting;
@@ -1216,7 +1213,7 @@
     PushHookAnkiChange('.handleType', ev => {
         const li = ev.target.parentElement;
         const from = li.dataset.from;
-        const newLi = actions.handlers.replacement.getReplacementItem({from})[0];
+        const newLi = actions.replacement.getReplacementItem({from})[0];
         newLi.querySelector('.handleType').replaceWith(ev.target);
         li.replaceWith(newLi);
         const type = ev.target.value;
