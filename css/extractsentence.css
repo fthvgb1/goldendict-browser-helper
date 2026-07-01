@@ -217,6 +217,14 @@ li.fetch-replacement-item[data-color]:has([name=rangeHandle]) {
     display: inline;
 }
 
+.fetch-replacement-item:has(input[name=handleThisValue]:checked),
+.fetch-replacement-item:has(.fetch-replacement-target>option[value=handleThisValue]:checked){
+    background-color: #54ffbd;
+    .leftValue,.varName{
+        background-color: #eaffce;
+    }
+}
+
 
 .handleType:has(option[value="remove element"]:checked), .fetch-replacement-item:has(option[value="remove element"]:checked) .fetch-replacement-target,
 .fetch-replacement-item:has(select.fetch-replacement-target[data-fn-set]):not(:has(.fetch-replacement-target>:where(option[value=getAttribute],option[value=getComputedStyle]):checked)):not(:has(.fetch-replacement-target[data-fn-set] ~ input.show)) select.handleType,
