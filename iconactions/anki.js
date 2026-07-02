@@ -567,14 +567,12 @@
         if (rawStr) {
             richTexts.push((ele) => {
                 editor.innerHTML = value;
-                enableImageResizeInDiv(editor);
 
                 ele.parentElement.replaceChild(richText, ele);
             })
             return li.outerHTML
         }
         li.removeChild(li.querySelector('.wait-replace'));
-        enableImageResizeInDiv(editor);
         editor.innerHTML = value;
         li.insertBefore(richText, li.querySelector('.field-operate'));
         document.querySelector('#shadowFields ol').appendChild(li);
@@ -881,7 +879,6 @@
                     const {wordFormat, sentenceFormat} = sentenceFormatFn();
                     const {sentence, offset, word,} = sentenceBackup;
                     editor.querySelector('.spell-content').innerHTML = cutSentence(word, offset, sentence, sentenceNum, wordFormat, sentenceFormat);
-                    enableImageResizeInDiv(editor.querySelector('.spell-content'))
                 }
 
                 let {result: tags} = await anki('getTags').catch(e => console.log(e)) ?? {result: []};

@@ -917,193 +917,194 @@
 
 
     const actions = {
-            fetch: {
-                async action(param, from, target, vars = {}) {
-                    if (param['selector-items'].length < 1 || param?.['super-fetch-items']?.length < 1) {
-                        log('not have valid fetch rule!', param)
+        programmer: {},
+        fetch: {
+            async action(param, from, target, vars = {}) {
+                if (param['selector-items'].length < 1 || param?.['super-fetch-items']?.length < 1) {
+                    log('not have valid fetch rule!', param)
+                    return;
+                }
+                const rule = actionHelper.parseFetchRule(param?.['super-fetch-items']);
+                if (!rule) {
+                    log('not have valid fetch rule!')
+                    return;
+                }
+                const selectorItems = [...param['selector-items']];
+                let ele = from, keep = [], i = 0;
+                while (true) {
+                    i++;
+                    const selectorItem = selectorItems.shift();
+                    if (!selectorItem?.['fetch-selector']) {
+                        i === 1 && await actionHelper.fetchItem([[from]], target, param, rule, vars);
                         return;
                     }
-                    const rule = actionHelper.parseFetchRule(param?.['super-fetch-items']);
-                    if (!rule) {
-                        log('not have valid fetch rule!')
+                    const last = selectorItems.length < 1;
+                    ele = actionHelper.query(ele, selectorItem, last, keep);
+                    if (!ele) {
                         return;
                     }
-                    const selectorItems = [...param['selector-items']];
-                    let ele = from, keep = [], i = 0;
-                    while (true) {
-                        i++;
-                        const selectorItem = selectorItems.shift();
-                        if (!selectorItem?.['fetch-selector']) {
-                            i === 1 && await actionHelper.fetchItem([[from]], target, param, rule, vars);
-                            return;
-                        }
-                        const last = selectorItems.length < 1;
-                        ele = actionHelper.query(ele, selectorItem, last, keep);
-                        if (!ele) {
-                            return;
-                        }
-                        if (last) {
-                            break
-                        }
+                    if (last) {
+                        break
                     }
-                    await actionHelper.fetchItem(ele, target, param, rule, vars);
-                },
-                text: mapTitle['fetch'], // option innerText
-                scope: 'all', // all html text;
-                desc: mapTitle['fetch'], // option title
-                singleRun: true, //can be added to contextmenu or automatic run
-                getTemplate(data) {
-                    data['selector-items'] = data?.['selector-items'] ? data['selector-items'] : [{}];
-                    data['fetch-chain-html'] = data['selector-items']
-                        .map(item => templateHelper.buildTemplateHTML('selector-chain', item));
-                    this.getFetchItem(data);
-                    return templateHelper.buildTemplateHTML('fetch', data);
-                },
-                // optional
-                form(el, data = {}) {
-                    data['selector-items'] = [];
-                    el.querySelectorAll('.selector-chain .selector-item').forEach(li => {
-                        const item = formProcessor.getFormValue(li, {}, 'input');
-                        data['selector-items'].push(item);
-                    })
-                    const items = el.querySelector('.super-fetch-items');
-                    if (!items) {
-                        return data;
-                    }
-                    data['super-fetch-items'] = [];
-                    el.querySelectorAll('.super-fetch-item')?.forEach(item => {
-                        data['super-fetch-items'].push(this.getSingleItem(item));
-                    });
+                }
+                await actionHelper.fetchItem(ele, target, param, rule, vars);
+            },
+            text: mapTitle['fetch'], // option innerText
+            scope: 'all', // all html text;
+            desc: mapTitle['fetch'], // option title
+            singleRun: true, //can be added to contextmenu or automatic run
+            getTemplate(data) {
+                data['selector-items'] = data?.['selector-items'] ? data['selector-items'] : [{}];
+                data['fetch-chain-html'] = data['selector-items']
+                    .map(item => templateHelper.buildTemplateHTML('selector-chain', item));
+                this.getFetchItem(data);
+                return templateHelper.buildTemplateHTML('fetch', data);
+            },
+            // optional
+            form(el, data = {}) {
+                data['selector-items'] = [];
+                el.querySelectorAll('.selector-chain .selector-item').forEach(li => {
+                    const item = formProcessor.getFormValue(li, {}, 'input');
+                    data['selector-items'].push(item);
+                })
+                const items = el.querySelector('.super-fetch-items');
+                if (!items) {
                     return data;
-                },
-                getSingleItem(el, data = {}) {
-                    const selector = ':where(input,select,textarea):not(.fetch-replacement-item :where(input,select,textarea))';
-                    formProcessor.getFormValue(el, data, selector);
-                    actions.replacement.form(el, data);
-                    return data;
-                },
-                // self helper
-                getFetchItem(data) {
-                    data['handleOp'] = handleOp;
-                    return data['super-fetch-item-html'] = (data?.['super-fetch-items'] ?? [{}]).map(item => {
-                            item.htmlType = htmlType;
-                            item.from = 'fetch-fetch';
+                }
+                data['super-fetch-items'] = [];
+                el.querySelectorAll('.super-fetch-item')?.forEach(item => {
+                    data['super-fetch-items'].push(this.getSingleItem(item));
+                });
+                return data;
+            },
+            getSingleItem(el, data = {}) {
+                const selector = ':where(input,select,textarea):not(.fetch-replacement-item :where(input,select,textarea))';
+                formProcessor.getFormValue(el, data, selector);
+                actions.replacement.form(el, data);
+                return data;
+            },
+            // self helper
+            getFetchItem(data) {
+                data['handleOp'] = handleOp;
+                return data['super-fetch-item-html'] = (data?.['super-fetch-items'] ?? [{}]).map(item => {
+                        item.htmlType = htmlType;
+                        item.from = 'fetch-fetch';
                         item['$clone'] = data?.['$clone'] ?? false;
                         item['replacement-item-html'] = actions.replacement.getReplacementItem(item);
-                            return templateHelper.buildTemplateHTML('fetch-item', item);
-                        }
-                    );
+                        return templateHelper.buildTemplateHTML('fetch-item', item);
+                    }
+                );
+            }
+        },
+        tag: {
+            action(param, from) {
+                if (!from instanceof Element) {
+                    return
+                }
+                if (from.querySelectorAll(param['tag-selector']).length > 0) {
+                    actionHelper.tagForAnki(param['fetch-tag']);
                 }
             },
-            tag: {
-                action(param, from) {
-                    if (!from instanceof Element) {
-                        return
+            text: mapTitle['tag'],
+            desc: mapTitle['tag-desc'],
+            scope: 'html',
+            getTemplate: (data) => {
+                return templateHelper.buildTemplateHTML('tag', data);
+            }
+        },
+        replacement: {
+            async action(param, target) {
+                const p = {vars: {value: target.value}, rule: param, handles: [...param['replacement-items']]};
+                while (true) {
+                    const item = p.handles.shift();
+                    if (!item) {
+                        break;
                     }
-                    if (from.querySelectorAll(param['tag-selector']).length > 0) {
-                        actionHelper.tagForAnki(param['fetch-tag']);
-                    }
-                },
-                text: mapTitle['tag'],
-                desc: mapTitle['tag-desc'],
-                scope: 'html',
-                getTemplate: (data) => {
-                    return templateHelper.buildTemplateHTML('tag', data);
+                    p.vars.value = await valueHandlers[item.handleType].handle(item, p.vars.value, p);
                 }
+                target.value = p.vars.value;
             },
-            replacement: {
-                async action(param, target) {
-                    const p = {vars: {value: target.value}, rule: param, handles: [...param['replacement-items']]};
-                    while (true) {
-                        const item = p.handles.shift();
-                        if (!item) {
-                            break;
-                        }
-                        p.vars.value = await valueHandlers[item.handleType].handle(item, p.vars.value, p);
-                    }
-                    target.value = p.vars.value;
-                },
-                text: mapTitle['replacement'],
-                desc: mapTitle['replacement'],
-                scope: 'text',
-                getTemplate(data) {
-                    data.from = 'replacement';
-                    this.getReplacementItem(data);
-                    return templateHelper.buildTemplateHTML('replacement', data);
-                },
-                getSingleItem(li, data = {}) {
-                    formProcessor.getFormValue(li, data, 'input,textarea,select');
-                    valueHandlers?.[data.handleType]?.form?.(li, data);
+            text: mapTitle['replacement'],
+            desc: mapTitle['replacement'],
+            scope: 'text',
+            getTemplate(data) {
+                data.from = 'replacement';
+                this.getReplacementItem(data);
+                return templateHelper.buildTemplateHTML('replacement', data);
+            },
+            getSingleItem(li, data = {}) {
+                formProcessor.getFormValue(li, data, 'input,textarea,select');
+                valueHandlers?.[data.handleType]?.form?.(li, data);
+                return data;
+            },
+            form(el, data = {}) {
+                if (el.querySelector('.super-fetch-item')) {
                     return data;
-                },
-                form(el, data = {}) {
-                    if (el.querySelector('.super-fetch-item')) {
-                        return data;
-                    }
-                    data['replacement-items'] = [];
-                    el.querySelectorAll('.fetch-replacement-item').forEach(li => data['replacement-items']
-                        .push(this.getSingleItem(li))
-                    );
+                }
+                data['replacement-items'] = [];
+                el.querySelectorAll('.fetch-replacement-item').forEach(li => data['replacement-items']
+                    .push(this.getSingleItem(li))
+                );
 
-                    return data;
-                },
-                opType: {},
-                getHandlers(from) {
-                    if (this.opType?.[from]?.length > 0) {
-                        return this.opType[from];
-                    }
-                    const [name, handle] = from.split('-');
-                    return this.opType[from] = iterateObjByKey(valueHandlers, (k, handler) => {
-                        if (handler.scope) {
-                            if ('string' === typeof handler.scope && name !== handler.scope) {
+                return data;
+            },
+            opType: {},
+            getHandlers(from) {
+                if (this.opType?.[from]?.length > 0) {
+                    return this.opType[from];
+                }
+                const [name, handle] = from.split('-');
+                return this.opType[from] = iterateObjByKey(valueHandlers, (k, handler) => {
+                    if (handler.scope) {
+                        if ('string' === typeof handler.scope && name !== handler.scope) {
+                            return false
+                        }
+                        if ('object' === typeof handler.scope) {
+                            if (!handler.scope?.[name]) {
+                                return false;
+                            }
+                            if ('fetch' === name && !handler.scope[name]?.[handle]) {
                                 return false
                             }
-                            if ('object' === typeof handler.scope) {
-                                if (!handler.scope?.[name]) {
-                                    return false;
-                                }
-                                if ('fetch' === name && !handler.scope[name]?.[handle]) {
-                                    return false
-                                }
-                            }
-                            const key = [k, from].join('.');
-                            if ('fetch' === name) { // second menu
-                                if (handler?.handlers && handler.scope[name]?.[handle]) {
-                                    if ('*' === handler.scope[name][handle]) {
-                                        setMapVal(key, simpleValueHandlerHelper.getHandlerOptions(handler.handlers), scopeMap);
-                                    } else {
-                                        const ops = handler.scope[name][handle].split(',').map(kk => {
-                                            return simpleValueHandlerHelper.handleOptions(kk, handler.handlers[kk])
-                                        });
-                                        setMapVal(key, ops, scopeMap);
-                                    }
-                                }
-                            } else {
-                                if ('*' === handler.scope[name]) {
+                        }
+                        const key = [k, from].join('.');
+                        if ('fetch' === name) { // second menu
+                            if (handler?.handlers && handler.scope[name]?.[handle]) {
+                                if ('*' === handler.scope[name][handle]) {
                                     setMapVal(key, simpleValueHandlerHelper.getHandlerOptions(handler.handlers), scopeMap);
                                 } else {
-                                    const ops = handler.scope[name].split(',').map(kk => {
+                                    const ops = handler.scope[name][handle].split(',').map(kk => {
                                         return simpleValueHandlerHelper.handleOptions(kk, handler.handlers[kk])
                                     });
                                     setMapVal(key, ops, scopeMap);
                                 }
                             }
+                        } else {
+                            if ('*' === handler.scope[name]) {
+                                setMapVal(key, simpleValueHandlerHelper.getHandlerOptions(handler.handlers), scopeMap);
+                            } else {
+                                const ops = handler.scope[name].split(',').map(kk => {
+                                    return simpleValueHandlerHelper.handleOptions(kk, handler.handlers[kk])
+                                });
+                                setMapVal(key, ops, scopeMap);
+                            }
                         }
-                        const text = handler.text ?? mapTitle[k] ?? k;
-                        const title = handler.title ?? mapTitle[`${k}-desc`] ?? text;
-                        return [k, text, {title: title}];
-                    });
-                },
-                getReplacementItem(data = {}) {
-                    data['replacement-items'] = data?.['replacement-items'] ? data['replacement-items'] : [{}];
-                    return data['replacement-item-html'] = data['replacement-items'].map(item => {
-                        item.opType = actions.replacement.getHandlers(data.from);
-                        item.from = data.from;
-                        item['$clone'] = data?.['$clone'] ?? false;
-                        return templateHelper.buildTemplateHTML('replacement-item', item)
-                    });
-                },
-            }
+                    }
+                    const text = handler.text ?? mapTitle[k] ?? k;
+                    const title = handler.title ?? mapTitle[`${k}-desc`] ?? text;
+                    return [k, text, {title: title}];
+                });
+            },
+            getReplacementItem(data = {}) {
+                data['replacement-items'] = data?.['replacement-items'] ? data['replacement-items'] : [{}];
+                return data['replacement-item-html'] = data['replacement-items'].map(item => {
+                    item.opType = actions.replacement.getHandlers(data.from);
+                    item.from = data.from;
+                    item['$clone'] = data?.['$clone'] ?? false;
+                    return templateHelper.buildTemplateHTML('replacement-item', item)
+                });
+            },
+        }
     };
 
     let setting;

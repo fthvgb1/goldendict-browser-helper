@@ -1,5 +1,5 @@
 ;(() => {
-    console.log('hello programmer');
+    //console.log('hello programmer');
 
     superFetchHook.hookLang({
         codeBlockName: '代码块名',
@@ -37,15 +37,16 @@
         },
         codeBlockTypes: {
             async program(param, vars) {
-                await superFetchHook.fetchActionHelper.handItems(param['replacement-items'], null, {
-                    vars: vars,
-                    'super-fetch-name': param['super-fetch-name'],
-                    rule: {
-                        'super-fetch-name': param['super-fetch-name'],
-                        handleValue: true,
-                    },
-                    fetchParam: param, globalVars: {...vars}, parentVars: {...vars}
-                })
+                await superFetchHook.fetchActionHelper.handItems(param['replacement-items'],
+                    vars[param['super-fetch-name']] ?? null,
+                    {
+                        vars,
+                        rule: {
+                            'super-fetch-name': param['super-fetch-name'],
+                            handleValue: true,
+                        },
+                        fetchParam: param, globalVars: vars, parentVars: vars
+                    });
             },
             function(param, vars) {
                 if (!param.codeBlockName) {
@@ -77,4 +78,13 @@
             );
         }
     };
+
+    superFetchHook.eventHook.addTplFn.program = (data, ev, el) => {
+        if (el) {
+            data.programmerItems = [superFetchHook.fetchActions.fetch.getSingleItem(el, data)];
+            data['$clone'] = true;
+            return superFetchHook.fetchActions.programmer.getItem(data)[0]
+        }
+        return superFetchHook.fetchActions.programmer.getItem(data);
+    }
 })();
