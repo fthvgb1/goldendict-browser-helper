@@ -110,12 +110,21 @@ input:required {
     width: 5vw;
 }
 
-.handleType option:not(:checked) {
+.handleType option:not(:checked), .handleType:has(option[value=valueRelation]:checked) + .fetch-replacement-target > option:not(:checked) {
     background-color: #ffffff;
 }
 
 .handleType option[value=log], .handleType:has(>option[value=log]:checked) {
     background-color: #9ae76e;
+}
+
+.handleType:has(option[value=valueRelation]:checked) + .fetch-replacement-target:has(>option[value=setValue]:checked),
+.handleType:has(option[value=valueRelation]:checked) + .fetch-replacement-target option[value=setValue] {
+    background-color: #d5afee;
+}
+
+.handleType option[value=valueRelation], .handleType:has(>option[value=valueRelation]:checked) {
+    background-color: #f1dc20;
 }
 
 .fetch-format {
@@ -206,9 +215,6 @@ select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAtt
     display: none;
 }
 
-/*.super-fetch-name, .super-fetch-item {
-    background-color: attr(data-color type(<color>));
-}*/
 li.fetch-replacement-item[data-color]:has([name=rangeHandle]) {
     background-color: attr(data-color type(<color>));
 }
