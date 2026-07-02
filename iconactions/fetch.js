@@ -557,13 +557,14 @@
                         break
                     }
                     if ('function' === typeof item) {
-                        value = param.vars[name] = await item(value, {}, param);
+                        value = await item(value, {}, param);
+                        name && (param.vars[name] = value);
                         continue;
                     }
                     const handler = {currentVarName: name, ...item};
                     value = await valueHandlers[handler.handleType].handle(handler, value, param);
                     name = handler.currentVarName;
-                    param.vars[name] = value;
+                    name && (param.vars[name] = value);
                     if (handler?.break || param?.break) {
                         break;
                     }

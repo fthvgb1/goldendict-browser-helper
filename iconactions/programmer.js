@@ -64,7 +64,7 @@
                     item.from = 'fetch-fetch';
                     item.codeBlockTypes = codeBlockTypes;
                     item['$clone'] = data?.['$clone'] ?? false;
-                    if (!item?.['super-fetch-name'] || !item?.['replacement-items']) {
+                    if (!item?.['replacement-items'] || item['replacement-items'].length < 1) {
                         item['replacement-items'] = [{
                             handleType: 'valueRelation',
                             searchValue: 'setValue',
