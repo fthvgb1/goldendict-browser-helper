@@ -165,6 +165,7 @@
                 return
             }
             const items = await file.text().then(JSON.parse);
+            ev.target.value = null;
             if (!items || items.length < 1 || !items[0]?.['fetch-name']) {
                 Swal.showValidationMessage(`can't parse rule file`);
                 return
@@ -183,12 +184,14 @@
                 return
             }
             const names = [];
+            window._importItem = true;
             newRule.forEach(item => {
                 const t = actionHelper.buildFetchItem(item);
                 t.classList.add('fetch-item-specific');
                 setting.appendChild(t);
                 names.push([item['fetch-name'], item['fetch-name']]);
             });
+            delete window._importItem;
             Swal.showValidationMessage(`已导入${newRule.length}条记录！`);
             if (GM_getValue('fetch-display-type', 1) === 2) {
                 const options = buildOption(names, '', 0, 1);

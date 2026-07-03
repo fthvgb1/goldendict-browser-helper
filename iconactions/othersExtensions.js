@@ -310,7 +310,7 @@
                 });
                 select2.val(vars.actionNames).trigger('change');
             };
-            (ev || vars?.['$clone']) ? fn() : this.afterRender.push(fn);
+            (ev || vars?.['$clone'] || window?._importItem) ? fn() : this.afterRender.push(fn);
         },
         renderHookX: superFetchHook.simpleValueHandlerHelper.buildFieldRender({
             mountElementSelector: '.handleType',

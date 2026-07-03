@@ -209,7 +209,7 @@
                     width: '13vw',
                 });
             }
-            (ev || vars?.['$clone']) ? fn() : this.afterRender.push(fn);
+            (ev || vars?.['$clone'] || window?._importItem) ? fn() : this.afterRender.push(fn);
         },
         afterRender: [],
         renderHookX: superFetchHook.simpleValueHandlerHelper.buildFieldRender({
