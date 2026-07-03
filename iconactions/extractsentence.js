@@ -1013,7 +1013,7 @@
         switchData: new WeakMap(),
 
         buildFetchItem(data = {}) {
-            data['operate-type'] = data['operate-type'] ?? 'fetch';
+            data['operate-type'] = data['operate-type'] ?? 'programmer';
             data.singleRun = actions[data['operate-type']]?.singleRun ?? false;
             const handler = actions[data['operate-type']];
             data['op'] = Object.keys(actions).map(k => [k, actions[k].text, {title: actions[k].desc}]);
