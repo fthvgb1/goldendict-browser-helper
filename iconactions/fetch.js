@@ -547,10 +547,11 @@
         },
 
         async handItems(items, value, param) {
+            let names = param.rule['super-fetch-name'];
+            let name = names;
             if (param.rule.handleValue) {
                 param.handlers = [...items];
                 param.fetchType = 'fetch';
-                let name = param.rule['super-fetch-name'];
                 while (true) {
                     const item = param.handlers.shift();
                     if (!item) {
@@ -564,13 +565,18 @@
                     const handler = {currentVarName: name, ...item};
                     value = await valueHandlers[handler.handleType].handle(handler, value, param);
                     name = handler.currentVarName;
-                    name && (param.vars[name] = value);
+                    if (name) {
+                        param.vars[name] = value;
+                        if (!names) {
+                            names = param.rule['super-fetch-name'] = name;
+                        }
+                    }
                     if (handler?.break || param?.break) {
                         break;
                     }
                 }
             }
-            return param.vars[param.rule['super-fetch-name']];
+            return names ? param.vars[names] : param.vars[name];
         },
         defaultReg: /\{(.*?)}/,
         getDefVars(defaultVal, vars) {

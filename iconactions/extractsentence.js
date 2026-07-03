@@ -339,9 +339,12 @@
         return setting ? [...setting.children].slice(1) : [];
     }
 
-
     function buttonField(item) {
-        return item?.['fetch-to-field'] ? item['fetch-to-field'] : item['fetch-field'];
+        const field = item?.['fetch-to-field'] ? item['fetch-to-field'] : item['fetch-field'];
+        if (!field) {
+            return item['operate-type'];
+        }
+        return item['operate-type'] + '-' + field;
     }
 
     function addBtn(input, items) {
@@ -499,6 +502,7 @@
         'url-scope': '生效域名，正则匹配url，多个用||隔开，只对自动执行或添加tampermonkey菜单有效',
     };
 
+    let itemCache;
 
     async function executeActions(...names) {
         let vars = {}, async = true;
@@ -515,8 +519,15 @@
         if (names.length < 1) {
             return;
         }
-        const rules = {};
-        getAnkiFetchParams().forEach(rule => rules[rule['fetch-name']] = rule);
+        let rules;
+        if (setting || !itemCache) {
+            rules = {};
+            getAnkiFetchParams().forEach(rule => rules[rule['fetch-name']] = rule);
+            itemCache = rules;
+        } else {
+            rules = itemCache;
+        }
+
         for (const name of names) {
             if (!rules?.[name]) {
                 console.log('action ', name, ' not exist');
@@ -1010,6 +1021,8 @@
             return templateHelper.buildTemplateHTML('fetch-base', data);
         },
     };
+
+    PushHookAnkiClose(() => setting = undefined);
 
     PushHookAnkiHtml(ankiContainer => {
         const div = templateHelper.buildTemplateHTML('fetch-form', {

@@ -2,7 +2,7 @@
     //console.log('hello programmer');
 
     superFetchHook.hookLang({
-        codeBlockName: '代码块名',
+        codeBlockName: '代码块名， 当类型为函数时即为函数名',
         codeBlockType: '代码块类型',
         programmer: '简易编程',
         program: '程序',
@@ -10,6 +10,9 @@
         arg: '参数名,为空表示无需参数',
         returnVarName: '返回值变量名，为空则没有返回值',
         isAsync: '是否异步',
+        functionName: '函数或方法名,从window对象中查找 window.object.method|window.function ，列表不存在可手动输入',
+        callFunction: '执行函数',
+        parameters: '参数, {var1},{var2}...',
     });
 
     superFetchHook.templateHelper.templateFnHook['programmer-item'] = (html, vars) => {
@@ -78,40 +81,20 @@
                 }
             },
             function: {
-                async fn(param, vars, config) {
-                    if (!param.codeBlockName) {
-                        console.log(superFetchHook.lang('codeBlockName'), 'is empty')
-                        return;
-                    }
-                    let fn;
-                    if (param.async) {
-                        fn = async (...args) => {
-                            param.arguments.forEach((name, i) => name && (vars[name] = args[i]));
-                            await superFetchHook.fetchActions.programmer.callFunc(param, vars);
-                            if (param.returnVarName) {
-                                const v = vars[param.returnVarName];
-                                delete vars[param.returnVarName];
-                                param.arguments.forEach(name => delete vars[name]);
-                                return v;
-                            }
+                async fn(param, varss, config) {
+                    const fn = async (...args) => {
+                        const vars = {...varss};
+                        param.arguments.forEach((name, i) => name && (vars[name] = args[i]));
+                        await superFetchHook.fetchActions.programmer.callFunc(param, vars);
+                        if (param.returnVarName) {
+                            const v = vars[param.returnVarName];
+                            delete vars[param.returnVarName];
                             param.arguments.forEach(name => delete vars[name]);
+                            return v;
                         }
-                    } else {
-                        fn = (...args) => {
-                            param.arguments.forEach((name, i) => name && (vars[name] = args[i]));
-                            superFetchHook.fetchActions.programmer.callFunc(param, vars);
-                            if (param.returnVarName) {
-                                const v = vars[param.returnVarName];
-                                delete vars[param.returnVarName];
-                                param.arguments.forEach(name => delete vars[name]);
-                                return v;
-                            }
-                            param.arguments.forEach(name => delete vars[name]);
-                        }
+                        param.arguments.forEach(name => delete vars[name]);
                     }
-
-
-                    const name = [config['fetch-name'], param.codeBlockName];
+                    const name = [config['fetch-name'], param.codeBlockName].filter(v => v);
                     setMapVal(name.join('.'), fn, window);
                 },
                 templateHook(html, vars = {}) {
@@ -164,5 +147,91 @@
             return superFetchHook.fetchActions.programmer.getItem(data)[0]
         }
         return superFetchHook.fetchActions.programmer.getItem(data);
-    }
+    };
+
+    superFetchHook.valueHandlers.callFunction = {
+        async handle(item, value, param) {
+            let fn = superFetchHook.getVarVal(window, item.func);
+            const args = item.parameters.split(',').map(v => {
+                v = v.trim();
+                return superFetchHook.fetchActionHelper.getVar(v, param, true);
+            })
+            if (fn) {
+                if (item.async) {
+                    fn(...args);
+                    return value
+                }
+                return await fn(...args);
+            }
+            await superFetchHook.executeActions(item.func.split('.')[0]);
+            fn = superFetchHook.getVarVal(window, item.func);
+            if (!fn) {
+                console.log("can't find function", item.func)
+                return value;
+            }
+            if (item.async) {
+                fn(...args);
+                return value
+            }
+            return await fn(...args);
+        },
+        renderHook(li, vars, ev) {
+            this.renderHookX(li, vars);
+            const sel = li.querySelector('.func');
+            const value = vars?.func ?? '';
+            const fn = () => {
+                const select2 = $(sel);
+                let selected = false;
+                const data = [];
+                getAnkiFetchParams().forEach(v => {
+                    if (v['operate-type'] !== 'programmer') {
+                        return false
+                    }
+                    v.programmerItems.forEach(item => {
+                        if (item.codeBlockType !== 'function') {
+                            return
+                        }
+                        const name = [v['fetch-name'], item.codeBlockName].filter(v => v).join('.');
+                        data.push({
+                            id: name,
+                            text: name,
+                            selected: (value === name ? (selected = true, true) : false)
+                        })
+                    });
+                });
+                !selected && (data.unshift({id: value, text: value, selected: true}));
+                data.unshift({id: '',});
+                select2.select2({
+                    placeholder: superFetchHook.lang('functionName'),
+                    data: data,
+                    allowClear: true,
+                    tags: true,
+                    width: '13vw',
+                });
+            }
+            (ev || vars?.['$clone']) ? fn() : this.afterRender.push(fn);
+        },
+        afterRender: [],
+        renderHookX: superFetchHook.simpleValueHandlerHelper.buildFieldRender({
+            mountElementSelector: '.handleType',
+            fields: {
+                func: {
+                    type: 'select',
+                    attrs: {
+                        className: 'hidden func'
+                    },
+                    getOptions(val) {
+                        return buildOption([], val)
+                    },
+                },
+                parameters: {
+                    type: 'text',
+                    width: '5vw'
+                },
+                async: {
+                    type: 'checkbox'
+                }
+            }
+        }),
+    };
 })();
