@@ -62,7 +62,7 @@
             return value;
         },
         renderHook(li) {
-            li.querySelectorAll('[name=searchValue] ~:not(button)').forEach(el => el.classList.add('hidden'));
+            li.querySelectorAll('[name=searchValue] ~:not(button)').forEach(el => el.remove());
             const input = li.querySelector('[name=searchValue]');
             input.style.width = '20vw';
             input.title = lang('log-desc');

@@ -978,8 +978,7 @@
                 });
                 return data;
             },
-            getSingleItem(el, data = {}) {
-                const selector = ':where(input,select,textarea):not(.fetch-replacement-item :where(input,select,textarea))';
+            getSingleItem(el, data = {}, selector = ':where(input,select,textarea):not(.fetch-replacement-item :where(input,select,textarea))') {
                 formProcessor.getFormValue(el, data, selector);
                 actions.replacement.form(el, data);
                 return data;

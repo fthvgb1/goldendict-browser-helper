@@ -737,8 +737,8 @@
             }
         },
         setValue: {
-            fn(_, item, param) {
-                const v = superFetchHook.valueHandlers.valueRelation.buildValue(item, param);
+            async fn(_, item, param) {
+                const v = await superFetchHook.valueHandlers.valueRelation.buildValue(item, param);
                 const o = superFetchHook.valueHandlers.valueRelation.handlers.setValue.parseVal(item, param);
                 o.set(v);
                 if (item.handleThisValue) {
@@ -1100,7 +1100,7 @@
         valueType: {
             variable: (value, vars, param) => superFetchHook.fetchActionHelper.getVar(value, param, true),
             ...superFetchHook.valueHandlers.ifBranch.valueType,
-            func: (v, vars) => {
+            func: async (v, vars) => {
                 let [fn, param] = v.split('|');
                 const f = superFetchHook.fetchActionHelper.replaceVars2Format(vars, fn).split('.');
                 const fnName = f.pop();
@@ -1114,7 +1114,7 @@
                 if (param) {
                     args = param.split(',').map(a => getValue(vars, a, a, true))
                 }
-                return args ? fn(...args) : fn();
+                return args ? await fn(...args) : await fn();
             },
             eval(express, vars, dest = globalThis) {
                 const keys = Object.keys(vars);

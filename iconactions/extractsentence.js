@@ -405,7 +405,7 @@
 
 
     const formProcessor = {
-        getFormValue(form, param = {}, selector = 'input:not([data-batch] input),select:not([data-batch] select),textarea:not([data-batch] textarea)') {
+        getFormValue(form, data = {}, selector = 'input:not([data-batch] input),select:not([data-batch] select),textarea:not([data-batch] textarea)') {
             [...form.querySelectorAll(selector)].forEach(el => {
                 const k = el.name;
                 let v = el.value;
@@ -415,9 +415,9 @@
                 if (el.type === 'checkbox') {
                     v = el.checked;
                 }
-                param[k] = v;
+                data[k] = v;
             });
-            return param;
+            return data;
         },
         convertFetchParam(item) {
             const data = formProcessor.getFormValue(item), t = data['operate-type'];
@@ -782,7 +782,7 @@
         };
         const evenFn = {
             dragstart(e) {
-                if (!e.target?.matches(selector)) {
+                if (!e.target?.matches?.(selector)) {
                     return
                 }
                 e.stopImmediatePropagation();
@@ -830,10 +830,10 @@
 
             },
             dragend(e) {
-                e.preventDefault();
-                if (!e.target.matches(selector)) {
+                if (!e.target?.matches?.(selector)) {
                     return
                 }
+                e.preventDefault();
                 e.stopPropagation();
                 param.target = null;
                 param.currentMovingEle && param.currentMovingEle.classList.remove('moving');
@@ -847,9 +847,21 @@
                 e.stopPropagation();
             },
             mousedown(ev) {
-                if (actionHelper.isTextNode(ev.target) || ev.target.contentEditable === 'true') {
+                let el = ev.target;
+                if (actionHelper.isTextNode(el)) {
                     turnDrag(false);
                     param.flag = true
+                }
+                while (true) {
+                    if (el.contentEditable === 'true') {
+                        turnDrag(false);
+                        param.flag = true
+                        return
+                    }
+                    if (el.matches(selector) || el === ele) {
+                        return;
+                    }
+                    el = el.parentElement;
                 }
             },
             mouseup() {
