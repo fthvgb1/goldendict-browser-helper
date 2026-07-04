@@ -6,7 +6,7 @@
     PushExpandAnkiRichButton,
     PushExpandAnkiInputButton,
     PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn, PushHookAnkiChange,
-    addNewTags, ankiFormChange, inputEventSelectors
+    addNewTags, ankiFormChange, inputEventSelectors, ankiSearchHook
 } = (() => {
     let ankiHost = GM_getValue('ankiHost', 'http://127.0.0.1:8765');
     let richTexts = [];
@@ -33,6 +33,10 @@
     const frameCss = GM_getResourceText("frame-css");
     const diagStyle = GM_getResourceText('diag-style');
     const beforeSaveHookFns = [], afterSaveHookFns = [];
+
+    function getDefaultSearchType(field) {
+        return GM_getValue('searchType_' + field, 'wordWithNoDeck');
+    }
 
     function PushAnkiBeforeSaveHook(...call) {
         beforeSaveHookFns.push(...call);
@@ -70,7 +74,45 @@
         return res.result;
     }
 
-    function getSearchType(ev, type = null) {
+    const ankiSearchHook = {
+        wordWithNoDeck: {
+            text: '单词模式不指定组牌查询',
+            builder(deck, field, value) {
+                const str = value.split(' ');
+                return str.length > 1 ? str.map(v => `${field}:re:\\b${v}\\b`).join(' ') : `${field}:re:\\b${value}\\b`;
+            }
+        },
+        wordWithDeck: {
+            text: '单词模式指定组牌查询',
+            builder(deck, field, value) {
+                const str = value.split(' ');
+                return str.length > 1 ? (`deck:${deck} ` + str.map(v => `${field}:re:\\b${v}\\b`).join(' ')) : `deck:${deck} ${field}:re:\\b${value}\\b`;
+            }
+        },
+        vagueWithNoDeck: {
+            text: '模糊不指定组牌查询',
+            builder(deck, field, value) {
+                const str = value.split(' ');
+                return str.length > 1 ? str.map(v => `${field}:*${v}*`).join(' ') : `${field}:*${value}*`;
+            }
+        },
+        vagueWithDeck: {
+            text: '模糊指定组牌查询',
+            builder(deck, field, value) {
+                return `deck:${deck} ` + ankiSearchHook.vagueWithNoDeck.builder(deck, field, value);
+            }
+        },
+        precision: {
+            text: '精确查询',
+            builder: (deck, field, value) => `deck:${deck} "${field}:${value}"`,
+        },
+        customizing: {
+            text: '自定义查询',
+            builder: (deck, field, value) => value,
+        }
+    };
+
+    async function getSearchType(ev, type = null) {
         const value = ev.target.parentElement.previousElementSibling.value.trim();
         const field = ev.target.parentElement.parentElement.querySelector('.field-name').value;
         const deck = document.querySelector('#deckName').value;
@@ -78,34 +120,20 @@
         const inputs = ev.target.parentElement.previousElementSibling;
         sel.name = inputs.name;
         sel.className = inputs.className;
-        const precision = `deck:${deck} "${field}:${value}"`;
-        const str = value.split(' ');
-        const wordMod = str.length > 1 ? str.map(v => `${field}:re:\\b${v}\\b`).join(' ') : `${field}:re:\\b${value}\\b`;
-        const wordMod2 = str.length > 1 ? (`deck:${deck} ` + str.map(v => `${field}:re:\\b${v}\\b`).join(' ')) : `deck:${deck} ${field}:re:\\b${value}\\b`;
-        const vague = str.length > 1 ? str.map(v => `${field}:*${v}*`).join(' ') : `${field}:*${value}*`;
-        const deckVague = `deck:${deck} ` + vague;
         if (type !== null) {
-            return [wordMod, wordMod2, vague, deckVague, precision, value][type];
+            return ankiSearchHook[type].builder(deck, field, value);
         }
-        const searchType = GM_getValue('searchType_' + field, 0);
-        const m = {};
+        const searchType = getDefaultSearchType(field);
+        const m = {}, options = [];
         const nbsp = '&nbsp;'.repeat(5);
-        const options = [
-            [wordMod, `单词模式不指定组牌查询:   ${nbsp}${wordMod}`],
-            [wordMod2, `单词模式指定组牌查询:   ${nbsp}${wordMod2}`],
-            [vague, `模糊不指定组牌查询:   ${nbsp}${vague}`],
-            [deckVague, `模糊指定组牌查询:    ${nbsp}${deckVague}`],
-            [precision, `精确查询:    ${nbsp}${precision}`],
-            [value, `自定义查询:    ${nbsp}${value}`],
-        ].map((v, i) => {
-            if (i === searchType) {
-                const vv = v[1].split(':')[0];
-                v[1] = v[1].replace(vv, vv + ' (默认)');
-            }
-            v[0] = htmlSpecial(v[0]);
-            m[v[0]] = i;
-            return v;
-        });
+        for (const [k, v] of Object.entries(ankiSearchHook)) {
+            let s = await v.builder(deck, field, value);
+            const ss = htmlSpecial(s);
+            m[ss] = k;
+            options.push([ss, `${v.text + (searchType === k ? '  (默认)' : '')}:  ${nbsp}${s}`]);
+        }
+
+
         return {options, m}
     }
 
@@ -150,8 +178,8 @@
             const inputs = ev.target.parentElement.previousElementSibling;
             sel.name = inputs.name;
             sel.className = inputs.className;
-            const {options, m} = getSearchType(ev);
-            sel.innerHTML = buildOption(options, m[GM_getValue('searchType_' + field, 0)], 0, 1);
+            const {options, m} = await getSearchType(ev);
+            sel.innerHTML = buildOption(options, m[getDefaultSearchType(field)], 0, 1);
             inputs.replaceWith(sel);
             sel.focus();
             const fn = () => {
@@ -240,9 +268,9 @@
             const express = tags.val().map(v => `tag:${v}`).join(' ');
             searchAnki(ev, express, el);
         },
-        'anki-search': (ev) => {
+        'anki-search': async (ev) => {
             const field = ev.target.parentElement.parentElement.querySelector('.field-name').value;
-            const express = getSearchType(ev, GM_getValue('searchType_' + field, 0));
+            const express = await getSearchType(ev, getDefaultSearchType(field));
             const inputs = ev.target.parentElement.previousElementSibling;
             searchAnki(ev, express, inputs);
         },
@@ -1029,7 +1057,7 @@
         anki, queryAnki, showAnkiCard, searchAnki,
         PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook, PushExpandAnkiRichButton, PushExpandAnkiInputButton,
         PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn, PushHookAnkiChange,
-        addNewTags, ankiFormChange: changeFns, inputEventSelectors: inputSelector
+        addNewTags, ankiFormChange: changeFns, inputEventSelectors: inputSelector, ankiSearchHook
     };
 
 })();

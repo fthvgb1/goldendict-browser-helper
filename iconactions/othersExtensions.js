@@ -1070,6 +1070,11 @@
         makeAnkiCard: 'anki制卡',
         ankiTag: '标签名,多个用,隔开',
         AddTag: '打标签',
+        customizeSearch: '添加搜索模式',
+        'customizeSearch-desc': '将添加 deck field words queryExpress 4个变量，最后将queryExpress的值作为查询表达式',
+        endCustomizeSearch: '结束添加模式作用域',
+        searchMode: '搜索模式标识',
+        searchModeDesc: '该搜索模式的说明',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('makeAnkiCard', {
         openDiag: {
@@ -1130,7 +1135,39 @@
                     },
                 }
             }
-        }
+        },
+        customizeSearch: {
+            fn(value, item, param) {
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['customizeSearch', 'endCustomizeSearch']);
+                ankiSearchHook[item.searchMode] = {
+                    text: item.searchModeDesc,
+                    async builder(deck, field, words) {
+                        param.vars.deck = deck;
+                        param.vars.field = field;
+                        param.vars.words = words;
+                        param.vars.queryExpress = words;
+                        await fn(value);
+                        return param.vars.queryExpress;
+                    }
+                }
+                return value
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    searchMode: {
+                        type: 'text',
+                        width: '6vw',
+                    },
+                    searchModeDesc: {
+                        type: 'text',
+                        width: '6vw',
+                    },
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('customizeSearch', '#8ca5ce')
+                }
+            }
+        },
+        endCustomizeSearch: superFetchHook.simpleValueHandlerHelper.endScope('endCustomizeSearch', '#8ca5ce'),
     });
 
     PushHookAnkiHtml(html => {
