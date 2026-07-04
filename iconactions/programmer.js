@@ -13,6 +13,7 @@
         functionName: '函数或方法名,从window对象中查找 window.object.method|window.function ，列表不存在可手动输入',
         callFunction: '执行函数',
         parameters: '参数, {var1},{var2}...',
+        noReturn: '无需返回结果'
     });
 
     superFetchHook.templateHelper.templateFnHook['programmer-item'] = (html, vars) => {
@@ -157,11 +158,7 @@
                 return superFetchHook.fetchActionHelper.getVar(v, param, true);
             })
             if (fn) {
-                if (item.async) {
-                    fn(...args);
-                    return value
-                }
-                return await fn(...args);
+                return this.execute(fn, item, args, value);
             }
             await superFetchHook.executeActions(item.func.split('.')[0]);
             fn = superFetchHook.getVarVal(window, item.func);
@@ -169,12 +166,20 @@
                 console.log("can't find function", item.func)
                 return value;
             }
+            return this.execute(fn, item, args, value);
+        },
+        execute: async (fn, item, args, value) => {
             if (item.async) {
                 fn(...args);
                 return value
             }
+            if (item.noReturn) {
+                await fn(...args);
+                return value;
+            }
             return await fn(...args);
         },
+
         renderHook(li, vars, ev) {
             this.renderHookX(li, vars);
             const sel = li.querySelector('.func');
@@ -230,6 +235,12 @@
                 },
                 async: {
                     type: 'checkbox'
+                },
+                noReturn: {
+                    type: 'checkbox',
+                    attr: {
+                        className: 'noReturn'
+                    }
                 }
             }
         }),

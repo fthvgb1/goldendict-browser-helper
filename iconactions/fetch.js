@@ -551,7 +551,7 @@
             let name = names;
             if (param.rule.handleValue) {
                 param.handlers = [...items];
-                param.fetchType = 'fetch';
+                param.fetchType = actions?.programmer ? 'programmer' : 'fetch';
                 while (true) {
                     const item = param.handlers.shift();
                     if (!item) {
@@ -919,7 +919,6 @@
 
 
     const actions = {
-        programmer: {},
         fetch: {
             async action(param, from, target, vars = {}) {
                 if (param['selector-items'].length < 1 || param?.['super-fetch-items']?.length < 1) {

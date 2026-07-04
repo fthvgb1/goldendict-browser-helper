@@ -172,6 +172,10 @@ select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAtt
     display: none;
 }
 
+input.async:checked + .noReturn {
+    display: none;
+}
+
 .handleType:has(option[value=parseTemplate]:checked) + .templateVar {
     display: inline;
     width: 4vw;

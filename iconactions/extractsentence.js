@@ -237,7 +237,8 @@
         copy(ev) {
             ev.preventDefault();
             const el = ev.target.dataset?.target ? findParent(ev.target, ev.target.dataset.target) : ev.target.parentElement;
-            el.insertAdjacentElement('afterend', eventFn.addTplFn[ev.target.dataset.tplFn]({}, ev, el));
+            const ele = eventFn.addTplFn?.[ev.target.dataset.tplFn]?.({}, ev, el) ?? el.cloneNode(true);
+            el.insertAdjacentElement('afterend', ele);
         },
         remove(ev) {
             ev.target.dataset?.target ?
@@ -526,7 +527,7 @@
             return;
         }
         let rules;
-        if (setting || !itemCache) {
+        if (setting?.children?.length > 1 || !itemCache) {
             rules = {};
             getAnkiFetchParams().forEach(rule => rules[rule['fetch-name']] = rule);
             itemCache = rules;
