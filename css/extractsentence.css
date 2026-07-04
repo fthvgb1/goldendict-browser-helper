@@ -199,6 +199,10 @@ select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAtt
     z-index: 1;
 }
 
+.fetch-name + .valueHelper {
+    bottom: 5vw;
+}
+
 .fetch-replacement-item .valueHelper {
     right: 0;
 }

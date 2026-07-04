@@ -142,7 +142,7 @@
             fetchItems.length < 1 && fetchItems.push({});
             fetchItems.forEach(item => setting.appendChild(actionHelper.buildFetchItem(item)));
             if (GM_getValue('fetch-display-type', 1) === 2) {
-                const arr = Object.groupBy(fetchItems, item => buttonField(item)) ?? [];
+                const arr = Object.groupBy(fetchItems, item => buttonField(item, true)) ?? [];
                 const options = [];
                 const nb = '&ensp;'.repeat(6);
                 Object.keys(arr).forEach(k => {
@@ -342,8 +342,11 @@
         return setting ? [...setting.children].slice(1) : [];
     }
 
-    function buttonField(item) {
+    function buttonField(item, show = false) {
         const field = item?.['fetch-to-field'] ? item['fetch-to-field'] : item['fetch-field'];
+        if (!show) {
+            return field;
+        }
         if (!field) {
             return item['operate-type'];
         }
