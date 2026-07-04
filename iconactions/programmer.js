@@ -58,7 +58,7 @@
             return item;
         },
 
-        async callFunc(param, vars) {
+        async callFunc(param, vars, globalVars = vars) {
             await superFetchHook.fetchActionHelper.handItems(param['replacement-items'],
                 vars[param['super-fetch-name']] ?? null,
                 {
@@ -67,7 +67,7 @@
                         'super-fetch-name': param['super-fetch-name'],
                         handleValue: true,
                     },
-                    fetchParam: param, globalVars: vars, parentVars: vars
+                    fetchParam: param, globalVars: globalVars, parentVars: vars
                 });
         },
 
@@ -86,7 +86,7 @@
                     const fn = async (...args) => {
                         const vars = {...varss};
                         param.arguments.forEach((name, i) => name && (vars[name] = args[i]));
-                        await superFetchHook.fetchActions.programmer.callFunc(param, vars);
+                        await superFetchHook.fetchActions.programmer.callFunc(param, vars, varss);
                         if (param.returnVarName) {
                             const v = vars[param.returnVarName];
                             delete vars[param.returnVarName];
@@ -245,4 +245,16 @@
             }
         }),
     };
+    return
+    const hiddenFn = ev => {
+        if (ev.target.className !== 'swal2-input field-name') {
+            return
+        }
+        ev.target.parentElement.querySelectorAll(':scope > *:not(.field-name)').forEach(el => el.classList.add('hidden'));
+    };
+    PushHookAnkiHtml(html => {
+        html.addEventListener('dblclick', hiddenFn)
+    });
+
+
 })();

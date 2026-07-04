@@ -812,10 +812,10 @@
                 }
             },
             dragenter(e) {
-                e.preventDefault();
                 if (!param.currentMovingEle) {
                     return
                 }
+                e.preventDefault();
                 const children = [...(param.parent ? param.parent : ele).querySelectorAll(selector)];
                 if (e.target === param.currentMovingEle || children.length <= 1) {
                     return
@@ -858,7 +858,6 @@
                 param.currentMovingEle = null;
             },
             dragover(e) {
-                !actionHelper.isTextNode(e.target) && e.preventDefault();
                 if (!e.target.matches(selector)) {
                     return
                 }
