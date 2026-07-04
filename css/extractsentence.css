@@ -172,6 +172,16 @@ select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAtt
     display: none;
 }
 
+.form-item ol .form-item input.addHidden {
+    height: 2vw;
+    width: 5vw;
+    margin: auto;
+}
+
+:has(>input.addHidden) > *:not(input.addHidden) {
+    display: none;
+}
+
 input.async:checked + .noReturn {
     display: none;
 }

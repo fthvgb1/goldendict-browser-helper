@@ -245,16 +245,25 @@
             }
         }),
     };
-    return
     const hiddenFn = ev => {
-        if (ev.target.className !== 'swal2-input field-name') {
+        const el = ev.target, name = 'addHidden';
+        if (!el.classList.contains('field-name')) {
             return
         }
-        ev.target.parentElement.querySelectorAll(':scope > *:not(.field-name)').forEach(el => el.classList.add('hidden'));
+        const field = `${name}_${el.value}`;
+        if (el.classList.contains(name)) {
+            el.classList.remove(name);
+            GM_deleteValue(field);
+            return;
+        }
+        GM_setValue(field, true);
+        el.classList.add(name);
     };
     PushHookAnkiHtml(html => {
-        html.addEventListener('dblclick', hiddenFn)
+        html.addEventListener('dblclick', hiddenFn);
+        html.querySelectorAll('.field-name').forEach(input =>
+            GM_getValue(`addHidden_${input.value}`) && input.classList.add('addHidden')
+        );
     });
-
 
 })();
