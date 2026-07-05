@@ -5,7 +5,7 @@
     const menus = [...GM_getValue('menus', []), ...[
         {
             title: "anki",
-            action: addAnki,
+            action: ankiHelper.addAnki,
             key: "p"
         },
         {

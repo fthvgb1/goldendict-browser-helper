@@ -264,6 +264,15 @@
         html.querySelectorAll('.field-name').forEach(input =>
             GM_getValue(`addHidden_${input.value}`) && input.classList.add('addHidden')
         );
+        html.querySelector('.anki-search').addEventListener('mousedown', async ev => {
+            if (ev.button !== 1 && ev.target.className !== 'anki-search') {
+                return
+            }
+            ev.preventDefault();
+            const field = findParent(ev.target, '.form-item').querySelector('.field-name').value;
+            const express = await ankiHelper.getSearchType(ev, ankiHelper.getDefaultSearchType(field));
+            navigator.clipboard.writeText(express).catch(e => console.log('copy', express, 'fail err:', e));
+        })
     });
 
 })();

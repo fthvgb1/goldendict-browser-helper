@@ -870,7 +870,10 @@
                     param.flag = true
                 }
                 while (true) {
-                    if (el.contentEditable === 'true') {
+                    if (!el) {
+                        return;
+                    }
+                    if (el?.contentEditable === 'true') {
                         turnDrag(false);
                         param.flag = true
                         return

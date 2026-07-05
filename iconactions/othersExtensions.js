@@ -1058,7 +1058,7 @@
             });
             evt.target.insertAdjacentElement('afterend', textarea);
             textarea.addEventListener('input', () => input.value = textarea.value)
-            //textarea.addEventListener('dblclick', fn);
+            textarea.addEventListener('mousedown', ev => (ev.button === 1 && (fn(), ev.preventDefault(), ev.stopImmediatePropagation())));
             textarea.focus();
         });
     });
@@ -1139,7 +1139,7 @@
         customizeSearch: {
             fn(value, item, param) {
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['customizeSearch', 'endCustomizeSearch']);
-                ankiSearchHook[item.searchMode] = {
+                ankiHelper.ankiSearchHook[item.searchMode] = {
                     text: item.searchModeDesc,
                     async builder(deck, field, words) {
                         param.vars.deck = deck;

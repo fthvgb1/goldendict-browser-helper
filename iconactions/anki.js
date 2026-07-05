@@ -1,12 +1,10 @@
 ;const {
-    addAnki, getAnkiFormValue,
-    anki, ankiSave, showAnkiCard,
-    queryAnki, searchAnki, findParent,
+    ankiHelper, findParent,
     PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook,
     PushExpandAnkiRichButton,
     PushExpandAnkiInputButton,
     PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn, PushHookAnkiChange,
-    addNewTags, ankiFormChange, inputEventSelectors, ankiSearchHook
+    addNewTags, inputEventSelectors
 } = (() => {
     let ankiHost = GM_getValue('ankiHost', 'http://127.0.0.1:8765');
     let richTexts = [];
@@ -51,7 +49,7 @@
         icon: 'icon-anki',
         image: GM_getResourceURL('icon-anki'),
         trigger: (t) => {
-            addAnki(getSelectionElement(), tapKeyboard).catch(res => console.log(res));
+            ankiHelper.addAnki(getSelectionElement(), tapKeyboard).catch(res => console.log(res));
         }
     });
 
@@ -523,7 +521,7 @@
                 <button class="minus">➖</button>
                 <input type="radio" title="选中赋值" ${checkeds} name="shadow-form-defaut[]">
                 <button class="lemmatizer" title="lemmatize查找单词原型">📟</button>
-                <button class="anki-search" title="search anki 左健搜索 右键选择搜索模式">🔍</button>
+                <button class="anki-search" title="search anki 左健搜索 中键复制搜索表达式 右键选择搜索模式">🔍</button>
                 <button class="upperlowercase" title="大小写转换">🔡</button>
                 ${inputButtons.join('\n')} ${inputButtonFields[field] ? inputButtonFields[field].join('\n') : ''}
 
@@ -1053,11 +1051,16 @@
     }
 
     return {
-        addAnki, getAnkiFormValue, ankiSave, findParent,
-        anki, queryAnki, showAnkiCard, searchAnki,
+        ankiHelper: {
+            anki, getSearchType, ankiSave, queryAnki, showAnkiCard, searchAnki,
+            ankiSearchHook, addAnki, getDefaultSearchType,
+            ankiFormChange: changeFns,
+            getAnkiFormValue,
+        },
+        findParent,
         PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook, PushExpandAnkiRichButton, PushExpandAnkiInputButton,
         PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn, PushHookAnkiChange,
-        addNewTags, ankiFormChange: changeFns, inputEventSelectors: inputSelector, ankiSearchHook
+        addNewTags, inputEventSelectors: inputSelector,
     };
 
 })();
