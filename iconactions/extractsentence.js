@@ -411,6 +411,7 @@
         actionHelper.flushElementCache();
         const data = getFetchItemEles().map(formProcessor.convertFetchParam);
         data.length > 0 && GM_setValue('fetch-items', data);
+        itemCache = null;
     }
 
 
