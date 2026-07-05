@@ -1064,7 +1064,7 @@
     });
 
     superFetchHook.hookLang({
-        openDiag: '打开anki制卡',
+        openDiag: '打开anki制卡对话框',
         closeDiag: '关闭anki制卡',
         endScope: '结束作用域',
         makeAnkiCard: 'anki制卡',
@@ -1075,6 +1075,8 @@
         endCustomizeSearch: '结束添加模式作用域',
         searchMode: '搜索模式标识',
         searchModeDesc: '该搜索模式的说明',
+        addAnkiStyle: '添加anki制卡对话框样式',
+        cssStyle: '样式内容'
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('makeAnkiCard', {
         openDiag: {
@@ -1168,6 +1170,21 @@
             }
         },
         endCustomizeSearch: superFetchHook.simpleValueHandlerHelper.endScope('endCustomizeSearch', '#8ca5ce'),
+        addAnkiStyle: {
+            fn(value, item) {
+                PushHookAnkiStyle(item.cssStyle);
+                return value
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    cssStyle: {
+                        type: 'text',
+                        width: '13vw',
+                    },
+                }
+            }
+        }
     });
 
     PushHookAnkiHtml(html => {
