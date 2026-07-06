@@ -103,7 +103,7 @@
                     superFetchHook.templateHelper.buildTemplateHTML('functionArgs', vars, div);
                     const title = superFetchHook.lang('arg');
                     div = div.querySelector('.args');
-                    !vars?.arguments && (vars.arguments = []);
+                    !vars?.arguments && (vars.arguments = ['']);
                     vars.arguments.forEach(arg => {
                         div.insertAdjacentHTML('beforeend', `
                    <div>
