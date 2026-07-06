@@ -1119,7 +1119,7 @@
 
         autoAddWidth() {
             const old = this.maxDeep;
-            const items = [...setting.querySelectorAll('.fetch-item:not(.fetch-hidden):has(option[value=fetch]:checked)')]
+            const items = [...setting.querySelectorAll('.fetch-item:not(.fetch-hidden):has(.fetch-box>.operate-type>option[value=fetch]:checked)')]
                 .map(el => [el, formProcessor.convertFetchParam(el)]);
             items.forEach(item => {
                 const el = item[0];

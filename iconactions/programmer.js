@@ -116,7 +116,7 @@
                 },
                 formHook(el, data) {
                     data.arguments = [...el.querySelectorAll('.codeBockContainer [name=arg]')].map(i => i.value);
-                    superFetchHook.formProcessor.getFormValue(el, data, 'input:not([name=arg])');
+                    superFetchHook.formProcessor.getFormValue(el, data, 'input:not(.fetch-replacement-items input)');
                 }
             },
         },
@@ -153,10 +153,7 @@
     superFetchHook.valueHandlers.callFunction = {
         async handle(item, value, param) {
             let fn = superFetchHook.getVarVal(window, item.func);
-            const args = item.parameters.split(',').map(v => {
-                v = v.trim();
-                return superFetchHook.fetchActionHelper.getVar(v, param, true);
-            })
+            const args = item.parameters.split(',').map(v => superFetchHook.fetchActionHelper.getVar(v, param, false, v));
             if (fn) {
                 return this.execute(fn, item, args, value);
             }
