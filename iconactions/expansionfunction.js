@@ -67,7 +67,7 @@
         'bool': '布尔',
         'bool-desc': 'true: 1, false: 0',
         'object': '对象',
-        'object-desc': '{attr:attr,attr:{attr:attr},"{varName}":attr,"{varName}":"{varName}","attr":"attr"}',
+        'object-desc': '只解析最顶层的变量 {attr:attr,attr:{attr:attr},"{varName}":attr,"{varName}":"{varName}","attr":"attr"}',
         'variable': '变量',
         'arrayUnshift': '向数组开开始位置添加一个值',
         'arrayUnshift-desc': 'arr.unshift(value)',

@@ -116,7 +116,7 @@
                 },
                 formHook(el, data) {
                     data.arguments = [...el.querySelectorAll('.codeBockContainer [name=arg]')].map(i => i.value);
-                    superFetchHook.formProcessor.getFormValue(el, data, 'input:not(.fetch-replacement-items input)');
+                    superFetchHook.formProcessor.getFormValue(el, data, 'input:not(.fetch-replacement-items input):not([name=arg])');
                 }
             },
         },
@@ -143,7 +143,7 @@
 
     superFetchHook.eventHook.addTplFn.program = (data, ev, el) => {
         if (el) {
-            data.programmerItems = [superFetchHook.fetchActions.fetch.getSingleItem(el, data)];
+            data.programmerItems = [superFetchHook.fetchActions.programmer.getSingleItem(el, data)];
             data['$clone'] = true;
             return superFetchHook.fetchActions.programmer.getItem(data)[0]
         }
