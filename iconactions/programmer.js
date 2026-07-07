@@ -262,7 +262,7 @@
             GM_getValue(`addHidden_${input.value}`) && input.classList.add('addHidden')
         );
         html.querySelector('.anki-search').addEventListener('mousedown', async ev => {
-            if (ev.button !== 1 && ev.target.className !== 'anki-search') {
+            if (ev.button !== 1 || ev.target.className !== 'anki-search') {
                 return
             }
             ev.preventDefault();
