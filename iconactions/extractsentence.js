@@ -262,9 +262,6 @@
     }, '', evt => eventFn.contextMenuAction(evt));
 
 
-    PushHookAnkiDidRender(() => setting.addEventListener('dblclick', settingItemSwitchDisplay));
-    PushHookAnkiClose(() => setting.removeEventListener('dblclick', settingItemSwitchDisplay));
-
     function settingItemSwitchDisplay(ev) {
         if (!ev.target.classList.contains('fetch-item')) {
             return
@@ -1032,8 +1029,6 @@
         },
     };
 
-    PushHookAnkiClose(() => setting = undefined);
-
     PushHookAnkiHtml(ankiContainer => {
         const div = templateHelper.buildTemplateHTML('fetch-form', {
             'sequentially-fetch': GM_getValue('sequentially-fetch', false),
@@ -1041,6 +1036,7 @@
         div.className = 'form-item fetch-sentence-container';
         setting = div.querySelector('.select-setting');
         const ty = new Set(['add', 'remove']);
+        setting.addEventListener('dblclick', settingItemSwitchDisplay);
         setting.addEventListener('click', evt => {
             if (!evt.target.dataset?.['op'] || !ty.has(evt.target.dataset.op)) {
                 return
