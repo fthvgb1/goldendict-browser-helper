@@ -1171,21 +1171,54 @@
         'divide': '➗',
         'arithmetic': '四则运算',
         'complementation': '%',
+        'num1': '双击切换输入变量或数字,为空表示当前值',
+        'operatedNumber': '双击切换输入变量或数字'
     });
 
 
     superFetchHook.simpleValueHandlerHelper.addHandlers('simpleCalculator', {
         calculator: {
             fn(value, item, param) {
-                const num = 'variable' === item.operatedTarget ? superFetchHook.getVariable(param.vars, item.operatedNumber, 0) : Number(item.operatedNumber);
-                return superFetchHook.valueHandlers.simpleCalculator.arithmetic[item.operator](Number(value), num)
+                const [num1, num] = superFetchHook.valueHandlers.simpleCalculator.handlers.calculator.getNum(value, item, param)
+                return superFetchHook.valueHandlers.simpleCalculator.arithmetic[item.operator](Number(num1), Number(num))
+            },
+            getNum(value, item, param) {
+                let num1 = param.vars[item.currentVarName];
+                if (item.num1 !== '') {
+                    num1 = (typeof item.num1 === 'number') ? item.num1 : superFetchHook.fetchActionHelper.getVar(item.num1, param, true, item.num1);
+                }
+                const num = (typeof item.operatedNumber === 'number') ? item.operatedNumber : superFetchHook.fetchActionHelper.getVar(item.operatedNumber, param, true, item.operatedNumber);
+                return [num1, num]
             },
             text: lang('arithmetic'),
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
-                    operator: {
+                    num1: {
+                        type: 'number',
                         width: '4vw',
+                        attrs: {
+                            className: 'num1 noTextarea show'
+                        },
+                        hook(el, v, cur = true) {
+                            if (v === '' && !cur) {
+                                el.type = 'number';
+                                el.value = 0;
+                            } else {
+                                el.type = (typeof v === 'number') ? 'number' : 'text';
+                                el.value = v;
+                            }
+                            el.ondblclick = ev => {
+                                const v = ev.target.value;
+                                el.type = el.type === 'number' ? 'text' : 'number';
+                                if (el.type === 'number' && isNaN(v)) {
+                                    el.value = 0;
+                                }
+                            }
+                        }
+                    },
+                    operator: {
+                        width: '3vw',
                         type: 'select',
                         getOptions(val) {
                             const o = Object.keys(superFetchHook.valueHandlers.simpleCalculator.arithmetic)
@@ -1193,31 +1226,20 @@
                             return buildOption(o, val, 0, 1)
                         },
                     },
-                    operatedTarget: {
-                        type: 'select',
-                        getOptions(val) {
-                            return buildOption({number: lang('number'), variable: lang('variable')}, val);
-                        },
-                        attrs: {
-                            onchange: evt => superFetchHook.valueHandlers.simpleCalculator.change[evt.target.value](evt.target.nextElementSibling),
-                        }
-                    },
                     operatedNumber: {
                         type: 'number',
-                        width: '5vw',
-                        hook(input, value, vars) {
-                            input.type = 'number' === vars.operatedTarget ? 'number' : 'text';
-                            input.value = value;
+                        width: '4vw',
+                        attrs: {
+                            className: 'operatedNumber noTextarea show'
+                        },
+                        hook(el, v) {
+                            superFetchHook.valueHandlers.simpleCalculator.handlers.calculator.param.fields.num1.hook(el, v, false);
                         }
                     },
                 },
             },
         }
     }, {
-        change: {
-            number: el => (el.type = 'number', el.value = 0),
-            variable: el => (el.type = 'text', el.value = ''),
-        },
         arithmetic: {
             addx: (num1, num2) => num1 + num2,
             subtract: (num1, num2) => num1 - num2,

@@ -16,8 +16,8 @@
     calculator.handlers.displacement = {
         ...calculator.handlers.calculator,
         fn(value, item, param) {
-            const num = 'variable' === item.operatedTarget ? superFetchHook.getVariable(param.vars, item.operatedNumber, 0) : Number(item.operatedNumber);
-            return calculator.displacementOperate[item.operator](Number(value), num)
+            const [num1, num] = superFetchHook.valueHandlers.simpleCalculator.handlers.calculator.getNum(value, item, param)
+            return calculator.displacementOperate[item.operator](Number(num1), Number(num))
         },
         text: lang('displacement'),
         param: {
@@ -1033,7 +1033,7 @@
     PushHookAnkiHtml(html => {
         const setting = html.querySelector('.select-setting');
         setting.addEventListener('dblclick', evt => {
-            if (!evt.target.matches('input[type=text]')) {
+            if (!evt.target.matches('input[type=text]:not(.noTextarea)')) {
                 return;
             }
             const i = evt => textarea.value = evt.target.value;
