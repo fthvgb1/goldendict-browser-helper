@@ -160,6 +160,7 @@ input[name=parent-selector], input[name=child-selector] {
     border: 1px dashed #ccc;
 }
 
+.fetch-replacement-target:has(>option[value=displacement]:checked)[data-fn-set] ~ .operator:has(>option[value=not]:checked) + .operatedNumber,
 .codeBockContainer .args div:first-child button[data-op=remove],
 .handleType:has(option[value="remove element"]:checked) ~ :not(.fetch-replacement-target,button),
 .handleType:has(option:where([value=simpleValueHandlers],[value=codeRelate]):checked) ~ :not(.fetch-replacement-target,button) {

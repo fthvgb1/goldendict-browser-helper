@@ -1176,6 +1176,8 @@
         'displacement': '位运算',
         'leftDisplacement': '<<',
         'rightDisplacement': '>>',
+        'andX': '&',
+        'orX': '|',
     });
 
 
@@ -1260,6 +1262,10 @@
             displacementOperator: {
                 leftDisplacement: (num1, num2) => num1 << num2,
                 rightDisplacement: (num1, num2) => num1 >> num2,
+                andX: (num1, num2) => num1 & num2,
+                orX: (num1, num2) => num1 | num2,
+                xor: (num1, num2) => num1 ^ num2,
+                not: num1 => ~num1,
             },
             showX: null,
             show(li, vars) {
@@ -1274,7 +1280,7 @@
                     ...param.fields.operator,
                     getOptions: val => {
                         const o = Object.keys(superFetchHook.valueHandlers.simpleCalculator.handlers.displacement.displacementOperator)
-                            .map(k => [k, superFetchHook.mapTitle[k] ?? k]);
+                            .map(k => [k, lang(k)]);
                         return buildOption(o, val, 0, 1)
                     }
                 }
