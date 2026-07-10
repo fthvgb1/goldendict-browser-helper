@@ -1144,19 +1144,24 @@
             bool: v => '1' === v,
             object: (v, vars) => {
                 const o = new Function('return ' + v)();
-                iterateObjByKey(o, (k, v) => {
-                    if ('string' === typeof v) {
-                        const vv = getValue(vars, v, v, true);
-                        if (v !== vv) {
-                            o[k] = vv;
+                function parseVar(o) {
+                    iterateObjByKey(o, (k, v) => {
+                        if ('string' === typeof v) {
+                            const vv = getValue(vars, v, v, true);
+                            if (v !== vv) {
+                                o[k] = vv;
+                            }
                         }
-                    }
-                    const kk = superFetchHook.fetchActionHelper.replaceVars2Format(vars, k);
-                    if (k !== kk) {
-                        o[kk] = o[k];
-                        delete o[k];
-                    }
-                }, false);
+                        ('object' === typeof v) && parseVar(v);
+                        const kk = superFetchHook.fetchActionHelper.replaceVars2Format(vars, k);
+                        if (k !== kk) {
+                            o[kk] = o[k];
+                            delete o[k];
+                        }
+                    }, false);
+                }
+
+                parseVar(o);
                 return o;
             }
         }
