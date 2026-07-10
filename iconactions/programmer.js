@@ -193,10 +193,11 @@
                         if (item.codeBlockType !== 'function') {
                             return
                         }
+                        const param = '( ' + item.arguments.join(', ') + ' ) ' + item.returnVarName;
                         const name = [v['fetch-name'], item.codeBlockName].filter(v => v).join('.');
                         data.push({
                             id: name,
-                            text: name,
+                            text: name + param,
                             selected: (value === name ? (selected = true, true) : false)
                         })
                     });

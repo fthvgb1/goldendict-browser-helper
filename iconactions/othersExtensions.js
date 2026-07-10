@@ -225,9 +225,6 @@
         async handle(item, value, param) {
             const vars = this.varsType[item.varsType](param.vars);
             await superFetchHook.executeActions(...item?.actionNames, vars, item.async);
-            if (item.async || item.useSeparateVars) {
-                return value
-            }
             return param.vars[item.currentVarName];
         },
         form(li, datum) {
