@@ -573,13 +573,13 @@
             }
         },
         breakIterator: {
-            fn: (value, item, param) => (item.break = true, param.breakIterator = true, value),
+            fn: (value, item, param) => (item.break = true, param.break = true, param.breakIterator = true, value),
             param: {
                 mountElementSelector: '.fetch-replacement-target',
             }
         },
         breakChildrenHandle: {
-            fn: (value, item, param) => (item.break = true, param.breakChildrenHandle = true, value),
+            fn: (value, item, param) => (item.break = true, param.break = true, param.breakIterator = true, param.breakChildrenHandle = true, value),
             param: {
                 mountElementSelector: '.fetch-replacement-target',
             }
@@ -587,6 +587,9 @@
         stopProcess: {
             fn: (value, item, param) => {
                 item.break = true;
+                param.break = true;
+                param.globalVars.$break = true;
+                param.vars.$break = true;
                 param.stopProcess = true;
                 return value;
             },

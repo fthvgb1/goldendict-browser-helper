@@ -544,11 +544,16 @@
                 } else {
                     await actionHelper.executeAction(rules[name], null, null, null, vars);
                 }
+                if (vars?.$break) {
+                    delete vars.$break;
+                    break;
+                }
             } catch (e) {
                 if (e.code === 'userThrow') {
                     throw e;
                 }
-                console.log('execute action', name, 'error:', e);
+                console.log('execute action', name, 'error');
+                throw e;
             }
         }
     }
