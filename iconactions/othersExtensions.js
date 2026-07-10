@@ -1,40 +1,10 @@
 ;(() => {
     superFetchHook.hookLang({
-        'displacement': '位运算',
-        'leftDisplacement': '<<',
-        'rightDisplacement': '>>',
         'log': '打印到控制台',
         'log-desc': '可使用{变量},{$vars}为所有变量，为空打印当前变量',
         'trim': '去除两边看不见字符',
     });
     const lang = superFetchHook.lang;
-    const calculator = superFetchHook.valueHandlers.simpleCalculator;
-    calculator.displacementOperate = {
-        leftDisplacement: (num1, num2) => num1 << num2,
-        rightDisplacement: (num1, num2) => num1 >> num2,
-    };
-    calculator.handlers.displacement = {
-        ...calculator.handlers.calculator,
-        fn(value, item, param) {
-            const [num1, num] = superFetchHook.valueHandlers.simpleCalculator.handlers.calculator.getNum(value, item, param)
-            return calculator.displacementOperate[item.operator](Number(num1), Number(num))
-        },
-        text: lang('displacement'),
-        param: {
-            ...calculator.handlers.calculator.param,
-            fields: {
-                ...calculator.handlers.calculator.param.fields,
-                operator: {
-                    ...calculator.handlers.calculator.param.fields.operator,
-                    getOptions(val) {
-                        const o = Object.keys(calculator.displacementOperate)
-                            .map(k => [k, superFetchHook.mapTitle[k] ?? k]);
-                        return buildOption(o, val, 0, 1)
-                    }
-                }
-            },
-        },
-    };
 
 
     superFetchHook.valueHandlers.log = {

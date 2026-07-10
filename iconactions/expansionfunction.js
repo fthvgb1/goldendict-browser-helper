@@ -1172,7 +1172,10 @@
         'arithmetic': '四则运算',
         'complementation': '%',
         'num1': '双击切换输入变量或数字,为空表示当前值',
-        'operatedNumber': '双击切换输入变量或数字'
+        'operatedNumber': '双击切换输入变量或数字',
+        'displacement': '位运算',
+        'leftDisplacement': '<<',
+        'rightDisplacement': '>>',
     });
 
 
@@ -1180,7 +1183,10 @@
         calculator: {
             fn(value, item, param) {
                 const [num1, num] = superFetchHook.valueHandlers.simpleCalculator.handlers.calculator.getNum(value, item, param)
-                return superFetchHook.valueHandlers.simpleCalculator.arithmetic[item.operator](Number(num1), Number(num))
+                const v = superFetchHook.valueHandlers.simpleCalculator.arithmetic[item.operator](Number(num1), Number(num));
+                const name = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.varName ? item.varName : item.currentVarName);
+                param.vars[name] = v;
+                return param.vars[item.currentVarName];
             },
             getNum(value, item, param) {
                 let num1 = param.vars[item.currentVarName];
@@ -1194,9 +1200,13 @@
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
+                    varName: {
+                        type: 'text',
+                        width: '3vw',
+                    },
                     num1: {
                         type: 'number',
-                        width: '4vw',
+                        width: '3vw',
                         attrs: {
                             className: 'num1 noTextarea show'
                         },
@@ -1228,7 +1238,7 @@
                     },
                     operatedNumber: {
                         type: 'number',
-                        width: '4vw',
+                        width: '3vw',
                         attrs: {
                             className: 'operatedNumber noTextarea show'
                         },
@@ -1237,6 +1247,39 @@
                         }
                     },
                 },
+            },
+        },
+        displacement: {
+            fn(value, item, param) {
+                const [num1, num] = superFetchHook.valueHandlers.simpleCalculator.handlers.calculator.getNum(value, item, param)
+                const v = superFetchHook.valueHandlers.simpleCalculator.handlers.displacement.displacementOperator[item.operator](Number(num1), Number(num));
+                const name = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.varName ? item.varName : item.currentVarName);
+                param.vars[name] = v;
+                return param.vars[item.currentVarName];
+            },
+            displacementOperator: {
+                leftDisplacement: (num1, num2) => num1 << num2,
+                rightDisplacement: (num1, num2) => num1 >> num2,
+            },
+            showX: null,
+            show(li, vars) {
+                if (this.showX) {
+                    this.showX(li, vars);
+                    return
+                }
+                const o = superFetchHook.valueHandlers.simpleCalculator.handlers.calculator;
+                const param = {...o.param};
+                param.fields = {...param.fields};
+                param.fields.operator = {
+                    ...param.fields.operator,
+                    getOptions: val => {
+                        const o = Object.keys(superFetchHook.valueHandlers.simpleCalculator.handlers.displacement.displacementOperator)
+                            .map(k => [k, superFetchHook.mapTitle[k] ?? k]);
+                        return buildOption(o, val, 0, 1)
+                    }
+                }
+                this.showX = superFetchHook.simpleValueHandlerHelper.buildFieldRender(param);
+                this.showX(li, vars);
             },
         }
     }, {

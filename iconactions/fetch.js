@@ -99,6 +99,12 @@
             }
             let fn = iterateObjByKey(param?.fields ?? {}, (field, attr) => {
                 return (pre, html, vars) => {
+                    if (typeof attr === 'string') {
+                        pre.insertAdjacentHTML('afterend', attr);
+                        return pre.nextElementSibling;
+                    } else if (typeof attr === 'function') {
+                        return attr(pre, vars, html);
+                    }
                     const value = vars[field] ?? '';
                     const ele = superFetchHook.simpleValueHandlerHelper.buildElement(field, value, vars, attr, pre);
                     attr?.width && (ele.style.width = attr.width);
