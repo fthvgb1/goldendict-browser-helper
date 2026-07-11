@@ -1020,15 +1020,18 @@
         },
         replacement: {
             async action(param, target) {
-                const p = {vars: {value: target.value}, rule: param, handles: [...param['replacement-items']]};
-                while (true) {
-                    const item = p.handles.shift();
-                    if (!item) {
-                        break;
-                    }
-                    p.vars.value = await valueHandlers[item.handleType].handle(item, p.vars.value, p);
-                }
-                target.value = p.vars.value;
+                const vars = {value: target.value};
+                target.value = await superFetchHook.fetchActionHelper.handItems(param['replacement-items'],
+                    target.value,
+                    {
+                        vars,
+                        rule: {
+                            ...param,
+                            'super-fetch-name': 'value',
+                            handleValue: true,
+                        },
+                        fetchParam: param, globalVars: vars, parentVars: vars
+                    });
             },
             text: mapTitle['replacement'],
             desc: mapTitle['replacement'],
@@ -1069,7 +1072,7 @@
                             if (!handler.scope?.[name]) {
                                 return false;
                             }
-                            if ('fetch' === name && !handler.scope[name]?.[handle]) {
+                            if ('fetch' === name && (!handler.scope[name]?.[handle]) && !handler.scope[name]) {
                                 return false
                             }
                         }

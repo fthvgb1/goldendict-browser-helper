@@ -1165,7 +1165,8 @@
                 parseVar(o);
                 return o;
             }
-        }
+        },
+        scope: {fetch: '*'},
     });
 
 

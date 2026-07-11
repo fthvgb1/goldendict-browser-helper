@@ -104,7 +104,7 @@
                 }
             }
         }
-    });
+    }, {scope: {fetch: '*'},});
 
     superFetchHook.simpleValueHandlerHelper.addHandlers('delayOrInterval', {
         delay: {
@@ -225,7 +225,7 @@
         async handle(item, value, param) {
             const vars = this.varsType[item.varsType](param.vars);
             await superFetchHook.executeActions(...item?.actionNames, vars, item.async);
-            return param.vars[item.currentVarName];
+            return item.currentVarName ? param.vars[item.currentVarName] : value;
         },
         form(li, datum) {
             datum.actionNames = $(li.querySelector('.actionNames')).val();
@@ -303,7 +303,6 @@
                 }
             }
         }),
-        scope: {fetch: {fetch: '*'}},
     }
 
     superFetchHook.hookLang({
@@ -1043,7 +1042,7 @@
         searchMode: '搜索模式标识',
         searchModeDesc: '该搜索模式的说明',
         addAnkiStyle: '添加anki制卡对话框样式',
-        cssStyle: '样式内容'
+        cssStyle: '样式内容',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('makeAnkiCard', {
         openDiag: {
@@ -1151,8 +1150,8 @@
                     },
                 }
             }
-        }
-    });
+        },
+    }, {scope: {fetch: '*'},});
 
     PushHookAnkiHtml(html => {
         setEleDrag(html.querySelector('#shadowFields > ol'), '#shadowFields > ol > .form-item');
