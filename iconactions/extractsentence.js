@@ -544,8 +544,8 @@
                 } else {
                     await actionHelper.executeAction(rules[name], null, null, null, vars);
                 }
-                if (vars?.$break) {
-                    delete vars.$break;
+                if (vars?.stopProcess) {
+                    delete vars.stopProcess;
                     break;
                 }
             } catch (e) {

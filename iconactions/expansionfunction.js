@@ -588,8 +588,6 @@
             fn: (value, item, param) => {
                 item.break = true;
                 param.break = true;
-                param.globalVars.$break = true;
-                param.vars.$break = true;
                 param.stopProcess = true;
                 return value;
             },

@@ -810,7 +810,7 @@
         <label for="ankiHost" class="form-label">ankiConnect监听地址</label>
         <input id="ankiHost" value="${ankiHost}" placeholder="ankiConnector监听地址" class="form-input swal2-input">
         <div class="field-operate">
-                <button class="hammer">🔨</button>
+                <button class="hammer" title="连接">🔨</button>
             </div>
     </div>
     <div class="form-item">
