@@ -340,8 +340,11 @@
         return setting ? [...setting.children].slice(1) : [];
     }
 
-    function buttonField(item, show = false) {
-        const field = item?.['fetch-to-field'] ? item['fetch-to-field'] : item['fetch-field'];
+    function buttonField(item, show = false, dropScope = true) {
+        let field = item?.['fetch-to-field'] ? item['fetch-to-field'] : item['fetch-field'];
+        if (field && dropScope) {
+            field = field.split('|')[0];
+        }
         if (!show) {
             return field;
         }
@@ -442,9 +445,12 @@
     const mapTitle = {
         'log': '打印到控制台',
         'no file': '没有文件！',
+        'input-field': '要处理的input类型anki字段名,为*表示任意anki input字段,值的变量名为value',
         'handleValue': '对值进行处理',
         'fold-or-unfold': '折叠或展开子项',
         'childUseIndependentSymbol': '所有子项使用独立的符号表',
+        'from-field': 'anki字段名，将提取该字段的内容',
+        'to-field': 'anki字段名，将提取的内容赋值给该字段,为*表示，任意字段,*|scope, scope值为html和text,表示只针对富文本或者纯文本字段',
         'handle': '处理',
         'concatenation': '拼接',
         'multiple_child': '子项按组查询（queryAll)或按数组处理，将每个子项分配独立符号表',
@@ -921,6 +927,7 @@
         elementCache: {},
 
         getEleAndCache(field, triggerEle = null) {
+            field = field.split('|')[0];
             if ('*' === field && triggerEle) {
                 return triggerEle;
             }
@@ -959,6 +966,17 @@
                 if (!type) {
                     return false;
                 }
+                if (type === 'all') {
+                    const [field, s] = buttonField(item, false, false).split('|');
+                    if (field === '*' && s) {
+                        if (isText && s !== 'text') {
+                            return false
+                        }
+                        if (!isText && s === 'text') {
+                            return false;
+                        }
+                    }
+                }
                 if (type !== 'all' && ((isText && type !== 'text')) || (!isText && type === 'text')) {
                     return false;
                 }
@@ -989,6 +1007,7 @@
             const fetchItem = findParent(e.target, '.fetch-item');
             fetchItem.querySelectorAll('[data-single-run]').forEach(el => el.dataset.singleRun = actions[v]?.singleRun ?? false);
             const container = fetchItem.querySelector('.fetch-action-container');
+            data.$clone = true;
             container.replaceWith(actions[v].getTemplate(data));
         },
 

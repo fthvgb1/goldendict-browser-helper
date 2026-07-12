@@ -232,6 +232,8 @@
     superFetchHook.hookLang({
         'stringConjunction': '字符串拼接',
         'format': '可使用{变量}',
+        'toString': '转为字符串',
+        'toBool': '转为布尔值',
     });
     const valueHandlers = {
         replacement: {
@@ -304,6 +306,8 @@
                     title: mapTitle['NBSPtoSpace-desc'],
                     fn: s => s.replaceAll(' ', ' ')
                 },
+                toNumber: Number,
+                toBool: Boolean
             },
         },
     };
