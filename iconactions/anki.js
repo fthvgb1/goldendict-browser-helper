@@ -516,7 +516,7 @@
         const useTextarea = GM_getValue('useTextarea-' + field, false);
         let input = `<input name="shadow-form-value[]" value="${value}" placeholder="字段值" class="swal2-input field-value">`;
         if (useTextarea) {
-            input = `<textarea name="shadow-form-value[]" rows="5" value="${value}" rows="4" placeholder="字段值" class="field-value"> </textarea>`;
+            input = `<textarea name="shadow-form-value[]" rows="5"  placeholder="字段值" class="field-value">${value}</textarea>`;
         }
         li.className = 'form-item'
         li.innerHTML = createHtml(`
