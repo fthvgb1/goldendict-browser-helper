@@ -116,7 +116,13 @@ ol .form-item:has( .sentence_setting) .field-operate input {
 .form-item .field-operate select {
     max-width: 3vw;
 }
-
+/*.field-operate button{
+    width: 2vw;
+    height: 2vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}*/
 
 #sentence_num {
     width: 5vw;

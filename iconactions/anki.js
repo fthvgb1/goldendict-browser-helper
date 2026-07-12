@@ -467,7 +467,7 @@
             if (fields[k].nextElementSibling.tagName === 'SELECT') {
                 continue;
             }
-            if (fields[k].nextElementSibling.tagName === 'INPUT') {
+            if (['INPUT', 'TEXTAREA'].includes(fields[k].nextElementSibling.tagName)) {
                 fields[k].nextElementSibling.value = v;
                 continue;
             }
@@ -513,13 +513,19 @@
     function buildInput(rawStr = false, field = '', value = '', checked = false) {
         const li = document.createElement('div');
         const checkeds = checked ? 'checked' : '';
+        const useTextarea = GM_getValue('useTextarea-' + field, false);
+        let input = `<input name="shadow-form-value[]" value="${value}" placeholder="字段值" class="swal2-input field-value">`;
+        if (useTextarea) {
+            input = `<textarea name="shadow-form-value[]" rows="5" value="${value}" rows="4" placeholder="字段值" class="field-value"> </textarea>`;
+        }
         li.className = 'form-item'
         li.innerHTML = createHtml(`
             <input name="shadow-form-field[]" placeholder="字段名" value="${field}" class="swal2-input field-name">
-            <input name="shadow-form-value[]" value="${value}" placeholder="字段值" class="swal2-input field-value"> 
+            ${input} 
             <div class="field-operate">
                 <button class="minus">➖</button>
                 <input type="radio" title="选中赋值" ${checkeds} name="shadow-form-defaut[]">
+                <input type="checkbox" title="切换为textarea" ${useTextarea ? 'checked' : ''} name="useTextarea" class="useTextarea">
                 <button class="lemmatizer" title="lemmatize查找单词原型">📟</button>
                 <button class="anki-search" title="search anki 左健搜索 中键复制搜索表达式 右键选择搜索模式">🔍</button>
                 <button class="upperlowercase" title="大小写转换">🔡</button>
@@ -675,6 +681,24 @@
     const styles = [], htmls = [], closeFns = [], didRenderFns = [], changeFns = {
         ".sentence-format-setting": (ev) => {
             document.querySelector('.sentence-format').style.display = ev.target.checked ? 'block' : 'none';
+        },
+        '.useTextarea': ev => {
+            const checked = ev.target.checked;
+            const item = findParent(ev.target, '.form-item');
+            const field = item.querySelector('.field-name').value;
+            const input = item.querySelector('.field-value');
+            const attrs = ['name', 'placeholder'];
+            const newEl = document.createElement(checked ? 'textarea' : 'input');
+            attrs.forEach(k => newEl.setAttribute(k, input[k]));
+            newEl.classList.add('field-value');
+            newEl.value = input.value;
+            checked ? (newEl.classList.remove('swal2-input'), newEl.rows = 5) : newEl.classList.add('swal2-input')
+            input.replaceWith(newEl);
+            if (!field) {
+                return
+            }
+            const name = 'useTextarea-' + field;
+            checked ? GM_setValue(name, true) : GM_deleteValue(name);
         },
         "#sentence_num": (ev) => {
             const {wordFormat, sentenceFormat} = sentenceFormatFn();
@@ -984,17 +1008,18 @@
         formFields.forEach(field => {
             form[field] = document.getElementById(field).value;
         });
+        const isText = ele => ['INPUT', 'TEXTAREA'].includes(ele.tagName);
         for (const div of [...document.querySelectorAll('#shadowFields > ol > div')]) {
             const name = div.children[0].value;
             if (name === '') {
                 continue;
             }
             modelField.push([
-                div.children[1].tagName === 'INPUT' ? 1 : 2,
+                isText(div.children[1]) ? 1 : 2,
                 name,
                 div.children[2].children[1].checked
             ]);
-            if (div.children[1].tagName === 'INPUT') {
+            if (isText(div.children[1])) {
                 fields[name] = decodeHtmlSpecial(div.children[1].value);
             } else {
                 const el = div.querySelector('.spell-content');
