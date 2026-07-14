@@ -127,7 +127,7 @@
         },
         setTimeout: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['setTimeoutStart', 'setTimeoutEnd']);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['setTimeoutStart', 'setTimeoutEnd'], item.currentVarName);
                 const t = setTimeout(async () => {
                     value = await fn(value, item, param);
                     clearTimeout(t);
@@ -171,7 +171,7 @@
         setTimeoutEnd: superFetchHook.simpleValueHandlerHelper.endScope('setTimeoutEnd', '#c5bd63'),
         interval: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startInterval', 'endInterVal']);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startInterval', 'endInterVal'], item.currentVarName);
                 const t = setInterval(async () => {
                     value = await fn(value, item, param);
                 }, item.intervalTime);
@@ -325,7 +325,7 @@
     superFetchHook.simpleValueHandlerHelper.addHandlers('simpleWatcher', {
         urlWatcher: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startUrlWatcher', 'endUrlWatcher']);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startUrlWatcher', 'endUrlWatcher'], item.currentVarName);
                 const urlWatcher = async e => {
                     param.vars.navigateEvt = e;
                     value = await fn(value);
@@ -365,7 +365,7 @@
 
         elementObserve: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startElementObserve', 'endElementObserve']);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startElementObserve', 'endElementObserve'], item.currentVarName);
                 const selector = superFetchHook.getVariable(param.vars, item.querySelector, item.querySelector, true);
                 const ele = selector instanceof Element ? selector : document.querySelector(selector);
                 if (!ele) {
@@ -442,7 +442,7 @@
     superFetchHook.simpleValueHandlerHelper.addHandlers('Tampermonkey', {
         addMenu: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startAddMenu', 'endAddMenu']);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startAddMenu', 'endAddMenu'], item.currentVarName);
                 const menu = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.menuTitle);
                 window.userJSMenu[menu] = GM_registerMenuCommand(menu, async () => {
                     value = await fn(value, item, param);
@@ -599,7 +599,7 @@
         for: {
             async fn(value, item, param) {
                 const iterator = item.useVariable ? superFetchHook.fetchActionHelper.getVar(item.iterator, param, true) : item.iterator;
-                const fn = superFetchHook.valueHandlers.foreach.handlers.for.continueHook(param, ['for', 'endfor']);
+                const fn = superFetchHook.valueHandlers.foreach.handlers.for.continueHook(param, ['for', 'endfor'], item.currentVarName);
                 if (!fn) {
                     return value
                 }
@@ -617,8 +617,8 @@
                 }
                 return value;
             },
-            continueHook(param, op) {
-                const h = superFetchHook.fetchActionHelper.buildHandlersMap.array(param, op);
+            continueHook(param, op, name) {
+                const h = superFetchHook.fetchActionHelper.buildHandlersMap.array(param, op, name);
                 if (h.length < 1) {
                     return null;
                 }
@@ -630,7 +630,7 @@
                         delete param.continue;
                         delete param.break;
                     }
-                    value = await superFetchHook.fetchActionHelper.handItems(handlers, value, param);
+                    value = await superFetchHook.fetchActionHelper.handItems(handlers, value, param, name);
                     if (!param?.breakforof && param?.break) {
                         param.handlers = [];
                         return value;
@@ -698,7 +698,7 @@
         forof: {
             async fn(value, item, param) {
                 const iterator = superFetchHook.getVariable(param.vars, item.iterator);
-                const fn = superFetchHook.valueHandlers.foreach.handlers.for.continueHook(param, ['forof', 'endforof']);
+                const fn = superFetchHook.valueHandlers.foreach.handlers.for.continueHook(param, ['forof', 'endforof'], item.currentVarName);
                 if (!fn) {
                     return value
                 }
@@ -734,7 +734,7 @@
         endforof: superFetchHook.simpleValueHandlerHelper.endScope('endforof', '#ca88cf'),
         'while(true)': {
             async fn(value, item, param) {
-                const fn = superFetchHook.valueHandlers.foreach.handlers.for.continueHook(param, ['while', 'endwhile']);
+                const fn = superFetchHook.valueHandlers.foreach.handlers.for.continueHook(param, ['while', 'endwhile'], item.currentVarName);
                 if (!fn) {
                     return value
                 }
@@ -761,7 +761,7 @@
         endwhile: superFetchHook.simpleValueHandlerHelper.endScope('endwhile', '#9cbef1'),
         iterateObject: {
             async fn(value, item, param) {
-                const fn = superFetchHook.valueHandlers.foreach.handlers.for.continueHook(param, ['iterateObject', 'endIterateObject']);
+                const fn = superFetchHook.valueHandlers.foreach.handlers.for.continueHook(param, ['iterateObject', 'endIterateObject'], item.currentVarName);
                 if (!fn) {
                     return value
                 }
@@ -866,7 +866,7 @@
         addEvent: {
             fn(value, item, param) {
                 const ele = superFetchHook.getVariable(param.vars, item.elementVarName ? item.elementVarName : item.currentVarName);
-                const handle = superFetchHook.fetchActionHelper.extractHandlers(param, ['startEvenScopet', 'endEventScope']);
+                const handle = superFetchHook.fetchActionHelper.extractHandlers(param, ['startEvenScopet', 'endEventScope'], item.currentVarName);
                 const eventIdentifier = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.eventIdentifier);
                 const fn = async ev => {
                     if (item.bindEventElement && !ev.target.matches(item.bindEventElement)) {
@@ -1048,7 +1048,7 @@
     superFetchHook.simpleValueHandlerHelper.addHandlers('makeAnkiCard', {
         openDiag: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endScope');
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endScope', item.currentVarName);
                 PushHookAnkiDidRender(() => fn(value));
                 return value;
             },
@@ -1067,7 +1067,7 @@
         },
         closeDiag: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endScope');
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endScope', item.currentVarName);
                 PushHookAnkiClose(() => fn(value));
                 return value;
             },
@@ -1107,7 +1107,7 @@
         },
         customizeSearch: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['customizeSearch', 'endCustomizeSearch']);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['customizeSearch', 'endCustomizeSearch'], item.currentVarName);
                 ankiHelper.ankiSearchHook[item.searchMode] = {
                     text: item.searchModeDesc,
                     async builder(deck, field, words) {

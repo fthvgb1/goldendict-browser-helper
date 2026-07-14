@@ -131,7 +131,7 @@
         cloneDeep: '深度克隆',
         cloneTo: '克隆后赋值给',
         handleThisValue: '后续没有指定变量名的操作都作用到该变量',
-        'handleThisValue-desc': '后续没有指定变量名的操作都作用到该变量,只对当前作用域有效',
+        'handleThisValue-desc': '后续没有指定变量名的操作都作用到该变量',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('htmlFns', {
         stringToElement: {
@@ -462,7 +462,7 @@
             identifier: new Set(['if', 'elseif', 'else', 'endif']),
             async fn(value, item, param) {
                 param.handlers.unshift(async () => await superFetchHook.valueHandlers.ifBranch.handlers.if.ifFn(value, item, param));
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['if', 'endif']);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['if', 'endif'], item.currentVarName);
                 return await fn(value);
             },
             ifFn: async (value, item, param) => {
@@ -481,7 +481,7 @@
                         }
                     }
                     return p.handlers.splice(0, p.handlers.length);
-                });
+                }, item.currentVarName);
                 if (r) {
                     value = await fn(value, item, param);
                     if (param.handlers[0]?.rangeHandle === 'else') {
@@ -539,7 +539,7 @@
         },
         else: {
             async fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endif');
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endif', item.currentVarName);
                 if (item?.drop?.()) {
                     return value;
                 }

@@ -557,10 +557,9 @@
             });
         },
 
-        async handItems(items, value, param) {
-            const names = param.rule['super-fetch-name'];
+        async handItems(items, value, param, currentVarName = '') {
+            const names = currentVarName || param.rule['super-fetch-name'];
             let name = names;
-            const v = value;
             if (param.rule.handleValue) {
                 param.handlers = [...items];
                 param.fetchType = actions?.programmer ? 'programmer' : 'fetch';
@@ -583,7 +582,7 @@
                     }
                 }
             }
-            return names ? param.vars[names] : v;
+            return names ? param.vars[names] : value;
         },
         defaultReg: /\{(.*?)}/,
         getDefVars(defaultVal, vars) {
@@ -864,11 +863,11 @@
             }
         },
 
-        buildHandlers(handlers, param) {
+        buildHandlers(handlers, param, name = '') {
             return async value => {
                 const handlerss = param.handlers;
                 param.handlers = handlers;
-                value = await superFetchHook.fetchActionHelper.handItems(handlers, value, param);
+                value = await superFetchHook.fetchActionHelper.handItems(handlers, value, param, name);
                 if (param?.break) {
                     param.handlers = [];
                     return value;
@@ -879,13 +878,13 @@
         },
 
         buildHandlersMap: {
-            number: (param, option) => actionHelper.buildHandlers(param.handlers.splice(0, option), param),
-            function: (param, option) => actionHelper.buildHandlers(option(param), param),
-            string: (param, option) => {
+            number: (param, option, name) => actionHelper.buildHandlers(param.handlers.splice(0, option), param, name),
+            function: (param, option, name) => actionHelper.buildHandlers(option(param), param, name),
+            string: (param, option, name) => {
                 const i = param.handlers.findIndex(value => value?.rangeHandle === option);
-                return actionHelper.buildHandlers(param.handlers.splice(0, i > -1 ? i : param.handlers.length), param);
+                return actionHelper.buildHandlers(param.handlers.splice(0, i > -1 ? i : param.handlers.length), param, name);
             },
-            array(param, option) {
+            array(param, option, name = '') {
                 const [start, end] = option;
                 const arr = [start], identifier = new Set(option);
                 const h = [[]];
@@ -904,7 +903,7 @@
                         }
                         const handlers = h.pop();
                         arr.pop();
-                        h[h.length - 1].push(superFetchHook.fetchActionHelper.buildHandlers(handlers, param))
+                        h[h.length - 1].push(superFetchHook.fetchActionHelper.buildHandlers(handlers, param, name))
                         if (arr.length < 1) {
                             break;
                         }
@@ -917,15 +916,15 @@
             }
         },
 
-        extractHandlers(param, option = 'endRangeHandle') {
+        extractHandlers(param, option = 'endRangeHandle', name = '') {
             if (Array.isArray(option)) {
-                const h = actionHelper.buildHandlersMap.array(param, option);
+                const h = actionHelper.buildHandlersMap.array(param, option, name);
                 if (h[0].length < 1) {
                     return v => v;
                 }
-                return actionHelper.buildHandlers(h[0], param);
+                return actionHelper.buildHandlers(h[0], param, name);
             }
-            return actionHelper.buildHandlersMap[typeof option]?.(param, option) ?? actionHelper.buildHandlers(param.handlers);
+            return actionHelper.buildHandlersMap[typeof option]?.(param, option, name) ?? actionHelper.buildHandlers(param.handlers, param, name);
         }
     };
 
