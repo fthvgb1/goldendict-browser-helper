@@ -307,6 +307,7 @@
                     fn: s => s.replaceAll(' ', ' ')
                 },
                 toNumber: Number,
+                toString: String,
                 toBool: Boolean
             },
         },
@@ -559,6 +560,7 @@
         async handItems(items, value, param) {
             const names = param.rule['super-fetch-name'];
             let name = names;
+            const v = value;
             if (param.rule.handleValue) {
                 param.handlers = [...items];
                 param.fetchType = actions?.programmer ? 'programmer' : 'fetch';
@@ -581,7 +583,7 @@
                     }
                 }
             }
-            return names ? param.vars[names] : value;
+            return names ? param.vars[names] : v;
         },
         defaultReg: /\{(.*?)}/,
         getDefVars(defaultVal, vars) {

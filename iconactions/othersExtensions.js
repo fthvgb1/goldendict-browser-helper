@@ -37,6 +37,7 @@
             const input = li.querySelector('[name=searchValue]');
             input.style.width = '20vw';
             input.title = lang('log-desc');
+            input.placeholder = lang('log-desc');
         }
     }
 
@@ -1137,8 +1138,8 @@
         },
         endCustomizeSearch: superFetchHook.simpleValueHandlerHelper.endScope('endCustomizeSearch', '#8ca5ce'),
         addAnkiStyle: {
-            fn(value, item) {
-                PushHookAnkiStyle(item.cssStyle);
+            fn(value, item, param) {
+                PushHookAnkiStyle(superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.cssStyle));
                 return value
             },
             param: {

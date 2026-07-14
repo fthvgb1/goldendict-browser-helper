@@ -26,7 +26,12 @@
 }
 
 .form-item ol .form-item .field-name {
-    width: 8vw
+    width: 8vw;
+    height: 3.3vw;
+}
+
+.anki-container .form-input {
+    height: 3.3vw;
 }
 
 .anki-container .form-input {
@@ -116,6 +121,7 @@ ol .form-item:has( .sentence_setting) .field-operate input {
 .form-item .field-operate select {
     max-width: 3vw;
 }
+
 /*.field-operate button{
     width: 2vw;
     height: 2vw;
@@ -147,4 +153,8 @@ ol .form-item:has( .sentence_setting) .field-operate input {
 
 .select2-container .select2-search--inline .select2-search__field {
     height: 2vw;
+}
+
+textarea.field-value {
+    font-size: 1.5vw
 }
