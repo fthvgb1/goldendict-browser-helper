@@ -34,6 +34,7 @@
             for (const programmerItem of param.programmerItems) {
                 await this.codeBlockTypes[programmerItem.codeBlockType].fn(programmerItem, vars, param);
                 if (param.vars?.stopProcess) {
+                    delete param.vars.stopProcess;
                     break;
                 }
             }

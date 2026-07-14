@@ -122,17 +122,13 @@
             return ankiSearchHook[type].builder(deck, field, value);
         }
         const searchType = getDefaultSearchType(field);
-        const m = {}, options = [];
+        const options = [];
         const nbsp = '&nbsp;'.repeat(5);
         for (const [k, v] of Object.entries(ankiSearchHook)) {
             let s = await v.builder(deck, field, value);
-            const ss = htmlSpecial(s);
-            m[ss] = k;
-            options.push([ss, `${v.text + (searchType === k ? '  (默认)' : '')}:  ${nbsp}${s}`]);
+            options.push([k, `${v.text + (searchType === k ? '  (默认)' : '')}:  ${nbsp}${s}`]);
         }
-
-
-        return {options, m}
+        return options
     }
 
     let searchInput;
@@ -176,13 +172,16 @@
             const inputs = ev.target.parentElement.previousElementSibling;
             sel.name = inputs.name;
             sel.className = inputs.className;
-            const {options, m} = await getSearchType(ev);
-            sel.innerHTML = buildOption(options, m[getDefaultSearchType(field)], 0, 1);
+            const options = await getSearchType(ev);
+            sel.innerHTML = buildOption(options, getDefaultSearchType(field), 0, 1);
             inputs.replaceWith(sel);
             sel.focus();
-            const fn = () => {
-                GM_setValue('searchType_' + field, m[htmlSpecial(sel.value)]);
-                searchAnki(ev, sel.value, inputs, sel);
+            const fn = async () => {
+                GM_setValue('searchType_' + field, sel.value);
+                const v = inputs.value.trim();
+                const deck = document.querySelector('#deckName').value;
+                const exp = await ankiSearchHook[sel.value].builder(deck, field, v);
+                await searchAnki(ev, exp, inputs, sel);
                 sel.removeEventListener('blur', fn);
                 sel.removeEventListener('change', fn);
             };
@@ -826,7 +825,7 @@
                 return fieldFn[v[0]](true, v[1], v[2] ? t : '', v[2])
             }).join('\n')
         }
-        const hookStyles = styles.length > 0 ? `<style>${styles.filter(v => v !== '').join('\n')}</style>` : '';
+        const hookStyles = styles.length > 0 ? styles.filterAndMapX(v => v ? `<style>${v}</style>` : false).join('\n') : '';
 
         const style = `<style>${select2Css} ${frameCss} ${spellCss} ${diagStyle} </style> ${hookStyles}`;
         const ankiHtml = createHtml(`${style} 

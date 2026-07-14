@@ -1,0 +1,196 @@
+[
+  {
+    "fetch-name": "getRootFontSize",
+    "operate-type": "programmer",
+    "url-scope": "",
+    "fetch-active": false,
+    "add-contextmenu": false,
+    "programmerItems": [
+      {
+        "codeBlockName": "",
+        "codeBlockType": "function",
+        "replacement-items": [
+          {
+            "handleType": "htmlFns",
+            "searchValue": "queryElement",
+            "leftValue": "html",
+            "elementVarName": "",
+            "elementSelector": "html",
+            "queryAll": false,
+            "anchorMode": false
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "handleThisValue",
+            "varName": "root"
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "getComputedStyle",
+            "elementVarName": "html",
+            "styleAttrName": "fontSize"
+          },
+          {
+            "handleType": "replacement",
+            "searchValue": "px",
+            "replaceValue": "",
+            "pattern": ""
+          },
+          {
+            "handleType": "simpleValueHandlers",
+            "searchValue": "toNumber",
+            "replaceValue": "",
+            "pattern": ""
+          }
+        ],
+        "arguments": [
+          ""
+        ],
+        "returnVarName": "root"
+      }
+    ]
+  },
+  {
+    "fetch-name": "ankiRelation",
+    "operate-type": "programmer",
+    "url-scope": ".*",
+    "fetch-active": true,
+    "add-contextmenu": false,
+    "programmerItems": [
+      {
+        "codeBlockName": "start",
+        "codeBlockType": "program",
+        "replacement-items": [
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "customizeSearch",
+            "searchMode": "due",
+            "searchModeDesc": "今天到期的组牌",
+            "rangeHandle": "customizeSearch"
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "handleThisValue",
+            "varName": "queryExpress"
+          },
+          {
+            "handleType": "stringConjunction",
+            "format": "prop:due=0 deck:{deck}"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "endCustomizeSearch",
+            "rangeHandle": "endCustomizeSearch"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "customizeSearch",
+            "searchMode": "add",
+            "searchModeDesc": "今天添加",
+            "rangeHandle": "customizeSearch"
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "handleThisValue",
+            "varName": "queryExpress"
+          },
+          {
+            "handleType": "stringConjunction",
+            "format": "added:1"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "endCustomizeSearch",
+            "rangeHandle": "endCustomizeSearch"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "customizeSearch",
+            "searchMode": "edit",
+            "searchModeDesc": "今天修改",
+            "rangeHandle": "customizeSearch"
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "handleThisValue",
+            "varName": "queryExpress"
+          },
+          {
+            "handleType": "stringConjunction",
+            "format": "edited:1"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "endCustomizeSearch",
+            "rangeHandle": "endCustomizeSearch"
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "handleThisValue",
+            "varName": "fontSize"
+          },
+          {
+            "handleType": "callFunction",
+            "func": "getRootFontSize",
+            "parameters": "",
+            "async": false,
+            "noReturn": false
+          },
+          {
+            "handleType": "ifBranch",
+            "searchValue": "if",
+            "v1": "{fontSize}",
+            "compareType": "lt",
+            "v2": "16",
+            "regPattern": "",
+            "valueType": "number",
+            "rangeHandle": "if"
+          },
+          {
+            "handleType": "simpleCalculator",
+            "searchValue": "calculator",
+            "varName": "offset",
+            "num1": 16,
+            "operator": "divide",
+            "operatedNumber": "fontSize"
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "handleThisValue",
+            "varName": "offset"
+          },
+          {
+            "handleType": "simpleValueHandlers",
+            "searchValue": "toString",
+            "replaceValue": "",
+            "pattern": ""
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "setValue",
+            "leftValue": "css",
+            "variableType": "string",
+            "rightValue": "textarea.field-value {font-size:1.4vw}div:where(.swal2-container) input:where(.swal2-input), div:where(.swal2-container) input:where(.swal2-file), div:where(.swal2-container) textarea:where(.swal2-textarea),div:where(.swal2-container) div:where(.swal2-html-container) {    font-size: [offset]rem;}",
+            "handleThisValue": true
+          },
+          {
+            "handleType": "replacement",
+            "searchValue": "[offset]",
+            "replaceValue": "{offset}",
+            "pattern": ""
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "addAnkiStyle",
+            "cssStyle": "{css}"
+          },
+          {
+            "handleType": "ifBranch",
+            "searchValue": "endif",
+            "rangeHandle": "endif"
+          }
+        ]
+      }
+    ]
+  }
+]

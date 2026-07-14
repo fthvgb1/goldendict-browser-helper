@@ -433,7 +433,7 @@
         getComputedStyle: {
             fn(value, item, param) {
                 const ele = superFetchHook.getVariable(param.vars, item.elementVarName ? item.elementVarName : item.currentVarName);
-                if (!(value instanceof Element)) {
+                if (!(ele instanceof Element)) {
                     console.log('can parse element', value, item);
                     return value;
                 }
@@ -1211,7 +1211,7 @@
                 fields: {
                     varName: {
                         type: 'text',
-                        width: '3vw',
+                        width: '2.9vw',
                     },
                     num1: {
                         type: 'number',
