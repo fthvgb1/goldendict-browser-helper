@@ -114,10 +114,13 @@
         // 绑定图标拖动事件
         const iconDrag = new Drag(icon);
         // 图标数组
-        let hideCalls = []
-        // 添加翻译引擎图标
-        iconActions.forEach(obj => {
-            const img = document.createElement('img');
+        let hideCalls = [];
+        window._addIconAction = obj => {
+            let img = document.createElement('img');
+            if (obj.hasOwnProperty('call') && obj.call) {
+                const im = obj.call(img, content);
+                im && (img = im);
+            }
             img.setAttribute('src', obj.image);
             img.setAttribute('alt', obj.name);
             img.setAttribute('title', obj.name);
@@ -127,14 +130,14 @@
                     obj.trigger(selected, hideIcon, event);
                 });
             }
-            icon.appendChild(img);
+            const im = icon.querySelector(':scope > img:last-of-type');
+            (im ? im : icon).insertAdjacentElement(im ? 'afterend' : 'beforeend', img);
             if (obj.hide) {
                 hideCalls.push(obj.hide)
             }
-            if (obj.hasOwnProperty('call') && obj.call) {
-                obj.call(img, content);
-            }
-        });
+        }
+        // 添加翻译引擎图标
+        iconActions.forEach(_addIconAction);
         // 添加内容面板（放图标后面）
         icon.appendChild(content);
         // 添加样式、翻译图标到 DOM

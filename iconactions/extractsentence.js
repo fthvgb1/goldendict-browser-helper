@@ -516,7 +516,7 @@
     let itemCache;
 
     async function executeActions(...names) {
-        let vars = {}, async = true;
+        let vars = {}, async = false;
         names = names.filterAndMapX(name => {
             if ('string' === typeof name && name) {
                 return name

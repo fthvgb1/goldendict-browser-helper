@@ -276,4 +276,78 @@
         })
     });
 
+    superFetchHook.hookLang({
+        iconAction: '添加划词点击图标操作',
+        imgSrc: '图片地址，可为url,base64或变量',
+        iconHandleDesc: '操作说明',
+        addIcon: '添加划词点击图标',
+        iconId: '图标id,用于标识图标和用于自定义添加事件时作为元素变量名',
+        startAddIconHandle: '开始点击图标操作',
+        endAddIconHandle: '结束点击图标操作',
+        startCustomizationHandle: '自定义添加事件,图标元素变量为图标id',
+        endAddCustomizationHandle: '结束自定义添加事件',
+        endAddIcon: '结束添加划词点击图标操作',
+    });
+    superFetchHook.simpleValueHandlerHelper.addHandlers('iconAction', {
+        addIcon: {
+            async fn(value, item, param) {
+                const i = param.handlers.findIndex(v => v?.rangeHandle === 'endAddIcon') || param.handlers.length;
+                const handlers = param.handlers.splice(i, param.handlers.length);
+                let call, fn;
+                const ii = param.handlers.findIndex(v => v?.rangeHandle === 'startAddIconHandle');
+                if (ii > -1) {
+                    param.handlers.splice(ii, 1);
+                    fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startAddIconHandle', 'endAddIconHandle'], item.currentVarName);
+                }
+                const iii = param.handlers.findIndex(v => v?.rangeHandle === 'startCustomizationHandle');
+                if (iii > -1) {
+                    param.handlers.splice(iii, 1);
+                    const customizeFn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startCustomizationHandle', 'endAddCustomizationHandle'], item.currentVarName);
+                    param.vars[item.iconId] = document.createElement('img');
+                    await customizeFn(value);
+                    call = () => param.vars[item.iconId];
+                }
+                await _addIconAction({
+                    name: item.name,
+                    id: item.iconId,
+                    image: superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.imgSrc),
+                    trigger: fn ? async (text, hideIcon, event) => {
+                        param.vars.text = text;
+                        param.vars[item.iconId] = event.target;
+                        param.vars.hideIcon = hideIcon;
+                        value = await fn(value)
+                    } : null,
+                    call: call,
+                });
+                param.handlers = handlers;
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    imgSrc: {
+                        type: 'text',
+                        width: '3vw',
+                    },
+                    name: {
+                        title: superFetchHook.lang('iconHandleDesc'),
+                        type: 'text',
+                        width: '4.8vw',
+                    },
+                    iconId: {
+                        type: 'text',
+                        width: '3.4vw',
+                    },
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('addIcon', '#5a4027')
+                }
+            }
+        },
+        endAddIcon: superFetchHook.simpleValueHandlerHelper.endScope('endAddIcon', '#5a4027'),
+        startAddIconHandle: superFetchHook.simpleValueHandlerHelper.endScope('startAddIconHandle', '#8ca5ce'),
+        endAddIconHandle: superFetchHook.simpleValueHandlerHelper.endScope('endAddIconHandle', '#8ca5ce'),
+
+        startCustomizationHandle: superFetchHook.simpleValueHandlerHelper.endScope('startCustomizationHandle', 'rgba(98,90,90,0.78)'),
+        endAddCustomizationHandle: superFetchHook.simpleValueHandlerHelper.endScope('endAddCustomizationHandle', 'rgba(98,90,90,0.78)'),
+    });
+
 })();
