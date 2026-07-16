@@ -287,6 +287,7 @@
         startCustomizationHandle: '自定义添加事件,图标元素变量为图标id',
         endAddCustomizationHandle: '结束自定义添加事件',
         endAddIcon: '结束添加划词点击图标操作',
+        completeReplacement: '完全替换icon元素，需配合自定义添加事件使用,此时可以不用图片作为icon，即完全替换iconId变量为自定义元素，可用button等',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('iconAction', {
         addIcon: {
@@ -318,7 +319,7 @@
                         value = await fn(value)
                     } : null,
                     call: call,
-                });
+                }, item.replacement);
                 param.handlers = handlers;
                 return value;
             },
@@ -332,11 +333,15 @@
                     name: {
                         title: superFetchHook.lang('iconHandleDesc'),
                         type: 'text',
-                        width: '4.8vw',
+                        width: '4.3vw',
                     },
                     iconId: {
                         type: 'text',
                         width: '3.4vw',
+                    },
+                    replacement: {
+                        type: 'checkbox',
+                        title: superFetchHook.lang('completeReplacement')
                     },
                     rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('addIcon', '#5a4027')
                 }

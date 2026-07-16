@@ -161,9 +161,7 @@
           },
           {
             "handleType": "simpleValueHandlers",
-            "searchValue": "toString",
-            "replaceValue": "",
-            "pattern": ""
+            "searchValue": "toString"
           },
           {
             "handleType": "valueRelation",
@@ -185,9 +183,119 @@
             "cssStyle": "{css}"
           },
           {
+            "handleType": "valueRelation",
+            "searchValue": "handleThisValue",
+            "varName": "fontSize"
+          },
+          {
+            "handleType": "simpleValueHandlers",
+            "searchValue": "toString"
+          },
+          {
             "handleType": "ifBranch",
             "searchValue": "endif",
             "rangeHandle": "endif"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "fetch-name": "addIconActionDemo",
+    "operate-type": "programmer",
+    "url-scope": ".*",
+    "fetch-active": true,
+    "add-contextmenu": false,
+    "programmerItems": [
+      {
+        "codeBlockName": "",
+        "codeBlockType": "program",
+        "replacement-items": [
+          {
+            "handleType": "iconAction",
+            "searchValue": "addIcon",
+            "imgSrc": "",
+            "name": "",
+            "iconId": "tt",
+            "replacement": true,
+            "rangeHandle": "addIcon"
+          },
+          {
+            "handleType": "iconAction",
+            "searchValue": "startAddIconHandle",
+            "rangeHandle": "startAddIconHandle"
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "setValue",
+            "leftValue": "t",
+            "variableType": "variable",
+            "rightValue": "tt.parentElement",
+            "handleThisValue": false
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "queryElement",
+            "leftValue": "c",
+            "elementVarName": "t",
+            "elementSelector": "tr-content",
+            "queryAll": false,
+            "anchorMode": false
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "setValue",
+            "leftValue": "c.style.display",
+            "variableType": "string",
+            "rightValue": "block",
+            "handleThisValue": false
+          },
+          {
+            "handleType": "log",
+            "searchValue": "{$vars}"
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "queryElement",
+            "leftValue": "d",
+            "elementVarName": "t",
+            "elementSelector": "div",
+            "queryAll": false,
+            "anchorMode": false
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "setValue",
+            "leftValue": "d.innerHTML",
+            "variableType": "variable",
+            "rightValue": "text",
+            "handleThisValue": false
+          },
+          {
+            "handleType": "iconAction",
+            "searchValue": "endAddIconHandle",
+            "rangeHandle": "endAddIconHandle"
+          },
+          {
+            "handleType": "iconAction",
+            "searchValue": "startCustomizationHandle",
+            "rangeHandle": "startCustomizationHandle"
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "stringToElement",
+            "setElementVarName": "tt",
+            "elementIdentOuterHTML": "<button title=\"test\">⚽</button>"
+          },
+          {
+            "handleType": "iconAction",
+            "searchValue": "endAddCustomizationHandle",
+            "rangeHandle": "endAddCustomizationHandle"
+          },
+          {
+            "handleType": "iconAction",
+            "searchValue": "endAddIcon",
+            "rangeHandle": "endAddIcon"
           }
         ]
       }

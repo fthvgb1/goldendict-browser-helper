@@ -294,7 +294,9 @@
                 return this.options[from] = simpleValueHandlerHelper.buildOptions(handlers, from);
             },
             renderHook(html, vars) {
-                simpleValueHandlerHelper.renderHooker(html, vars, this.getOptions(this.handlers, html.dataset.from))
+                simpleValueHandlerHelper.renderHooker(html, vars, this.getOptions(this.handlers, html.dataset.from));
+                html.querySelectorAll('.fetch-replacement-target~:not(.replacement-add)')
+                    .forEach(el => el.remove());
             },
             handlers: {
                 toUpperCase: str => str.toUpperCase(),

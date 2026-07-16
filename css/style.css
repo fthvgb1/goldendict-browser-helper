@@ -26,7 +26,7 @@ a:active {
     text-decoration: underline
 }
 
-img {
+tr-icon > :not(tr-content) {
     cursor: pointer;
     display: inline-block;
     width: 20px;
@@ -35,17 +35,16 @@ img {
     border-radius: 4px;
     background-color: rgba(255, 255, 255, 1);
     padding: 2px;
-    margin: 0;
-    margin-right: 5px;
+    margin: 0 5px 0 0;
     box-sizing: content-box;
     vertical-align: middle
 }
 
-img:last-of-type {
+tr-icon :not(tr-content):last-of-type {
     margin-right: auto
 }
 
-img:hover {
+tr-icon :not(tr-content):hover {
     border: 1px solid #f90
 }
 
