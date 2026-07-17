@@ -40,11 +40,11 @@ tr-icon > :not(tr-content) {
     vertical-align: middle
 }
 
-tr-icon :not(tr-content):last-of-type {
+tr-icon > :not(tr-content):last-of-type {
     margin-right: auto
 }
 
-tr-icon :not(tr-content):hover {
+tr-icon > :not(tr-content):hover {
     border: 1px solid #f90
 }
 

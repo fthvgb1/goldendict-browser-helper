@@ -189,7 +189,7 @@
                 let selected = false;
                 const data = [];
                 getAnkiFetchParams().forEach(v => {
-                    if (v['operate-type'] !== 'programmer') {
+                    if (v['operate-type'] !== 'programmer' || !v?.programmerItems) {
                         return false
                     }
                     v.programmerItems.forEach(item => {
@@ -292,35 +292,41 @@
     superFetchHook.simpleValueHandlerHelper.addHandlers('iconAction', {
         addIcon: {
             async fn(value, item, param) {
-                const i = param.handlers.findIndex(v => v?.rangeHandle === 'endAddIcon') || param.handlers.length;
-                const handlers = param.handlers.splice(i, param.handlers.length);
-                let call, fn;
-                const ii = param.handlers.findIndex(v => v?.rangeHandle === 'startAddIconHandle');
-                if (ii > -1) {
-                    param.handlers.splice(ii, 1);
-                    fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startAddIconHandle', 'endAddIconHandle'], item.currentVarName);
-                }
-                const iii = param.handlers.findIndex(v => v?.rangeHandle === 'startCustomizationHandle');
-                if (iii > -1) {
-                    param.handlers.splice(iii, 1);
-                    const customizeFn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startCustomizationHandle', 'endAddCustomizationHandle'], item.currentVarName);
-                    param.vars[item.iconId] = document.createElement('img');
-                    await customizeFn(value);
-                    call = () => param.vars[item.iconId];
-                }
-                await _addIconAction({
+                const scopeFn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endAddIcon', item.currentVarName);
+                const data = {
                     name: item.name,
                     id: item.iconId,
                     image: superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.imgSrc),
+                }
+                let v;
+                if (param.vars.hasOwnProperty(data.id)) {
+                    v = param.vars[data.id];
+                }
+                param.vars.iconParam = data;
+                value = await scopeFn(value);
+                let call, fn;
+                if (param.vars?.clickFn) {
+                    fn = param.vars.clickFn;
+                    delete param.vars.clickFn;
+                }
+                if (param.vars?.callFn) {
+                    call = param.vars.callFn;
+                    delete param.vars.callFn;
+                }
+                (v !== undefined) && (param.vars[data.id] = v);
+                delete param.vars.iconParam;
+                await _addIconAction({
+                    ...data,
                     trigger: fn ? async (text, hideIcon, event) => {
                         param.vars.text = text;
                         param.vars[item.iconId] = event.target;
                         param.vars.hideIcon = hideIcon;
+                        param.vars.trContent = findParent(event.target, 'tr-icon').querySelector('tr-content');
+                        param.vars.trDiv = param.vars.trContent.querySelector(':scope>div');
                         value = await fn(value)
                     } : null,
                     call: call,
                 }, item.replacement);
-                param.handlers = handlers;
                 return value;
             },
             param: {
@@ -348,11 +354,37 @@
             }
         },
         endAddIcon: superFetchHook.simpleValueHandlerHelper.endScope('endAddIcon', '#5a4027'),
-        startAddIconHandle: superFetchHook.simpleValueHandlerHelper.endScope('startAddIconHandle', '#8ca5ce'),
+        startAddIconHandle: {
+            fn(value, item, param) {
+                param.vars.clickFn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startAddIconHandle', 'endAddIconHandle'], item.currentVarName);
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('startAddIconHandle', '#8ca5ce')
+                }
+            }
+        },
         endAddIconHandle: superFetchHook.simpleValueHandlerHelper.endScope('endAddIconHandle', '#8ca5ce'),
 
-        startCustomizationHandle: superFetchHook.simpleValueHandlerHelper.endScope('startCustomizationHandle', 'rgba(98,90,90,0.78)'),
+        startCustomizationHandle: {
+            async fn(value, item, param) {
+                const customizeFn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startCustomizationHandle', 'endAddCustomizationHandle'], item.currentVarName);
+                item.iconId = param.vars.iconParam.id;
+                param.vars[item.iconId] = document.createElement('img');
+                value = await customizeFn(value);
+                param.vars.callFn = () => param.vars[item.iconId];
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('startCustomizationHandle', 'rgba(98,90,90,0.78)')
+                }
+            }
+        },
         endAddCustomizationHandle: superFetchHook.simpleValueHandlerHelper.endScope('endAddCustomizationHandle', 'rgba(98,90,90,0.78)'),
-    });
+    }, {scope: {fetch: '*'}});
 
 })();

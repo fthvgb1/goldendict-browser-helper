@@ -208,7 +208,7 @@
     "add-contextmenu": false,
     "programmerItems": [
       {
-        "codeBlockName": "",
+        "codeBlockName": "add icon left click convert text to base64 right click decode base64",
         "codeBlockType": "program",
         "replacement-items": [
           {
@@ -228,45 +228,26 @@
           {
             "handleType": "valueRelation",
             "searchValue": "setValue",
-            "leftValue": "t",
-            "variableType": "variable",
-            "rightValue": "tt.parentElement",
-            "handleThisValue": false
-          },
-          {
-            "handleType": "htmlFns",
-            "searchValue": "queryElement",
-            "leftValue": "c",
-            "elementVarName": "t",
-            "elementSelector": "tr-content",
-            "queryAll": false,
-            "anchorMode": false
-          },
-          {
-            "handleType": "valueRelation",
-            "searchValue": "setValue",
-            "leftValue": "c.style.display",
+            "leftValue": "trContent.style.display",
             "variableType": "string",
             "rightValue": "block",
             "handleThisValue": false
           },
           {
-            "handleType": "log",
-            "searchValue": "{$vars}"
+            "handleType": "valueRelation",
+            "searchValue": "handleThisValue",
+            "varName": "text"
           },
           {
-            "handleType": "htmlFns",
-            "searchValue": "queryElement",
-            "leftValue": "d",
-            "elementVarName": "t",
-            "elementSelector": "div",
-            "queryAll": false,
-            "anchorMode": false
+            "handleType": "codeRelate",
+            "searchValue": "btoa",
+            "replaceValue": "",
+            "pattern": ""
           },
           {
             "handleType": "valueRelation",
             "searchValue": "setValue",
-            "leftValue": "d.innerHTML",
+            "leftValue": "trDiv.innerHTML",
             "variableType": "variable",
             "rightValue": "text",
             "handleThisValue": false
@@ -285,7 +266,83 @@
             "handleType": "htmlFns",
             "searchValue": "stringToElement",
             "setElementVarName": "tt",
-            "elementIdentOuterHTML": "<button title=\"test\">⚽</button>"
+            "elementIdentOuterHTML": "<button title=\"左键 base64.encode 右键 base64.decode\">⚽</button>"
+          },
+          {
+            "handleType": "simpleEvent",
+            "searchValue": "addEvent",
+            "rangeHandle": "startEventScope",
+            "elementVarName": "tt",
+            "eventIdentifier": "",
+            "bindEventElement": "",
+            "event": "contextmenu",
+            "preventDefault": true,
+            "stopPropagation": false,
+            "stopImmediatePropagation": false,
+            "capture": false,
+            "once": false,
+            "passive": false
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "setValue",
+            "leftValue": "sel",
+            "variableType": "func",
+            "rightValue": "{$window.getSelection}",
+            "handleThisValue": false
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "setValue",
+            "leftValue": "sel",
+            "variableType": "func",
+            "rightValue": "sel.toString",
+            "handleThisValue": true
+          },
+          {
+            "handleType": "codeRelate",
+            "searchValue": "atob",
+            "replaceValue": "",
+            "pattern": ""
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "queryElement",
+            "leftValue": "tr",
+            "elementVarName": "tt",
+            "elementSelector": "ns@tr-content",
+            "queryAll": false,
+            "anchorMode": true
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "setValue",
+            "leftValue": "tr.style.display",
+            "variableType": "string",
+            "rightValue": "block",
+            "handleThisValue": false
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "queryElement",
+            "leftValue": "div",
+            "elementVarName": "tr",
+            "elementSelector": ".tr-content-div",
+            "queryAll": false,
+            "anchorMode": false
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "setValue",
+            "leftValue": "div.innerHTML",
+            "variableType": "variable",
+            "rightValue": "sel",
+            "handleThisValue": false
+          },
+          {
+            "handleType": "simpleEvent",
+            "searchValue": "endEventScope",
+            "rangeHandle": "endEventScope"
           },
           {
             "handleType": "iconAction",

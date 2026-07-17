@@ -109,6 +109,7 @@
             pageX, // 图标显示的 X 坐标
             pageY; // 图标显示的 Y 坐标
         // 初始化内容面板
+        contentList.classList.add('tr-content-div');
         content.appendChild(contentList);
 
         // 绑定图标拖动事件
