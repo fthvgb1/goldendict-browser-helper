@@ -58,6 +58,8 @@ ps3: 其实还可以弄些其它骚操作，反正其实就是调些 [快捷键]
 
 [addIconActionDemo.webm](https://github.com/user-attachments/assets/ccb90d13-d4a3-4486-b13f-d78e7f083e0d)
 
+demo中的json文件见 https://github.com/fthvgb1/goldendict-browser-helper/blob/master/example/promgram-example.json 
+
 #### 附 windows 后台运行（开机启动）
 
 在**goldenDictHelperServer.exe**目录下创建一个后缀为.vbs的文本文件，添加以下代码
