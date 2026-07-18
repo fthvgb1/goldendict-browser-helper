@@ -57,6 +57,12 @@ select and map wordhead, sentence, content of dictionary to Anki's fields.
 
 [![fetch_sentence.webm]()](https://github.com/user-attachments/assets/dbba4035-8615-4be8-b4e1-35564cfa7c64)
 
+#### simply program
+
+suffice to say watch the demo
+
+[![add icon action]()](https://raw.githubusercontent.com/fthvgb1/goldendict-browser-helper/refs/heads/master/example/addIconActionDemo.webm)
+
 #### Install script
 
 [click here](https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/goldenDict-browser-helper.user.js)

@@ -52,6 +52,12 @@ ps3: 其实还可以弄些其它骚操作，反正其实就是调些 [快捷键]
 
   [![fetch_sentence.webm]()](https://github.com/user-attachments/assets/dbba4035-8615-4be8-b4e1-35564cfa7c64)
 
+#### 简易编程
+
+无需多言，看demo
+
+[![add icon action]()](https://raw.githubusercontent.com/fthvgb1/goldendict-browser-helper/refs/heads/master/example/addIconActionDemo.webm)
+
 #### 附 windows 后台运行（开机启动）
 
 在**goldenDictHelperServer.exe**目录下创建一个后缀为.vbs的文本文件，添加以下代码
