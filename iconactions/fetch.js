@@ -536,11 +536,15 @@
         fetchReplaceVarsRex: /\{(.*?)}/g,
         reg: /\{.*}/,
         templateVarself: /\{\{(.*?)}}/g,
+        format2StringFn: {
+            string: v => v,
+            number: v => String(v)
+        },
         replaceVars2Format(vars, str, empty = false) {
             if (!str) {
                 return str;
             }
-            const fn = (v, name) => typeof v === 'string' ? v : name;
+            const fn = (v, name) => this.format2StringFn[typeof v]?.(v) ?? name;
             return str.replace(this.templateVarself, (substring, name) => {
                 if (!vars?.[name]) {
                     return substring
