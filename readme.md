@@ -56,7 +56,7 @@ ps3: 其实还可以弄些其它骚操作，反正其实就是调些 [快捷键]
 
 无需多言，看demo
 
-[![add icon action]()](https://raw.githubusercontent.com/fthvgb1/goldendict-browser-helper/refs/heads/master/example/addIconActionDemo.webm)
+[addIconActionDemo.webm](https://github.com/user-attachments/assets/ccb90d13-d4a3-4486-b13f-d78e7f083e0d)
 
 #### 附 windows 后台运行（开机启动）
 
