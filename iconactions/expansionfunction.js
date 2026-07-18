@@ -454,7 +454,7 @@
                 }
             }
         },
-    }, {scope: {fetch: {fetch: '*', handle: 'getAttribute,getComputedStyle'}}});
+    }, {scope: 'fetch'});
 
 
     superFetchHook.simpleValueHandlerHelper.addHandlers('ifBranch', {
@@ -612,7 +612,7 @@
             }
         },
     }, {
-        scope: {fetch: {fetch: '*'}},
+        scope: 'fetch',
         valueType: {
             string: String,
             number: Number,
@@ -714,7 +714,7 @@
             },
         },
     }, {
-        scope: {fetch: {fetch: '*'}},
+        scope: 'fetch',
         async req(data, path) {
             return new Promise((resolve) => {
                 request(data, path, res => {
@@ -1303,7 +1303,7 @@
             divide: (num1, num2) => num1 / num2,
             complementation: (num1, num2) => num1 % num2,
         },
-        scope: {fetch: {fetch: '*'}}
+        scope: 'fetch'
     });
 
 

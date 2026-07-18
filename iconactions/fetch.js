@@ -139,7 +139,10 @@
             select.dataset.fnSet = '';
             searchInput.replaceWith(select);
         },
-        buildOptions(handlers) {
+        buildOptions(handlers, from = '', name = '') {
+            if (from && name) {
+                return scopeMap?.[name]?.[from] ?? this.getHandlerOptions(handlers);
+            }
             return this.getHandlerOptions(handlers);
         },
         execute(item, value, handlers, param = {}) {
@@ -291,7 +294,7 @@
                 if (this.options?.[from]?.length > 0) {
                     return this.options[from];
                 }
-                return this.options[from] = simpleValueHandlerHelper.buildOptions(handlers, from);
+                return this.options[from] = simpleValueHandlerHelper.buildOptions(handlers, from, 'simpleValueHandlers');
             },
             renderHook(html, vars) {
                 simpleValueHandlerHelper.renderHooker(html, vars, this.getOptions(this.handlers, html.dataset.from));
@@ -1069,33 +1072,17 @@
                 if (this.opType?.[from]?.length > 0) {
                     return this.opType[from];
                 }
-                const [name, handle] = from.split('-');
+                const [name,] = from.split('-');
                 return this.opType[from] = iterateObjByKey(valueHandlers, (k, handler) => {
                     if (handler.scope) {
                         if ('string' === typeof handler.scope && name !== handler.scope) {
                             return false
                         }
                         if ('object' === typeof handler.scope) {
-                            if (!handler.scope?.[name]) {
-                                return false;
-                            }
-                            if ('fetch' === name && (!handler.scope[name]?.[handle]) && !handler.scope[name]) {
+                            if (!handler.scope[name]) {
                                 return false
                             }
-                        }
-                        const key = [k, from].join('.');
-                        if ('fetch' === name) { // second menu
-                            if (handler?.handlers && handler.scope[name]?.[handle]) {
-                                if ('*' === handler.scope[name][handle]) {
-                                    setMapVal(key, simpleValueHandlerHelper.getHandlerOptions(handler.handlers), scopeMap);
-                                } else {
-                                    const ops = handler.scope[name][handle].split(',').map(kk => {
-                                        return simpleValueHandlerHelper.handleOptions(kk, handler.handlers[kk])
-                                    });
-                                    setMapVal(key, ops, scopeMap);
-                                }
-                            }
-                        } else {
+                            const key = [k, from].join('.');
                             if ('*' === handler.scope[name]) {
                                 setMapVal(key, simpleValueHandlerHelper.getHandlerOptions(handler.handlers), scopeMap);
                             } else {

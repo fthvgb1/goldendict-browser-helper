@@ -211,7 +211,7 @@
                 },
             }
         }
-    }, {scope: {fetch: {fetch: '*'}}});
+    }, {scope: 'fetch'});
 
 
     superFetchHook.hookLang({
@@ -424,7 +424,7 @@
                 }
             }
         },
-    }, {scope: {fetch: {fetch: '*'}}});
+    }, {scope: 'fetch'});
 
     superFetchHook.hookLang({
         'addMenu': '添加菜单',
@@ -576,7 +576,7 @@
                 }
             }
         }
-    }, {scope: {fetch: {fetch: '*'}}});
+    }, {scope: 'fetch'});
 
     superFetchHook.hookLang({
         foreach: '循环遍历',
@@ -832,7 +832,7 @@
                 }
             }
         },
-    }, {scope: {fetch: {fetch: '*'}}});
+    }, {scope: 'fetch'});
 
     superFetchHook.hookLang({
         'simpleEvent': '事件处理',
@@ -994,7 +994,7 @@
             mouseEvent: ['click', 'mousedown', 'mouseup', 'dblclick', 'contextmenu', 'mouseenter', 'mouseout',
                 'mouseleave', 'mouseover']
         },
-        scope: {fetch: {fetch: '*'}}
+        scope: {fetch: '*'}
     });
 
     PushHookAnkiHtml(html => {
