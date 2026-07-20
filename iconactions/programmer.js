@@ -339,11 +339,11 @@
                     name: {
                         title: superFetchHook.lang('iconHandleDesc'),
                         type: 'text',
-                        width: '4.3vw',
+                        width: '4.2vw',
                     },
                     iconId: {
                         type: 'text',
-                        width: '3.4vw',
+                        width: '3.3vw',
                     },
                     replacement: {
                         type: 'checkbox',
