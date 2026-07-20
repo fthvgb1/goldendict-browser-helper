@@ -132,6 +132,9 @@
         cloneTo: '克隆后赋值给',
         handleThisValue: '后续没有指定变量名的操作都作用到该变量',
         'handleThisValue-desc': '后续没有指定变量名的操作都作用到该变量',
+        regPattern: '正则模式',
+        startsWith: '以某字符串为开头',
+        endsWith: '以某字符串为结尾',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('htmlFns', {
         stringToElement: {
@@ -618,13 +621,15 @@
             number: Number,
         },
         noType: new Set(['include', 'strRegexTest', 'isTrue', 'isFalse',
-            'completeTrue', 'completeFalse', 'and', 'or']),
+            'completeTrue', 'completeFalse', 'and', 'or', 'startsWith', 'endsWith']),
         compareFn: {
             include: (v1, v2) => v1?.includes ? v1.includes(v2) : v1.hasOwnProperty(v2),
             strRegexTest: (v1, v2, item) => {
                 v2 = new RegExp(v2, item?.regPattern ?? '');
                 return v2.test(v1)
             },
+            startsWith: (v1, v2) => v1.startsWith(v2),
+            endsWith: (v1, v2) => v1.endsWith(v2),
             and: (v1, v2) => v1 && v2,
             or: (v1, v2) => v1 || v2,
             eq: (v1, v2) => v1 === v2,

@@ -438,6 +438,9 @@
         'requestHeaders': '请求头',
         'saveAs': '弹出保存路径提示框',
         'download': '下载',
+        getResource: '获取资源的纯文本或base64',
+        resourceURL: '默认获取纯文本，勾选获取base64',
+        resourcesVariableName: '@resource标记的变量名',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('Tampermonkey', {
         addMenu: {
@@ -572,6 +575,32 @@
                     },
                     saveAs: {
                         type: 'checkbox',
+                    }
+                }
+            }
+        },
+        getResource: {
+            fn(value, item, param) {
+                const name = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.rightValue);
+                const val = item.resourceURL ? GM_getResourceURL(name) : GM_getResourceText(name);
+                const o = superFetchHook.valueHandlers.valueRelation.handlers.setValue.parseVal(item, param);
+                o.set(val, o.getLeftName());
+                return param.vars[item.currentVarName];
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    leftValue: {
+                        type: 'text',
+                        width: '5vw'
+                    },
+                    resourceURL: {
+                        type: 'checkbox',
+                    },
+                    rightValue: {
+                        title: lang('resourcesVariableName'),
+                        type: 'text',
+                        width: '6vw'
                     }
                 }
             }
