@@ -1216,9 +1216,6 @@
                     num1: {
                         type: 'number',
                         width: '3vw',
-                        attrs: {
-                            className: 'num1 noTextarea show'
-                        },
                         hook(el, v, cur = true) {
                             if (v === '' && !cur) {
                                 el.type = 'number';
@@ -1234,6 +1231,7 @@
                                     el.value = 0;
                                 }
                             }
+                            el.classList.add('noTextarea');
                         }
                     },
                     operator: {
@@ -1248,9 +1246,6 @@
                     operatedNumber: {
                         type: 'number',
                         width: '3vw',
-                        attrs: {
-                            className: 'operatedNumber noTextarea show'
-                        },
                         hook(el, v) {
                             superFetchHook.valueHandlers.simpleCalculator.handlers.calculator.param.fields.num1.hook(el, v, false);
                         }

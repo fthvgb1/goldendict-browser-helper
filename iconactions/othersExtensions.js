@@ -598,12 +598,15 @@
     superFetchHook.simpleValueHandlerHelper.addHandlers('foreach', {
         for: {
             async fn(value, item, param) {
-                const iterator = item.useVariable ? superFetchHook.fetchActionHelper.getVar(item.iterator, param, true) : item.iterator;
+                const parseNum = v => 'string' === typeof v ? Number(superFetchHook.fetchActionHelper.getVar(v, param, false, v)) : v;
+                const iterator = parseNum(item.iterator);
                 const fn = superFetchHook.valueHandlers.foreach.handlers.for.continueHook(param, ['for', 'endfor'], item.currentVarName);
                 if (!fn) {
                     return value
                 }
-                for (let i = item.start; superFetchHook.valueHandlers.foreach.handlers.for.operate[item.handleTypeOperator](i, iterator); i += item.addNumber) {
+                const start = parseNum(item.start);
+                const addNum = parseNum(item.addNumber);
+                for (let i = start; superFetchHook.valueHandlers.foreach.handlers.for.operate[item.handleTypeOperator](i, iterator); i += addNum) {
                     param.vars[item.iteratorVariable] = i;
                     value = await fn(value);
                     if (param?.breakforof) {
@@ -652,10 +655,14 @@
                         type: 'text',
                         width: '5vw',
                     },
+                    eq: '<span class="show">=</span>',
                     start: {
                         title: lang('startNumber'),
                         type: 'number',
                         width: '4vw',
+                        hook(el, v) {
+                            superFetchHook.valueHandlers.simpleCalculator.handlers.calculator.param.fields.num1.hook(el, v, false);
+                        }
                     },
                     handleTypeOperator: {
                         type: 'select',
@@ -666,21 +673,19 @@
                     },
                     iterator: {
                         title: lang('iteratorNumber'),
-                        type: 'text',
+                        type: 'number',
                         width: '5vw',
-                    },
-                    useVariable: {
-                        type: 'checkbox',
-                        afterInsertDoc(el, v) {
-                            el.previousElementSibling.type = v ? 'text' : 'number';
-                        },
-                        attrs: {
-                            onchange: ev => ev.target.previousElementSibling.type = ev.target.checked ? 'text' : 'number'
+                        hook(el, v) {
+                            superFetchHook.valueHandlers.simpleCalculator.handlers.calculator.param.fields.num1.hook(el, v, false);
                         }
                     },
+                    vars: (pre, vars, html) => (pre.insertAdjacentHTML('afterend', `<span class="show">${vars.iteratorVariable ?? ''}=${vars.iteratorVariable ?? ''}+</span>`), pre.nextElementSibling),
                     addNumber: {
                         type: 'number',
                         width: '4vw',
+                        hook(el, v) {
+                            superFetchHook.valueHandlers.simpleCalculator.handlers.calculator.param.fields.num1.hook(el, v, false);
+                        }
                     },
                     rangeHandle: {
                         type: 'text',
