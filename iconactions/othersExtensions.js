@@ -266,6 +266,7 @@
                     multiple: true,
                     allowClear: true,
                     tags: true,
+                    dropdownAutoWidth: true
                 });
                 select2.on('select2:select', evt => {
                     const val = select2.val(), name = evt.params.data.id;
@@ -968,6 +969,7 @@
                                 allowClear: true,
                                 tags: true,
                                 width: '13vw',
+                                dropdownAutoWidth: true
                             });
                             return select.nextElementSibling
                         }

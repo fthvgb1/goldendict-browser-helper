@@ -1138,6 +1138,7 @@
                 document.querySelectorAll(this.changedEleSelector).forEach(el => {
                     let w = parseFloat(getComputedStyle(el).width.replace('px', ''));
                     w += offset;
+                    el.matches('.swal2-popup') && (w += 3);
                     el.style.width = `${w}px`;
                     el.style.maxWidth = '100%';
                 });

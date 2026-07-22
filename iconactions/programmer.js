@@ -213,6 +213,7 @@
                     allowClear: true,
                     tags: true,
                     width: '13vw',
+                    dropdownAutoWidth: true
                 });
             }
             (ev || vars?.['$clone'] || window?._importItem) ? fn() : this.afterRender.push(fn);
@@ -232,7 +233,7 @@
                 },
                 parameters: {
                     type: 'text',
-                    width: '5vw'
+                    width: '4vw'
                 },
                 async: {
                     type: 'checkbox'
@@ -386,5 +387,165 @@
         },
         endAddCustomizationHandle: superFetchHook.simpleValueHandlerHelper.endScope('endAddCustomizationHandle', 'rgba(98,90,90,0.78)'),
     }, {scope: {fetch: '*'}});
+
+
+    superFetchHook.hookLang({
+        others: '其它杂项',
+        tts: '文本转语音',
+        voice: '声音',
+        speed: '速度',
+        selectVoice: '选择一个声音',
+        ttsContent: '文本,可使用{变量}',
+        lemmatizer: '查找单词的原型或词性',
+        getLang: '获取文本所属语种',
+        readTextFile: '读取一个文本文件',
+        'readTextFile-desc': '需先让浏览器处于激活状态（随便点击下网页空白区域）'
+    });
+    superFetchHook.simpleValueHandlerHelper.addHandlers('others', {
+        tts: {
+            fn(value, item, param) {
+                const text = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.content);
+                if (!text) {
+                    return value;
+                }
+                const voices = speechSynthesis.getVoices();
+                const i = voices.findIndex(v => v.name === item.voice);
+                const voice = voices[i];
+                const utterance = new SpeechSynthesisUtterance();
+                utterance.voice = voice;
+                utterance.rate = item.speed;
+                utterance.text = text;
+                speechSynthesis.speak(utterance);
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    content: {
+                        type: 'text',
+                        width: '10vw',
+                        title: superFetchHook.lang('ttsContent'),
+                        attrs: {
+                            className: 'content show needStretch'
+                        }
+                    },
+                    speed: {
+                        type: 'number',
+                        width: '5vw',
+                        hook(el, v) {
+                            !v && (el.value = 1);
+                            el.step = '0.01';
+                            el.min = '0.01';
+                            el.max = '5';
+                        }
+                    },
+                    voice: {
+                        type: 'select',
+                        afterInsertDoc(el, value) {
+                            const select2 = $(el);
+                            const data = speechSynthesis.getVoices().map(v => (
+                                {
+                                    text: `${v.lang} ${v.name}${v.localService ? '--localService' : ''}`,
+                                    id: v.name,
+                                    selected: value === v.name
+                                }
+                            ));
+                            data.unshift({id: '', text: '', selected: false});
+                            select2.select2({
+                                placeholder: superFetchHook.lang('selectVoice'),
+                                data: data,
+                                allowClear: true,
+                                tags: true,
+                                width: '26vw',
+                                dropdownAutoWidth: true
+                            });
+                            return el.nextElementSibling
+                        }
+                    },
+                }
+            }
+        },
+        lemmatizer: {
+            fn(value, item, param) {
+                const text = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.text);
+                const lang = lemmatizer.only_lemmas_withPos(text);
+                const o = superFetchHook.valueHandlers.valueRelation.handlers.setValue.parseVal(item, param);
+                o.set(lang);
+                return param.vars[item.currentVarName];
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    leftValue: {
+                        type: 'text',
+                        width: '4vw',
+                    },
+                    text: {
+                        title: superFetchHook.lang('ttsContent'),
+                        type: 'text',
+                        width: '6vw'
+                    }
+                }
+            }
+        },
+        getLang: {
+            fn(value, item, param) {
+                const text = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.text);
+                const lang = eld.detect(text).language;
+                const o = superFetchHook.valueHandlers.valueRelation.handlers.setValue.parseVal(item, param);
+                o.set(lang);
+                return param.vars[item.currentVarName];
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    leftValue: {
+                        type: 'text',
+                        width: '4vw',
+                    },
+                    text: {
+                        title: superFetchHook.lang('ttsContent'),
+                        type: 'text',
+                        width: '6vw'
+                    }
+                }
+            }
+        },
+        readTextFile: {
+            async fn(value, item, param) {
+                const o = superFetchHook.valueHandlers.valueRelation.handlers.setValue.parseVal(item, param);
+                let input = document.querySelector('#__hiddenFileInput');
+                if (!input) {
+                    input = document.createElement('input');
+                    input.id = '__hiddenFileInput';
+                    input.type = 'file';
+                    input.style.display = 'none';
+                    document.body.appendChild(input);
+                }
+                const p = () => new Promise(resolve => {
+                    input.onchange = async () => {
+                        const file = input.files[0];
+                        const content = await file.text();
+                        resolve(content);
+                        input.value = null;
+                    };
+                    input.dispatchEvent(new MouseEvent('click'))
+                });
+                const v = await p();
+                input.remove();
+                o.set(v);
+                return param.vars[item.currentVarName];
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    leftValue: {
+                        type: 'text',
+                        width: '6vw',
+                    },
+                }
+            }
+        }
+    }, {scope: 'fetch'});
 
 })();
