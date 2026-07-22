@@ -10,7 +10,7 @@
         'valueRelation': '值相关',
         'getVal': '取值',
         'valueExpression': '变量名, format:(name,name|g,name|p)',
-        'setValue': '设置值',
+        'setValue': '设置值,当设置模式为变量时，且右值为对象或数组，左值可使用name1,name2,...解构右值',
         'getValue': '获取值',
         'leftValue': '左值名',
         'rightValue': '右值名',
@@ -746,7 +746,12 @@
             async fn(_, item, param) {
                 const v = await superFetchHook.valueHandlers.valueRelation.buildValue(item, param);
                 const o = superFetchHook.valueHandlers.valueRelation.handlers.setValue.parseVal(item, param);
-                o.set(v);
+                if (item.variableType === 'variable' && item.leftValue.includes(',')) {
+                    const fn = Array.isArray(v) ? (name, i) => param.vars[name] = v[i] : name => param.vars[name] = v[name];
+                    item.leftValue.split(',').forEach(fn);
+                } else {
+                    o.set(v);
+                }
                 if (item.handleThisValue) {
                     item.currentVarName = o.getLeftName();
                 }

@@ -399,7 +399,11 @@
         lemmatizer: '查找单词的原型或词性',
         getLang: '获取文本所属语种',
         readTextFile: '读取一个文本文件',
-        'readTextFile-desc': '需先让浏览器处于激活状态（随便点击下网页空白区域）'
+        'readTextFile-desc': '需先让浏览器处于激活状态（随便点击下网页空白区域）',
+        openAsBinary: '以进制方式打开',
+        downAsFile: '下载变量的值为文件',
+        filename: '文件名',
+        mimeType: 'mimeType 默认为 text/plain'
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('others', {
         tts: {
@@ -514,25 +518,18 @@
         readTextFile: {
             async fn(value, item, param) {
                 const o = superFetchHook.valueHandlers.valueRelation.handlers.setValue.parseVal(item, param);
-                let input = document.querySelector('#__hiddenFileInput');
-                if (!input) {
-                    input = document.createElement('input');
-                    input.id = '__hiddenFileInput';
-                    input.type = 'file';
-                    input.style.display = 'none';
-                    document.body.appendChild(input);
-                }
                 const p = () => new Promise(resolve => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
                     input.onchange = async () => {
                         const file = input.files[0];
-                        const content = await file.text();
+                        const content = item.openAsBinary ? await file.arrayBuffer() : await file.text();
                         resolve(content);
                         input.value = null;
                     };
-                    input.dispatchEvent(new MouseEvent('click'))
+                    input.dispatchEvent(new MouseEvent('click'));
                 });
                 const v = await p();
-                input.remove();
                 o.set(v);
                 return param.vars[item.currentVarName];
             },
@@ -542,6 +539,41 @@
                     leftValue: {
                         type: 'text',
                         width: '6vw',
+                    },
+                    openAsBinary: {
+                        type: 'checkbox'
+                    }
+                }
+            }
+        },
+        downAsFile: {
+            fn(value, item, param) {
+                const v = superFetchHook.fetchActionHelper.getVar(item.leftValue, param, true);
+                const type = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.mimeType, true);
+                const blob = new Blob([v], {type: type || 'text/plain'});
+                const a = document.createElement('a');
+                const objectUrl = URL.createObjectURL(blob);
+                a.href = objectUrl;
+                a.download = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.filename);
+                a.click();
+                URL.revokeObjectURL(objectUrl);
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    leftValue: {
+                        title: superFetchHook.lang('varName'),
+                        type: 'text',
+                        width: '3vw',
+                    },
+                    mimeType: {
+                        type: 'text',
+                        width: '4vw',
+                    },
+                    filename: {
+                        type: 'text',
+                        width: '4vw',
                     },
                 }
             }
