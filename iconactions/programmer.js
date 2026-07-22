@@ -398,12 +398,14 @@
         ttsContent: '文本,可使用{变量}',
         lemmatizer: '查找单词的原型或词性',
         getLang: '获取文本所属语种',
-        readTextFile: '读取一个文本文件',
-        'readTextFile-desc': '需先让浏览器处于激活状态（随便点击下网页空白区域）',
+        readFile: '读取一个文件',
+        'readFile-desc': '需先让浏览器处于激活状态（随便点击下网页任一区域）',
+        fileContent: '将文件内容赋值给该变量',
+        fileInfo: '如果该值不为空，就将文件基本信息赋值给该变量',
         openAsBinary: '以进制方式打开',
         downAsFile: '下载变量的值为文件',
         filename: '文件名',
-        mimeType: 'mimeType 默认为 text/plain'
+        mimeType: 'mimeType媒体类型，默认为纯文本 即: text/plain'
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('others', {
         tts: {
@@ -515,7 +517,7 @@
                 }
             }
         },
-        readTextFile: {
+        readFile: {
             async fn(value, item, param) {
                 const o = superFetchHook.valueHandlers.valueRelation.handlers.setValue.parseVal(item, param);
                 const p = () => new Promise(resolve => {
@@ -523,6 +525,13 @@
                     input.type = 'file';
                     input.onchange = async () => {
                         const file = input.files[0];
+                        item.fileInfo && o.set({
+                            type: file.type,
+                            name: file.name,
+                            size: file.size,
+                            lastModified: file.lastModified,
+                            webkitRelativePath: file.webkitRelativePath,
+                        }, item.fileInfo);
                         const content = item.openAsBinary ? await file.arrayBuffer() : await file.text();
                         resolve(content);
                         input.value = null;
@@ -537,8 +546,13 @@
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
                     leftValue: {
+                        title: superFetchHook.lang('fileContent'),
                         type: 'text',
-                        width: '6vw',
+                        width: '5vw',
+                    },
+                    fileInfo: {
+                        type: 'text',
+                        width: '5vw'
                     },
                     openAsBinary: {
                         type: 'checkbox'
