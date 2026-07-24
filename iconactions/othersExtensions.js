@@ -6,7 +6,6 @@
     });
     const lang = superFetchHook.lang;
 
-
     superFetchHook.valueHandlers.log = {
         reg: /\{(.*?)}/g,
         handle(item, value, eleParam) {
@@ -1080,6 +1079,15 @@
         searchModeDesc: '该搜索模式的说明',
         addAnkiStyle: '添加anki制卡对话框样式',
         cssStyle: '样式内容',
+        hookButton: '添加或者修改anki字段操作按钮',
+        endHookButton: '结束添加或者修改anki字段操作按钮作用域',
+        ankiField: 'anki字段名，不填表示所有字段',
+        buttonHTML: '按钮的HTML,class注意必须包含且与前className表单值相同',
+        hookRichText: '默认将按钮表示添加到纯文本字段，勾选表示添加到富文本字段',
+        addFieldClickFn: '添加按钮左键单击事件',
+        endFieldClickFn: '结束添加按钮左键单击事件作用域',
+        addFieldContextMenuFn: '添加按钮右键点击事件',
+        endFieldContextMenuFn: '结束添加按钮右键点击事件作用域'
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('makeAnkiCard', {
         openDiag: {
@@ -1188,6 +1196,91 @@
                 }
             }
         },
+        hookButton: {
+            async fn(value, item, param) {
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['hookButton', 'endHookButton'], item.currentVarName);
+                value = await fn(value);
+                if (!item.className) {
+                    return value;
+                }
+                const click = param.vars.clickFn;
+                delete param.vars.clickFn;
+                const buildFn = async (eventName, call, fn, ev) => {
+                    param.vars[`${eventName}Evt`] = ev;
+                    param.vars[`${eventName}Fn`] = fn || (ev => ev);
+                    param.vars.fieldEle = findParent(ev.target, '.form-item').querySelector('.field-value,.spell-content');
+                    if (!item.hookRichText) {
+                        param.vars.value = param.vars.fieldEle.value;
+                    }
+                    value = await call(value);
+                };
+                const clickFn = async (ev, fn) => {
+                    await buildFn('click', click, fn, ev);
+                };
+                let contextMenuFn = null;
+                if (param.vars?.contextMenuFn) {
+                    const contextMenu = param.vars.contextMenuFn;
+                    contextMenuFn = async (ev, fn) => {
+                        ev.preventDefault();
+                        await buildFn('contextMenu', contextMenu, fn, ev);
+                    };
+                    delete param.vars.contextMenuFn;
+                }
+                (item.hookRichText ? PushExpandAnkiRichButton : PushExpandAnkiInputButton)(item.className, item.button, clickFn, item.field, contextMenuFn)
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    className: {
+                        type: 'text',
+                        width: '3.5vw',
+                    },
+                    field: {
+                        title: lang('ankiField'),
+                        type: 'text',
+                        width: '3.5vw',
+                    },
+                    button: {
+                        title: lang('buttonHTML'),
+                        type: 'text',
+                        width: '3.5vw',
+                    },
+                    hookRichText: {
+                        type: 'checkbox'
+                    },
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('hookButton', '#d9b187')
+                }
+            },
+
+        },
+        endHookButton: superFetchHook.simpleValueHandlerHelper.endScope('endHookButton', '#d9b187'),
+        addFieldClickFn: {
+            fn(value, item, param) {
+                param.vars.clickFn = superFetchHook.fetchActionHelper.extractHandlers(param, ['addFieldClickFn', 'endFieldClickFn'], item.currentVarName);
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('addFieldClickFn', '#e8aaff')
+                }
+            }
+        },
+        endFieldClickFn: superFetchHook.simpleValueHandlerHelper.endScope('endFieldClickFn', '#e8aaff'),
+        addFieldContextMenuFn: {
+            fn(value, item, param) {
+                param.vars.contextMenuFn = superFetchHook.fetchActionHelper.extractHandlers(param, ['addFieldContextMenuFn', 'endFieldContextMenuFn'], item.currentVarName);
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('addFieldContextMenuFn', '#6d6ae3')
+                }
+            }
+        },
+        endFieldContextMenuFn: superFetchHook.simpleValueHandlerHelper.endScope('endFieldContextMenuFn', '#6d6ae3'),
     }, {scope: {fetch: '*'},});
 
     PushHookAnkiHtml(html => {

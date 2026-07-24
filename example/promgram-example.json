@@ -357,5 +357,88 @@
         ]
       }
     ]
+  },
+  {
+    "fetch-name": "addUpperOrLowerCaseButton",
+    "operate-type": "programmer",
+    "url-scope": ".",
+    "fetch-active": true,
+    "add-contextmenu": false,
+    "programmerItems": [
+      {
+        "codeBlockName": "left click lower case right click upper case",
+        "codeBlockType": "program",
+        "replacement-items": [
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "hookButton",
+            "className": "upperOrLowerCase",
+            "field": "",
+            "button": "<button class=\"upperOrLowerCase\" title=\"左键转为小写，右键转为大写\">🔡</button>",
+            "hookRichText": false,
+            "rangeHandle": "hookButton"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "addFieldClickFn",
+            "rangeHandle": "addFieldClickFn"
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "handleThisValue",
+            "varName": "value"
+          },
+          {
+            "handleType": "simpleValueHandlers",
+            "searchValue": "toLowerCase"
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "setValue",
+            "leftValue": "fieldEle.value",
+            "variableType": "variable",
+            "rightValue": "value",
+            "handleThisValue": false
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "endFieldClickFn",
+            "rangeHandle": "endFieldClickFn"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "addFieldContextMenuFn",
+            "rangeHandle": "addFieldContextMenuFn"
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "handleThisValue",
+            "varName": "value"
+          },
+          {
+            "handleType": "simpleValueHandlers",
+            "searchValue": "toUpperCase"
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "setValue",
+            "leftValue": "fieldEle.value",
+            "variableType": "variable",
+            "rightValue": "value",
+            "handleThisValue": false
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "endFieldContextMenuFn",
+            "rangeHandle": "endFieldContextMenuFn"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "endHookButton",
+            "rangeHandle": "endHookButton"
+          }
+        ]
+      }
+    ]
   }
 ]

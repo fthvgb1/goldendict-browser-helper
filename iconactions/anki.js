@@ -283,28 +283,6 @@
             focusEle(b);
             b.parentElement.scrollBy({top: b.offsetTop})
         },
-        'upperlowercase': (ev) => {
-            const input = ev.target.parentElement.previousElementSibling;
-            if (input.value === '') {
-                return
-            }
-            const stats = input.dataset.stats;
-            switch (stats) {
-                case 'upper':
-                    input.value = input.dataset.value;
-                    input.dataset.stats = '';
-                    break
-                case 'lower':
-                    input.value = input.value.toUpperCase();
-                    input.dataset.stats = 'upper';
-                    break
-                default:
-                    input.dataset.value = input.value;
-                    input.value = input.value.toLowerCase();
-                    input.dataset.stats = 'lower';
-                    break
-            }
-        },
         'lemmatizer': (ev) => {
             const inputs = ev.target.parentElement.previousElementSibling;
             const words = inputs.value.split(' ');
@@ -527,7 +505,6 @@
                 <input type="checkbox" title="切换为textarea" ${useTextarea ? 'checked' : ''} name="useTextarea" class="useTextarea">
                 <button class="lemmatizer" title="lemmatize查找单词原型">📟</button>
                 <button class="anki-search" title="search anki 左健搜索 中键复制搜索表达式 右键选择搜索模式">🔍</button>
-                <button class="upperlowercase" title="大小写转换">🔡</button>
                 ${inputButtons.join('\n')} ${inputButtonFields[field] ? inputButtonFields[field].join('\n') : ''}
 
             </div>
