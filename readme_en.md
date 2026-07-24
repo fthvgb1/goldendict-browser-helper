@@ -63,6 +63,8 @@ suffice to say watch the demo
 
 [addIconActionDemo.webm](https://github.com/user-attachments/assets/ccb90d13-d4a3-4486-b13f-d78e7f083e0d)
 
+[add an upper lower case button demo.webm](https://github.com/user-attachments/assets/10cd9ba3-ebb5-4a96-83ac-c103373b2042)
+
 demo json file see: https://github.com/fthvgb1/goldendict-browser-helper/blob/master/example/promgram-example.json
 
 #### Install script
