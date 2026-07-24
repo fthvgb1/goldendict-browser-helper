@@ -405,7 +405,12 @@
         openAsBinary: '以进制方式打开',
         downAsFile: '下载变量的值为文件',
         filename: '文件名',
-        mimeType: 'mimeType媒体类型，默认为纯文本 即: text/plain'
+        mimeType: 'mimeType媒体类型，默认为纯文本 即: text/plain',
+        command: '指令',
+        showUI: 'showUI',
+        valueArgument: '参数，可使用{变量}',
+        needResult: '需要执行结果',
+        execCommand: 'execCommand执行指令',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('others', {
         tts: {
@@ -589,6 +594,33 @@
                         type: 'text',
                         width: '4vw',
                     },
+                }
+            }
+        },
+        execCommand: {
+            fn(value, item, param) {
+                const v = superFetchHook.fetchActionHelper.getVar(item.value, param, false, '');
+                const r = document.execCommand(item.command, item.showUI, v || '');
+                return item.needResult ? r : value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    command: {
+                        type: 'text',
+                        width: '5vw',
+                    },
+                    showUI: {
+                        type: 'checkbox'
+                    },
+                    value: {
+                        title: superFetchHook.lang('valueArgument'),
+                        type: 'text',
+                        width: '5vw'
+                    },
+                    needResult: {
+                        type: 'checkbox',
+                    }
                 }
             }
         }
