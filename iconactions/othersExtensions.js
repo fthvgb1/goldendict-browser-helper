@@ -636,11 +636,10 @@
                 }
                 const start = parseNum(item.start);
                 const addNum = parseNum(item.addNumber);
-                const vars = param.vars;
                 for (let i = start; superFetchHook.valueHandlers.foreach.handlers.for.operate[item.handleTypeOperator](i, iterator); i += addNum) {
-                    const variables = item.useSeparateVars ? {...vars} : vars;
-                    variables[item.iteratorVariable] = i;
-                    value = await fn(value, variables);
+                    const p = item.useSeparateVars ? {...param, vars: {...param.vars}} : param;
+                    p.vars[item.iteratorVariable] = i;
+                    value = await fn(value, p, item.useSeparateVars);
                     if (param?.breakforof) {
                         delete param.breakforof;
                         delete param.break;
@@ -650,7 +649,6 @@
                         break;
                     }
                 }
-                item.useSeparateVars && (param.vars = vars);
                 return value;
             },
             continueHook(param, op, name) {
@@ -660,19 +658,18 @@
                 }
                 const handlers = h[0];
                 const handlerss = param.handlers;
-                return async (value, vars = param.vars) => {
-                    param.handlers = handlers;
-                    if (param?.continue) {
-                        delete param.continue;
-                        delete param.break;
+                return async (value, p = param, separate = false) => {
+                    p.handlers = separate ? [...handlers] : handlers;
+                    if (p?.continue) {
+                        delete p.continue;
+                        delete p.break;
                     }
-                    param.vars = vars;
-                    value = await superFetchHook.fetchActionHelper.handItems(handlers, value, param, name);
-                    if (!param?.breakforof && param?.break) {
-                        param.handlers = [];
+                    value = await superFetchHook.fetchActionHelper.handItems(handlers, value, p, name);
+                    if (!p?.breakforof && p?.break) {
+                        p.handlers = [];
                         return value;
                     }
-                    param.handlers = handlerss;
+                    p.handlers = separate ? [...handlers] : handlerss;
                     return value;
                 }
             },
@@ -744,11 +741,10 @@
                 if (!fn) {
                     return value
                 }
-                const vars = param.vars;
                 for (const iteratorElement of iterator) {
-                    const variables = item.useSeparateVars ? {...vars} : vars;
-                    variables[item.iteratorElement] = iteratorElement;
-                    value = await fn(value, variables);
+                    const p = item.useSeparateVars ? {...param, vars: {...param.vars}} : param;
+                    p.vars[item.iteratorElement] = iteratorElement;
+                    value = await fn(value, p, item.useSeparateVars);
                     if (param?.breakforof) {
                         delete param.breakforof;
                         delete param.break;
@@ -758,7 +754,6 @@
                         break;
                     }
                 }
-                item.useSeparateVars && (param.vars = vars);
                 return value;
             },
             param: {
@@ -787,10 +782,9 @@
                 if (!fn) {
                     return value
                 }
-                const vars = param.vars;
                 while (true) {
-                    const variables = item.useSeparateVars ? {...vars} : vars;
-                    value = await fn(value, variables);
+                    const p = item.useSeparateVars ? {...param, vars: {...param.vars}} : param;
+                    value = await fn(value, p, item.useSeparateVars);
                     if (param?.breakforof) {
                         delete param.breakforof;
                         delete param.break;
@@ -800,7 +794,6 @@
                         break;
                     }
                 }
-                item.useSeparateVars && (param.vars = vars);
                 return value;
             },
             param: {
@@ -821,12 +814,11 @@
                     return value
                 }
                 const o = superFetchHook.fetchActionHelper.getVar(item.object, param, true);
-                const vars = param.vars;
                 for (const [k, v] of Object.entries(o)) {
-                    const variables = item.useSeparateVars ? {...vars} : vars;
-                    variables[item.key] = k;
-                    variables[item.value] = v;
-                    value = await fn(value, variables);
+                    const p = item.useSeparateVars ? {...param, vars: {...param.vars}} : param;
+                    p.vars[item.key] = k;
+                    p.vars[item.value] = v;
+                    value = await fn(value, p, item.useSeparateVars);
                     if (param?.breakforof) {
                         delete param.breakforof;
                         delete param.break;
@@ -836,7 +828,6 @@
                         break;
                     }
                 }
-                item.useSeparateVars && (param.vars = vars);
                 return value;
             },
             param: {
