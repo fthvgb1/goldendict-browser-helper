@@ -613,6 +613,7 @@
         iteratorElement: '循环时子变量名',
         breakforof: 'break',
         iteratorVariable: '循环时使用的变量名',
+        beIteratedVar: '被循环的变量',
         startNumber: '开始的数',
         handleTypeOperator: '循环时比较操作',
         iteratorNumber: '要循环的数或变量名',
@@ -635,9 +636,11 @@
                 }
                 const start = parseNum(item.start);
                 const addNum = parseNum(item.addNumber);
+                const vars = param.vars;
                 for (let i = start; superFetchHook.valueHandlers.foreach.handlers.for.operate[item.handleTypeOperator](i, iterator); i += addNum) {
-                    param.vars[item.iteratorVariable] = i;
-                    value = await fn(value);
+                    const variables = item.useSeparateVars ? {...vars} : vars;
+                    variables[item.iteratorVariable] = i;
+                    value = await fn(value, variables);
                     if (param?.breakforof) {
                         delete param.breakforof;
                         delete param.break;
@@ -647,6 +650,7 @@
                         break;
                     }
                 }
+                item.useSeparateVars && (param.vars = vars);
                 return value;
             },
             continueHook(param, op, name) {
@@ -656,12 +660,13 @@
                 }
                 const handlers = h[0];
                 const handlerss = param.handlers;
-                return async value => {
+                return async (value, vars = param.vars) => {
                     param.handlers = handlers;
                     if (param?.continue) {
                         delete param.continue;
                         delete param.break;
                     }
+                    param.vars = vars;
                     value = await superFetchHook.fetchActionHelper.handItems(handlers, value, param, name);
                     if (!param?.breakforof && param?.break) {
                         param.handlers = [];
@@ -716,6 +721,9 @@
                             superFetchHook.valueHandlers.simpleCalculator.handlers.calculator.param.fields.num1.hook(el, v, false);
                         }
                     },
+                    useSeparateVars: {
+                        type: 'checkbox',
+                    },
                     rangeHandle: {
                         type: 'text',
                         attrs: {
@@ -731,14 +739,16 @@
 
         forof: {
             async fn(value, item, param) {
-                const iterator = superFetchHook.getVariable(param.vars, item.iterator);
+                const iterator = superFetchHook.fetchActionHelper.getVar(item.iterator, param, true);
                 const fn = superFetchHook.valueHandlers.foreach.handlers.for.continueHook(param, ['forof', 'endforof'], item.currentVarName);
                 if (!fn) {
                     return value
                 }
+                const vars = param.vars;
                 for (const iteratorElement of iterator) {
-                    param.vars[item.iteratorElement] = iteratorElement;
-                    value = await fn(value);
+                    const variables = item.useSeparateVars ? {...vars} : vars;
+                    variables[item.iteratorElement] = iteratorElement;
+                    value = await fn(value, variables);
                     if (param?.breakforof) {
                         delete param.breakforof;
                         delete param.break;
@@ -748,18 +758,23 @@
                         break;
                     }
                 }
+                item.useSeparateVars && (param.vars = vars);
                 return value;
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
                     iterator: {
+                        title: lang('beIteratedVar'),
                         type: 'text',
                         width: '4vw',
                     },
                     iteratorElement: {
                         type: 'text',
                         width: '4vw',
+                    },
+                    useSeparateVars: {
+                        type: 'checkbox',
                     },
                     rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('forof', '#ca88cf')
                 }
@@ -772,8 +787,10 @@
                 if (!fn) {
                     return value
                 }
+                const vars = param.vars;
                 while (true) {
-                    value = await fn(value, item, param);
+                    const variables = item.useSeparateVars ? {...vars} : vars;
+                    value = await fn(value, variables);
                     if (param?.breakforof) {
                         delete param.breakforof;
                         delete param.break;
@@ -783,11 +800,15 @@
                         break;
                     }
                 }
+                item.useSeparateVars && (param.vars = vars);
                 return value;
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
+                    useSeparateVars: {
+                        type: 'checkbox',
+                    },
                     rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('while', '#9cbef1'),
                 }
             }
@@ -800,10 +821,12 @@
                     return value
                 }
                 const o = superFetchHook.fetchActionHelper.getVar(item.object, param, true);
+                const vars = param.vars;
                 for (const [k, v] of Object.entries(o)) {
-                    param.vars[item.key] = k;
-                    param.vars[item.value] = v;
-                    value = await fn(value, item, param);
+                    const variables = item.useSeparateVars ? {...vars} : vars;
+                    variables[item.key] = k;
+                    variables[item.value] = v;
+                    value = await fn(value, variables);
                     if (param?.breakforof) {
                         delete param.breakforof;
                         delete param.break;
@@ -813,6 +836,7 @@
                         break;
                     }
                 }
+                item.useSeparateVars && (param.vars = vars);
                 return value;
             },
             param: {
@@ -821,17 +845,20 @@
                     object: {
                         title: lang("objectName"),
                         type: 'text',
-                        width: '3.9vw',
+                        width: '3.6vw',
                     },
                     key: {
                         title: lang("objectKey"),
                         type: 'text',
-                        width: '4vw',
+                        width: '3.6vw',
                     },
                     value: {
                         title: lang("objectValue"),
                         type: 'text',
-                        width: '4vw',
+                        width: '3.6vw',
+                    },
+                    useSeparateVars: {
+                        type: 'checkbox',
                     },
                     rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('iterateObject', '#bce4d9')
                 }

@@ -873,9 +873,11 @@
         },
 
         buildHandlers(handlers, param, name = '') {
+            const vars = param.vars;
             return async value => {
                 const handlerss = param.handlers;
                 param.handlers = handlers;
+                param.vars = vars;
                 value = await superFetchHook.fetchActionHelper.handItems(handlers, value, param, name);
                 if (param?.break) {
                     param.handlers = [];

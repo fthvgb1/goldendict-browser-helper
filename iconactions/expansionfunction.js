@@ -10,11 +10,11 @@
         'valueRelation': '值相关',
         'getVal': '取值',
         'valueExpression': '变量名, format:(name,name|g,name|p)',
-        'setValue': '设置值,当设置模式为变量时，且右值为对象或数组，左值可使用name1,name2,...解构右值',
+        'setValue': '设置值',
         'getValue': '获取值',
         'leftValue': '左值名',
         'rightValue': '右值名',
-        'setValue-desc': '将右值赋给左值，当用函数时语法为{变量}.函数名|参数1,参数2...',
+        'setVarDesc': '右值为对象或数组时，左值可使用name1,name2,...解构右值',
         'getVal-desc': '从符号表中取值，无需{}',
         'toNumber': '转为数字',
         'toNumber-desc': '将右值转为数字赋给左值，左值和右值为空都默认为当前值',
@@ -411,7 +411,7 @@
                 if ('function' !== typeof v) {
                     return v
                 }
-                const call = v.bind(value);
+                const call = v.bind(ele);
                 const p = item.parameter ? item.parameter.split('|') : '';
                 return p ? call(...p) : call();
             },
@@ -815,9 +815,15 @@
                         type: 'select',
                         getOptions(val) {
                             const va = superFetchHook.valueHandlers.valueRelation;
-                            return buildOption(Object.keys(va.valueType).map(v => [
-                                v, lang(v), `title="${superFetchHook.mapTitle?.[v + '-desc'] ? lang(v + '-desc') : lang(v)}"`
-                            ]), val, 0, 1, 2);
+                            return buildOption(Object.keys(va.valueType).map(v => {
+                                let title = `title="${superFetchHook.mapTitle?.[v + '-desc'] ? lang(v + '-desc') : lang(v)}"`;
+                                if (v === 'variable') {
+                                    title = `title="${superFetchHook.mapTitle['setVarDesc']}"`;
+                                }
+                                return [
+                                    v, lang(v), title
+                                ]
+                            }), val, 0, 1, 2);
                         }
                     },
                     rightValue: {
