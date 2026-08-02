@@ -624,7 +624,8 @@
         objectKey: '对象键名，用于后续访问',
         objectValue: '对象值名,用于后续访问',
         objectName: '要遍历的对象名',
-    })
+    });
+
     superFetchHook.simpleValueHandlerHelper.addHandlers('foreach', {
         for: {
             async fn(value, item, param) {
@@ -636,10 +637,9 @@
                 }
                 const start = parseNum(item.start);
                 const addNum = parseNum(item.addNumber);
+                const name = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.iteratorVariable);
                 for (let i = start; superFetchHook.valueHandlers.foreach.handlers.for.operate[item.handleTypeOperator](i, iterator); i += addNum) {
-                    const p = item.useSeparateVars ? {...param, vars: {...param.vars}} : param;
-                    p.vars[item.iteratorVariable] = i;
-                    value = await fn(value, p, item.useSeparateVars);
+                    value = await fn(value, item.useSeparateVars, {[name]: i});
                     if (param?.breakforof) {
                         delete param.breakforof;
                         delete param.break;
@@ -658,8 +658,19 @@
                 }
                 const handlers = h[0];
                 const handlerss = param.handlers;
-                return async (value, p = param, separate = false) => {
-                    p.handlers = separate ? [...handlers] : handlers;
+                return async (value, separate = false, o = {}, p = param) => {
+                    p.handlers = handlers;
+                    if (separate) {
+                        p = {
+                            ...param,
+                            vars: {
+                                ...param.vars,
+                            },
+                            handlers: [...handlers],
+                            parentVars: param.vars
+                        };
+                    }
+                    superFetchHook.mergeMap(p.vars, o);
                     if (p?.continue) {
                         delete p.continue;
                         delete p.break;
@@ -741,10 +752,9 @@
                 if (!fn) {
                     return value
                 }
+                const name = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.iteratorElement);
                 for (const iteratorElement of iterator) {
-                    const p = item.useSeparateVars ? {...param, vars: {...param.vars}} : param;
-                    p.vars[item.iteratorElement] = iteratorElement;
-                    value = await fn(value, p, item.useSeparateVars);
+                    value = await fn(value, item.useSeparateVars, {[name]: iteratorElement});
                     if (param?.breakforof) {
                         delete param.breakforof;
                         delete param.break;
@@ -783,8 +793,7 @@
                     return value
                 }
                 while (true) {
-                    const p = item.useSeparateVars ? {...param, vars: {...param.vars}} : param;
-                    value = await fn(value, p, item.useSeparateVars);
+                    value = await fn(value, item.useSeparateVars);
                     if (param?.breakforof) {
                         delete param.breakforof;
                         delete param.break;
@@ -813,12 +822,11 @@
                 if (!fn) {
                     return value
                 }
+                const key = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.key);
+                const val = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.value);
                 const o = superFetchHook.fetchActionHelper.getVar(item.object, param, true);
                 for (const [k, v] of Object.entries(o)) {
-                    const p = item.useSeparateVars ? {...param, vars: {...param.vars}} : param;
-                    p.vars[item.key] = k;
-                    p.vars[item.value] = v;
-                    value = await fn(value, p, item.useSeparateVars);
+                    value = await fn(value, item.useSeparateVars, {[key]: k, [val]: v});
                     if (param?.breakforof) {
                         delete param.breakforof;
                         delete param.break;
