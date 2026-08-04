@@ -273,6 +273,10 @@ select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAtt
     width: 4.2vw;
 }
 
+.fetch-dd > .fetch-replacement-items[data-batch] > .fetch-replacement-item:has(.handleType>option[value=Tampermonkey]:checked) input[name=handleThisValue] {
+    display: none;
+}
+
 .fetch-replacement-item .actionNames + .select2 {
     max-width: 16vw;
     min-width: 16vw;
