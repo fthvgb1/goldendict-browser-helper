@@ -547,13 +547,13 @@
         PushButtonFn('rich', className, button, clickFn, field, contextMenuFn)
     }
 
-    function buildTextarea(rawStr = false, field = '', value = '', checked = false) {
+    async function buildTextarea(rawStr = false, field = '', value = '', checked = false) {
         if (!value) {
             value = '<div><br></div>';
         }
         const li = document.createElement('div');
         const checkeds = checked ? 'checked' : '';
-        const richText = spell();
+        const richText = await spell(field);
         li.className = 'form-item'
         li.innerHTML = createHtml(`
             <input name="shadow-form-field[]" spellcheck="true" placeholder="字段名" value="${field}" class="swal2-input field-name">
@@ -688,20 +688,20 @@
         }
     };
 
-    function fieldChange(field, value) {
+    async function fieldChange(field, value) {
         if (field === '') {
             return;
         }
         const modelField = GM_getValue('modelFields-' + field, [[1, '正面', false], [2, '背面', false]]);
         document.querySelector('#shadowFields ol').innerHTML = '';
         if (modelField.length > 0) {
-            modelField.forEach(v => {
+            for (const v of modelField) {
                 let t = value
                 if (value instanceof HTMLElement) {
                     t = v[0] === 2 ? value.innerHTML : htmlSpecial(value.innerText.trim());
                 }
-                fieldFn[v[0]](false, v[1], v[2] ? t : '', v[2]);
-            })
+                await fieldFn[v[0]](false, v[1], v[2] ? t : '', v[2]);
+            }
         }
     }
 
@@ -793,14 +793,17 @@
         const sentenceBold = GM_getValue('sentence_bold', '');
         const sentenceFormat = GM_getValue('sentence_format', '')
         let ol = '';
+        const a = [];
         if (modelFields.length > 0) {
-            ol = modelFields.map(v => {
+            for (const v of modelFields) {
                 let t = value
                 if (value instanceof HTMLElement) {
                     t = v[0] === 2 ? value.innerHTML : htmlSpecial(value.innerText.trim());
                 }
-                return fieldFn[v[0]](true, v[1], v[2] ? t : '', v[2])
-            }).join('\n')
+                const r = await fieldFn[v[0]](true, v[1], v[2] ? t : '', v[2]);
+                a.push(r);
+            }
+            ol = a.join('\n')
         }
         const hookStyles = styles.length > 0 ? styles.filterAndMapX(v => v ? `<style>${v}</style>` : false).join('\n') : '';
 

@@ -886,6 +886,20 @@
             }
         },
 
+        buildSeparatedScopeHandlers(handlers, param, name = '', p = undefined) {
+            p = p ?? {...param, vars: {...param.vars}};
+            const handlerss = param.handlers;
+            return async value => {
+                p.handlers = [...handlers];
+                value = await superFetchHook.fetchActionHelper.handItems(p.handlers, value, p, name);
+                if (p?.break) {
+                    p.handlers = [];
+                    return value;
+                }
+                p.handlers = [...handlerss];
+                return value;
+            }
+        },
         buildHandlersMap: {
             number: (param, option, name) => actionHelper.buildHandlers(param.handlers.splice(0, option), param, name),
             function: (param, option, name) => actionHelper.buildHandlers(option(param), param, name),

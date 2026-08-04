@@ -492,7 +492,7 @@
                 GM_setValue(name, v);
                 return value;
             },
-            show: superFetchHook.valueHandlers.valueRelation.handlers.setValue.show,
+            show: (li, vars) => superFetchHook.valueHandlers.valueRelation.handlers.setValue.show(li, vars),
         },
         getValue: {
             fn(value, item, param) {
@@ -1113,7 +1113,11 @@
         addFieldClickFn: '添加按钮左键单击事件',
         endFieldClickFn: '结束添加按钮左键单击事件作用域',
         addFieldContextMenuFn: '添加按钮右键点击事件',
-        endFieldContextMenuFn: '结束添加按钮右键点击事件作用域'
+        endFieldContextMenuFn: '结束添加按钮右键点击事件作用域',
+        addSpellRichEditorButton: '添加富文本编辑器按钮',
+        "addSpellRichEditorButton-desc": '需要创建一个按钮元素',
+        elementVarName: '创建的按钮元素变量名',
+        endAddSpellRichEditorButton: '结束添加富文本编辑器按钮作用域',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('makeAnkiCard', {
         openDiag: {
@@ -1307,6 +1311,30 @@
             }
         },
         endFieldContextMenuFn: superFetchHook.simpleValueHandlerHelper.endScope('endFieldContextMenuFn', '#6d6ae3'),
+        addSpellRichEditorButton: {
+            fn(value, item, param) {
+                const h = superFetchHook.fetchActionHelper.buildHandlersMap.array(param, ['addSpellRichEditorButton', 'endAddSpellRichEditorButton'], item.currentVarName);
+                spellRichEditor.addButton(async field => {
+                    const p = {...param, vars: {...param.vars}};
+                    p.vars.field = field;
+                    const fn = superFetchHook.fetchActionHelper.buildSeparatedScopeHandlers(h[0], param, item.currentVarName, p);
+                    await fn(value);
+                    return p.vars[item.elementVarName];
+                });
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    elementVarName: {
+                        type: 'text',
+                    },
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('addSpellRichEditorButton', '#e89c4b')
+                }
+            }
+        },
+        endAddSpellRichEditorButton: superFetchHook.simpleValueHandlerHelper.endScope('endAddSpellRichEditorButton', '#e89c4b')
+
     }, {scope: {fetch: '*'},});
 
     PushHookAnkiHtml(html => {
