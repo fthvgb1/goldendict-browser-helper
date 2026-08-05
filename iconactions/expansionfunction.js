@@ -1133,25 +1133,7 @@
                 }
                 return args ? await fn(...args) : await fn();
             },
-            eval(express, vars, dest = globalThis) {
-                const keys = Object.keys(vars);
-                const hasValue = {};
-                iterateObjByKey(vars, (k, v) => {
-                    if (dest.hasOwnProperty(k)) {
-                        hasValue[k] = dest[k];
-                    }
-                    dest[k] = v;
-                }, false);
-                const r = eval(createScript(express));
-                for (const key of keys) {
-                    if (hasValue.hasOwnProperty(key)) {
-                        dest[key] = hasValue[key];
-                    } else {
-                        delete dest[key];
-                    }
-                }
-                return r;
-            },
+            eval: (express, vars) => eval(createScript(express)),
             array: (v, vars) => {
                 if (!v) {
                     return []
@@ -1161,6 +1143,7 @@
             bool: v => '1' === v,
             object: (v, vars) => {
                 const o = new Function('return ' + v)();
+
                 function parseVar(o) {
                     iterateObjByKey(o, (k, v) => {
                         if ('string' === typeof v) {

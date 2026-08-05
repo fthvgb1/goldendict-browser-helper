@@ -872,7 +872,10 @@
             }
         },
 
-        buildHandlers(handlers, param, name = '') {
+        buildHandlers(handlers, param, name = '', p = undefined) {
+            if (p) {
+                return this.buildSeparatedScopeHandlers(handlers, param, name, p === true ? undefined : p);
+            }
             return async value => {
                 const handlerss = param.handlers;
                 param.handlers = handlers;
@@ -887,27 +890,27 @@
         },
 
         buildSeparatedScopeHandlers(handlers, param, name = '', p = undefined) {
-            p = p ?? {...param, vars: {...param.vars}};
+            p = p ?? {...param, vars: {...param.vars}, parentVars: param.vars};
             const handlerss = param.handlers;
-            return async value => {
-                p.handlers = [...handlers];
-                value = await superFetchHook.fetchActionHelper.handItems(p.handlers, value, p, name);
-                if (p?.break) {
-                    p.handlers = [];
+            return async (value, pp = p) => {
+                pp.handlers = [...handlers];
+                value = await superFetchHook.fetchActionHelper.handItems(pp.handlers, value, pp, name);
+                if (pp?.break) {
+                    pp.handlers = [];
                     return value;
                 }
-                p.handlers = [...handlerss];
+                pp.handlers = [...handlerss];
                 return value;
             }
         },
         buildHandlersMap: {
-            number: (param, option, name) => actionHelper.buildHandlers(param.handlers.splice(0, option), param, name),
-            function: (param, option, name) => actionHelper.buildHandlers(option(param), param, name),
-            string: (param, option, name) => {
+            number: (param, option, name, p) => actionHelper.buildHandlers(param.handlers.splice(0, option), param, name, p),
+            function: (param, option, name, p) => actionHelper.buildHandlers(option(param), param, name, p),
+            string: (param, option, name, p) => {
                 const i = param.handlers.findIndex(value => value?.rangeHandle === option);
-                return actionHelper.buildHandlers(param.handlers.splice(0, i > -1 ? i : param.handlers.length), param, name);
+                return actionHelper.buildHandlers(param.handlers.splice(0, i > -1 ? i : param.handlers.length), param, name, p);
             },
-            array(param, option, name = '') {
+            array(param, option, name = '', p = undefined) {
                 const [start, end] = option;
                 const arr = [start], identifier = new Set(option);
                 const h = [[]];
@@ -939,15 +942,15 @@
             }
         },
 
-        extractHandlers(param, option = 'endRangeHandle', name = '') {
+        extractHandlers(param, option = 'endRangeHandle', name = '', p = undefined) {
             if (Array.isArray(option)) {
-                const h = actionHelper.buildHandlersMap.array(param, option, name);
+                const h = actionHelper.buildHandlersMap.array(param, option, name, p);
                 if (h[0].length < 1) {
                     return v => v;
                 }
-                return actionHelper.buildHandlers(h[0], param, name);
+                return actionHelper.buildHandlers(h[0], param, name, p);
             }
-            return actionHelper.buildHandlersMap[typeof option]?.(param, option, name) ?? actionHelper.buildHandlers(param.handlers, param, name);
+            return actionHelper.buildHandlersMap[typeof option]?.(param, option, name, p) ?? actionHelper.buildHandlers(param.handlers, param, name, p);
         }
     };
 

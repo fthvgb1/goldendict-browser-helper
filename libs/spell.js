@@ -64,7 +64,7 @@
                 const arr = [];
                 for (const fn of customButtons) {
                     const b = await fn(field);
-                    arr.push(b);
+                    b && arr.push(b);
                 }
                 const b = await $('div', {className: 'spell-zone'}, arr);
                 topChildren.push(b);
