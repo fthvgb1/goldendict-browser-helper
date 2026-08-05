@@ -623,6 +623,48 @@
                     }
                 }
             }
+        },
+        queryCommandState: {
+            fn(value, item, param) {
+                const o = superFetchHook.valueHandlers.valueRelation.handlers.setValue.parseVal(item, param);
+                const r = document.queryCommandState(superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.command));
+                o.set(r);
+                return param.vars[item.currentVarName];
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    leftValue: {
+                        type: 'text',
+                        width: '4vw'
+                    },
+                    command: {
+                        type: 'text',
+                        width: '7vw'
+                    },
+                }
+            }
+        },
+        queryCommandValue: {
+            fn(value, item, param) {
+                const o = superFetchHook.valueHandlers.valueRelation.handlers.setValue.parseVal(item, param);
+                const r = document.queryCommandValue(superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.command));
+                o.set(r);
+                return param.vars[item.currentVarName];
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    leftValue: {
+                        type: 'text',
+                        width: '4vw'
+                    },
+                    command: {
+                        type: 'text',
+                        width: '7vw'
+                    },
+                }
+            }
         }
     }, {scope: 'fetch'});
 

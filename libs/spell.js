@@ -1,6 +1,6 @@
 //altered from https://github.com/ninja33/ODH/blob/master/src/fg/js/spell.js
 ;const {spell, spellRichEditor} = (() => {
-    const customButtons = [], stateFns = [];
+    const customButtons = [], stateFns = {};
 
     async function spell(field) {
         let exec = (command, value = null) => document.execCommand(command, false, value)
@@ -22,7 +22,7 @@
             for (const cmd in buttons) {
                 buttons[cmd].classList.toggle('selected', document.queryCommandState(cmd));
             }
-            stateFns.forEach(fn => fn());
+            stateFns[field].forEach(fn => fn());
         }
 
         const actions = [
@@ -98,7 +98,7 @@
     return {
         spell, spellRichEditor: {
             addButton: el => customButtons.push(el),
-            addStateFn: fn => stateFns.push(fn),
+            addStateFn: (field, fn) => stateFns?.[field] ? stateFns.push(fn) : (stateFns[field] = [fn]),
         }
     }
 })();

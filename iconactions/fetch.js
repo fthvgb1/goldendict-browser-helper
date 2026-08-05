@@ -929,7 +929,7 @@
                         }
                         const handlers = h.pop();
                         arr.pop();
-                        h[h.length - 1].push(superFetchHook.fetchActionHelper.buildHandlers(handlers, param, name))
+                        h[h.length - 1].push(superFetchHook.fetchActionHelper.buildHandlers(handlers, param, name, p))
                         if (arr.length < 1) {
                             break;
                         }

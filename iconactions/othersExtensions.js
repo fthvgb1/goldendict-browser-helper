@@ -1116,8 +1116,10 @@
         endFieldContextMenuFn: '结束添加按钮右键点击事件作用域',
         addSpellRichEditorButton: '添加富文本编辑器按钮',
         "addSpellRichEditorButton-desc": '需要创建一个按钮元素',
-        elementVarName: '创建的按钮元素变量名',
+        buttonElementVarName: '创建的按钮元素变量名',
         endAddSpellRichEditorButton: '结束添加富文本编辑器按钮作用域',
+        addQueryState: '添加状态查询',
+        endAddQueryStateScope: '结束状态查询使用域',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('makeAnkiCard', {
         openDiag: {
@@ -1317,8 +1319,11 @@
                 spellRichEditor.addButton(async field => {
                     const p = {...param, vars: {...param.vars}};
                     p.vars.field = field;
+                    p.vars.elementVarName = item.elementVarName;
                     const fn = superFetchHook.fetchActionHelper.buildSeparatedScopeHandlers(h[0], param, item.currentVarName, p);
                     await fn(value);
+                    const stateFn = p.vars[`${item.elementVarName}-stateFn`] ?? undefined;
+                    stateFn && (spellRichEditor.addStateFn(field, stateFn), delete p.vars[`${item.elementVarName}-stateFn`]);
                     return p.vars[item.elementVarName];
                 });
                 return value;
@@ -1327,13 +1332,27 @@
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
                     elementVarName: {
+                        title: lang('buttonElementVarName'),
                         type: 'text',
                     },
                     rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('addSpellRichEditorButton', '#e89c4b')
                 }
             }
         },
-        endAddSpellRichEditorButton: superFetchHook.simpleValueHandlerHelper.endScope('endAddSpellRichEditorButton', '#e89c4b')
+        endAddSpellRichEditorButton: superFetchHook.simpleValueHandlerHelper.endScope('endAddSpellRichEditorButton', '#e89c4b'),
+        addQueryState: {
+            fn(value, item, param) {
+                param.vars[`${param.vars.elementVarName}-stateFn`] = superFetchHook.fetchActionHelper.extractHandlers(param, ['addQueryState', 'endAddQueryStateScope'], item.currentVarName);
+                return param.vars[item.currentVarName];
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('addQueryState', '#4b9ae8')
+                }
+            }
+        },
+        endAddQueryStateScope: superFetchHook.simpleValueHandlerHelper.endScope('endAddQueryStateScope', '#4b9ae8')
 
     }, {scope: {fetch: '*'},});
 
