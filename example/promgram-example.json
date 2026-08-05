@@ -440,5 +440,277 @@
         ]
       }
     ]
+  },
+  {
+    "fetch-name": "add set color button",
+    "operate-type": "programmer",
+    "url-scope": ".",
+    "fetch-active": true,
+    "add-contextmenu": false,
+    "programmerItems": [
+      {
+        "codeBlockName": "set text color",
+        "codeBlockType": "program",
+        "replacement-items": [
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "addAnkiStyle",
+            "cssStyle": ".icon-color::before {     content: \"\\61\"}.colorPicker{       width: 2vw;      height: 2vw; cursor: pointer;}"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "addSpellRichEditorButton",
+            "elementVarName": "color",
+            "rangeHandle": "addSpellRichEditorButton"
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "stringToElement",
+            "setElementVarName": "color",
+            "elementIdentOuterHTML": "<button class=\"spell-icon\" title=\"set text color\"><i class=\"icon-color\"></i></button>"
+          },
+          {
+            "handleType": "simpleEvent",
+            "searchValue": "addEvent",
+            "rangeHandle": "startEventScope",
+            "elementVarName": "color",
+            "eventIdentifier": "col",
+            "bindEventElement": "",
+            "event": "click",
+            "preventDefault": false,
+            "stopPropagation": false,
+            "stopImmediatePropagation": false,
+            "capture": false,
+            "once": false,
+            "passive": false
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "queryElement",
+            "leftValue": "co",
+            "elementVarName": "color",
+            "elementSelector": "ns@.colorPicker",
+            "queryAll": false,
+            "anchorMode": true
+          },
+          {
+            "handleType": "others",
+            "searchValue": "execCommand",
+            "command": "foreColor",
+            "showUI": false,
+            "value": "{co.value}",
+            "needResult": false
+          },
+          {
+            "handleType": "simpleEvent",
+            "searchValue": "endEventScope",
+            "rangeHandle": "endEventScope"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "endAddSpellRichEditorButton",
+            "rangeHandle": "endAddSpellRichEditorButton"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "addSpellRichEditorButton",
+            "elementVarName": "colorPicker",
+            "rangeHandle": "addSpellRichEditorButton"
+          },
+          {
+            "handleType": "Tampermonkey",
+            "searchValue": "getValue",
+            "leftValue": "c",
+            "rightValue": "{field}-color",
+            "variableType": "string",
+            "defaultValue": "#000000"
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "stringToElement",
+            "setElementVarName": "colorPicker",
+            "elementIdentOuterHTML": "<input class=\"colorPicker\" title=\"pick text color\"  type=\"color\" name=\"color\" value=\"{c}\">"
+          },
+          {
+            "handleType": "simpleEvent",
+            "searchValue": "addEvent",
+            "rangeHandle": "startEventScope",
+            "elementVarName": "colorPicker",
+            "eventIdentifier": "pick",
+            "bindEventElement": "",
+            "event": "change",
+            "preventDefault": false,
+            "stopPropagation": false,
+            "stopImmediatePropagation": false,
+            "capture": false,
+            "once": false,
+            "passive": false
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "queryElement",
+            "leftValue": "field",
+            "elementVarName": "colorPicker",
+            "elementSelector": "p@.form-item%s@.field-name",
+            "queryAll": false,
+            "anchorMode": true
+          },
+          {
+            "handleType": "Tampermonkey",
+            "searchValue": "setValue",
+            "leftValue": "{field.value}-color",
+            "variableType": "variable",
+            "rightValue": "pick.target.value",
+            "handleThisValue": false
+          },
+          {
+            "handleType": "simpleEvent",
+            "searchValue": "endEventScope",
+            "rangeHandle": "endEventScope"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "endAddSpellRichEditorButton",
+            "rangeHandle": "endAddSpellRichEditorButton"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "fetch-name": "add set fontsize button",
+    "operate-type": "programmer",
+    "url-scope": ".",
+    "fetch-active": true,
+    "add-contextmenu": false,
+    "programmerItems": [
+      {
+        "codeBlockName": "set font size",
+        "codeBlockType": "program",
+        "replacement-items": [
+          {
+            "handleType": "delayOrInterval",
+            "searchValue": "delay",
+            "delayTime": 1
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "addAnkiStyle",
+            "cssStyle": ".icon-fontsize::before {     content: \"\\47\"} .select-fontsize{       width: 4vw;      height: 2vw;}"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "addSpellRichEditorButton",
+            "elementVarName": "fontsize",
+            "rangeHandle": "addSpellRichEditorButton"
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "stringToElement",
+            "setElementVarName": "fontsize",
+            "elementIdentOuterHTML": "<button class=\"spell-icon\" title=\"fontsize\"><i class=\"icon-fontsize\"></i></button>"
+          },
+          {
+            "handleType": "simpleEvent",
+            "searchValue": "addEvent",
+            "rangeHandle": "startEventScope",
+            "elementVarName": "fontsize",
+            "eventIdentifier": "fon",
+            "bindEventElement": "",
+            "event": "click",
+            "preventDefault": false,
+            "stopPropagation": false,
+            "stopImmediatePropagation": false,
+            "capture": false,
+            "once": false,
+            "passive": false
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "queryElement",
+            "leftValue": "si",
+            "elementVarName": "fontsize",
+            "elementSelector": "ns@.select-fontsize",
+            "queryAll": false,
+            "anchorMode": true
+          },
+          {
+            "handleType": "others",
+            "searchValue": "execCommand",
+            "command": "fontSize",
+            "showUI": false,
+            "value": "{si.value}",
+            "needResult": false
+          },
+          {
+            "handleType": "simpleEvent",
+            "searchValue": "endEventScope",
+            "rangeHandle": "endEventScope"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "endAddSpellRichEditorButton",
+            "rangeHandle": "endAddSpellRichEditorButton"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "addSpellRichEditorButton",
+            "elementVarName": "size",
+            "rangeHandle": "addSpellRichEditorButton"
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "setValue",
+            "leftValue": "o",
+            "variableType": "object",
+            "rightValue": "{1:\"8pt\",2:\"10pt\",3:\"12pt\",4:\"14pt\",5:\"18pt\",6:\"24pt\",8:\"36pt\"}",
+            "handleThisValue": false
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "setValue",
+            "leftValue": "op",
+            "variableType": "eval",
+            "rightValue": "buildOption(vars.o)",
+            "handleThisValue": false
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "stringToElement",
+            "setElementVarName": "size",
+            "elementIdentOuterHTML": "<select class=\"select-fontsize\"  name=\"fontsize\" title=\"select font size\">   {op}</select>"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "addQueryState",
+            "rangeHandle": "addQueryState"
+          },
+          {
+            "handleType": "others",
+            "searchValue": "queryCommandValue",
+            "leftValue": "xx",
+            "command": "fontSize"
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "editElementAttribute",
+            "elementVarName": "size",
+            "attrName": "value",
+            "attrValue": "{xx}",
+            "addNode": false
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "endAddQueryStateScope",
+            "rangeHandle": "endAddQueryStateScope"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "endAddSpellRichEditorButton",
+            "rangeHandle": "endAddSpellRichEditorButton"
+          }
+        ]
+      }
+    ]
   }
 ]
