@@ -19,7 +19,7 @@
             for (const cmd in buttons) {
                 buttons[cmd].classList.toggle('selected', document.queryCommandState(cmd));
             }
-            stateFns[field].forEach(fn => fn());
+            stateFns?.[field]?.forEach?.(fn => fn());
         }
 
         const actions = [
