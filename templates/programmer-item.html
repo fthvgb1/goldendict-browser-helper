@@ -6,6 +6,7 @@
     <select class="codeBlockType" name="codeBlockType" title="{{codeBlockType|lang}}">
       {{codeBlockTypes|buildOption(codeBlockType,0,1)}}
     </select>
+    <input name="copyPreviousVars" title="{{copyPreviousVars|lang}}" type="checkbox" {{copyPreviousVars|checked}}>
     <button class="add-super-fetch-item" data-op="add" data-target=".super-fetch-item" data-tpl-fn="program"
             title="{{add|lang}}">+
     </button>

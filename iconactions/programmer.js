@@ -13,7 +13,8 @@
         functionName: '函数或方法名,从window对象中查找 window.object.method|window.function ，列表不存在可手动输入',
         callFunction: '执行函数',
         parameters: '参数, {var1},{var2}...',
-        noReturn: '无需返回结果'
+        noReturn: '无需返回结果',
+        copyPreviousVars: '勾选使当前及后续代码块使用前一个代码块符号表的副本',
     });
 
     superFetchHook.templateHelper.templateFnHook['programmer-item'] = (html, vars) => {
@@ -32,7 +33,13 @@
                 vars = {...superFetchHook.fetchActionHelper.global};
             }
             for (const programmerItem of param.programmerItems) {
-                await this.codeBlockTypes[programmerItem.codeBlockType].fn(programmerItem, vars, param);
+                let v = vars;
+                let p = param;
+                if (programmerItem.copyPreviousVars) {
+                    v = {...vars};
+                    p = {...param}
+                }
+                await this.codeBlockTypes[programmerItem.codeBlockType].fn(programmerItem, v, p);
                 if (param.vars?.stopProcess) {
                     break;
                 }

@@ -130,8 +130,9 @@
                 const t = setTimeout(async () => {
                     value = await fn(value, item, param);
                     clearTimeout(t);
+                    item.identifier && delete window?.['_timeoutMap']?.[item.identifier];
                 }, item.time);
-                param.vars[item.identifier] = t;
+                item.identifier && setMapVal(`_timeoutMap.${item.identifier}`, t, window);
                 return param.vars[item.currentVarName];
             },
             param: {
@@ -152,8 +153,8 @@
             }
         },
         clearTimeout: {
-            fn(value, item, param) {
-                clearTimeout(param.vars[item.identifier]);
+            fn(value, item) {
+                item.identifier && clearTimeout(superFetchHook.getVarVal(window, `_timeoutMap.${item.identifier}`, null));
                 return value
             },
             param: {
