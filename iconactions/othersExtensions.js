@@ -670,7 +670,7 @@
                             parentVars: param.vars
                         };
                     }
-                    superFetchHook.mergeMap(p.vars, o);
+                    Object.assign(p.vars, o);
                     if (p?.continue) {
                         delete p.continue;
                         delete p.break;
@@ -1352,7 +1352,8 @@
                 }
             }
         },
-        endAddQueryStateScope: superFetchHook.simpleValueHandlerHelper.endScope('endAddQueryStateScope', '#4b9ae8')
+        endAddQueryStateScope: superFetchHook.simpleValueHandlerHelper.endScope('endAddQueryStateScope', '#4b9ae8'),
+
 
     }, {scope: {fetch: '*'},});
 

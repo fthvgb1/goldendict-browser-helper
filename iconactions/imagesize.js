@@ -47,7 +47,7 @@
     const observer = new MutationObserver(callback);
 
 
-    PushAnkiBeforeSaveHook((isUpdate, note) => {
+    ankiHelper.PushAnkiBeforeSaveHook((isUpdate, note) => {
         Object.keys(note.fields).forEach(field => {
             const div = document.createElement('div');
             div.innerHTML = note.fields[field];

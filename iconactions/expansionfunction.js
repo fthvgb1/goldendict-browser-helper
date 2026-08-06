@@ -86,10 +86,10 @@
         'jsonDecodeX': 'use new Function parse',
     });
     const lang = superFetchHook.lang, getValue = superFetchHook.getVariable;
-    superFetchHook.mergeMap(superFetchHook.valueHandlers.simpleValueHandlers.handlers, {
+    Object.assign(superFetchHook.valueHandlers.simpleValueHandlers.handlers, {
         capitalize: s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(),
     })
-    superFetchHook.mergeMap(superFetchHook.valueHandlers.codeRelate.handlers, {
+    Object.assign(superFetchHook.valueHandlers.codeRelate.handlers, {
         jsonEncode: JSON.stringify,
         jsonDecode: JSON.parse,
         jsonDecodeX: s => new Function(`return ${s}`)(),

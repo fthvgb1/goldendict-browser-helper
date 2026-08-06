@@ -1059,10 +1059,9 @@
             anki, getSearchType, ankiSave, queryAnki, showAnkiCard, searchAnki,
             ankiSearchHook, addAnki, getDefaultSearchType,
             ankiFormChange: changeFns,
-            getAnkiFormValue,
+            getAnkiFormValue, PushAnkiAfterSaveHook, PushAnkiBeforeSaveHook
         },
-        findParent,
-        PushAnkiBeforeSaveHook, PushAnkiAfterSaveHook, PushExpandAnkiRichButton, PushExpandAnkiInputButton,
+        findParent, PushExpandAnkiRichButton, PushExpandAnkiInputButton,
         PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn, PushHookAnkiChange,
         addNewTags, inputEventSelectors: inputSelector,
     };

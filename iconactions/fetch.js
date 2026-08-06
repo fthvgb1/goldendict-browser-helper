@@ -1292,7 +1292,7 @@
         setEleDrag(setting, '.super-fetch-item');
     };
     superFetchHook.valueHandlers = valueHandlers;
-    superFetchHook.mergeMap(superFetchHook.fetchActionHelper, actionHelper);
-    superFetchHook.mergeMap(superFetchHook.fetchActions, actions);
-    superFetchHook.mergeMap(superFetchHook.eventHook, evtFn);
+    Object.assign(superFetchHook.fetchActionHelper, actionHelper);
+    Object.assign(superFetchHook.fetchActions, actions);
+    Object.assign(superFetchHook.eventHook, evtFn);
 })();
