@@ -14,10 +14,7 @@
             return elm;
         }
 
-        let colorPicker = _ => $('input', {type: 'color'})
-        let select = options => $('select', {}, options.map(o => $('option', {textContent: o})));
-
-        let buttons = {};
+        const buttons = {};
         let queryState = _ => {
             for (const cmd in buttons) {
                 buttons[cmd].classList.toggle('selected', document.queryCommandState(cmd));
@@ -66,8 +63,7 @@
                     const b = await fn(field);
                     b && arr.push(b);
                 }
-                const b = await $('div', {className: 'spell-zone'}, arr);
-                topChildren.push(b);
+                topChildren.push(...arr);
                 continue;
             }
             const children = [];
@@ -80,11 +76,10 @@
                 }, [await $('i', {className: 'icon-' + cmd.toLowerCase()}), control])
                 children.push(buttons[cmd]);
             }
-            const ele = await $('div', {className: 'spell-zone'}, children);
-            topChildren.push(ele);
+            topChildren.push(...children);
         }
         return await $('div', {className: 'spell', spellcheck: true}, [
-            await $('div', {className: 'spell-bar'}, topChildren),
+            await $('div', {className: 'spell-bar'}, [$('div', {className: 'spell-zone'}, topChildren)]),
             await $('div', {
                 className: 'spell-content',
                 contentEditable: true,
@@ -98,7 +93,8 @@
     return {
         spell, spellRichEditor: {
             addButton: el => customButtons.push(el),
-            addStateFn: (field, fn) => stateFns?.[field] ? stateFns.push(fn) : (stateFns[field] = [fn]),
+            addStateFn: (field, fn) => stateFns?.[field] ? stateFns[field].push(fn) : (stateFns[field] = [fn]),
+            stateFns
         }
     }
 })();

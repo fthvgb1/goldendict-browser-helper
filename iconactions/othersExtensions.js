@@ -1356,6 +1356,7 @@
 
     }, {scope: {fetch: '*'},});
 
+    PushHookAnkiClose(() => Object.keys(spellRichEditor.stateFns).forEach(k => delete spellRichEditor.stateFns[k]));
     PushHookAnkiHtml(html => {
         setEleDrag(html.querySelector('#shadowFields > ol'), '#shadowFields > ol > .form-item');
     });
