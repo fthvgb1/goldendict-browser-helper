@@ -33,13 +33,7 @@
                 vars = {...superFetchHook.fetchActionHelper.global};
             }
             for (const programmerItem of param.programmerItems) {
-                let v = vars;
-                let p = param;
-                if (programmerItem.copyPreviousVars) {
-                    v = {...vars};
-                    p = {...param}
-                }
-                await this.codeBlockTypes[programmerItem.codeBlockType].fn(programmerItem, v, p);
+                await this.codeBlockTypes[programmerItem.codeBlockType].fn(programmerItem, vars, param);
                 if (param.vars?.stopProcess) {
                     break;
                 }
@@ -84,7 +78,9 @@
         codeBlockTypes: {
             program: {
                 async fn(param, vars) {
-                    await superFetchHook.fetchActions.programmer.callFunc(param, vars);
+                    const p = param.copyPreviousVars ? {...param} : param;
+                    const v = param.copyPreviousVars ? {...vars} : vars;
+                    await superFetchHook.fetchActions.programmer.callFunc(p, v);
                 },
                 templateHook(html) {
                     const div = html.querySelector('.codeBockContainer');
