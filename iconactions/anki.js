@@ -472,7 +472,9 @@
             }
             fields[k].parentElement.querySelector('.spell-content').innerHTML = div.innerHTML;
         }
-        showFns.forEach(fn => fn(result, res));
+        for (const fn of showFns) {
+            await fn(result, res)
+        }
     }
 
     function findParent(ele, selector) {
@@ -1033,19 +1035,21 @@
         let res;
         if (existsNoteId > 0 && document.querySelector('#force-update').checked) {
             params.note.id = existsNoteId;
-            beforeSaveHookFns.forEach(fn => {
-                const note = fn(true, params.note);
+            for (const fn of beforeSaveHookFns) {
+                const note = await fn(true, params.note);
                 params.note = note ? note : params.note;
-            });
+            }
             res = await anki(update, params)
         } else {
-            beforeSaveHookFns.forEach(fn => {
-                const note = fn(false, params.note);
+            for (const fn of beforeSaveHookFns) {
+                const note = await fn(false, params.note);
                 params.note = note ? note : params.note;
-            });
+            }
             res = await anki('addNote', params);
         }
-        afterSaveHookFns.forEach(fn => fn(res, params));
+        for (const fn of afterSaveHookFns) {
+            await fn(res, params);
+        }
         if (res.error) {
             throw res.error;
         }
@@ -1058,11 +1062,11 @@
         ankiHelper: {
             anki, getSearchType, ankiSave, queryAnki, showAnkiCard, searchAnki,
             ankiSearchHook, addAnki, getDefaultSearchType,
-            ankiFormChange: changeFns,
+            ankiFormChange: changeFns, PushShowFn,
             getAnkiFormValue, PushAnkiAfterSaveHook, PushAnkiBeforeSaveHook
         },
         findParent, PushExpandAnkiRichButton, PushExpandAnkiInputButton,
-        PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushShowFn, PushHookAnkiChange,
+        PushHookAnkiStyle, PushHookAnkiHtml, PushHookAnkiClose, PushHookAnkiDidRender, PushHookAnkiChange,
         addNewTags, inputEventSelectors: inputSelector,
     };
 

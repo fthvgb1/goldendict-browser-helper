@@ -1118,8 +1118,13 @@
         "addSpellRichEditorButton-desc": '需要创建一个按钮元素',
         buttonElementVarName: '创建的按钮元素变量名',
         endAddSpellRichEditorButton: '结束添加富文本编辑器按钮作用域',
-        addQueryState: '添加状态查询',
-        endAddQueryStateScope: '结束状态查询使用域',
+        addQueryState: '添加富文本编辑器状态查询',
+        endAddQueryStateScope: '结束富文本编辑器状态查询使用域',
+        hookSave: 'anki保存卡片时勾子',
+        endHookSaveScope: '结束anki保存卡时片勾子作用域',
+        hookAnkiAfter: '默认在保存前执行，勾选后在保存后执行',
+        afterShow: '展示结果时勾子',
+        endAfterShowScope: '结束展示结果时勾子作用域',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('makeAnkiCard', {
         openDiag: {
@@ -1353,7 +1358,55 @@
             }
         },
         endAddQueryStateScope: superFetchHook.simpleValueHandlerHelper.endScope('endAddQueryStateScope', '#4b9ae8'),
-
+        hookSave: {
+            fn(value, item, param) {
+                const p = {...param, vars: {...param.vars}, parentVars: param.vars};
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['hookSave', 'endHookSaveScope'], item.currentVarName, p);
+                if (item.hookAfter) {
+                    ankiHelper.PushAnkiAfterSaveHook(async (res, params) => {
+                        p.vars.saveResult = res;
+                        p.vars.param = params;
+                        value = await fn(value)
+                    });
+                } else {
+                    ankiHelper.PushAnkiBeforeSaveHook(async (isUpdate, note) => {
+                        p.vars.isUpdate = isUpdate;
+                        p.vars.note = note;
+                        value = await fn(value)
+                    });
+                }
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    hookAfter: {
+                        title: lang('hookAnkiAfter'),
+                        type: 'checkbox',
+                    },
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('hookSave', '#5afc79')
+                }
+            },
+        },
+        endHookSaveScope: superFetchHook.simpleValueHandlerHelper.endScope('endHookSaveScope', '#5afc79'),
+        afterShow: {
+            fn(value, item, param) {
+                const p = {...param, vars: {...param.vars}, parentVars: param.vars};
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['afterShow', 'endAfterShowScope'], item.currentVarName, p);
+                ankiHelper.PushShowFn(async (_, card) => {
+                    p.vars.note = card;
+                    value = await fn(value)
+                });
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('afterShow', '#c7d33d')
+                }
+            },
+        },
+        endAfterShowScope: superFetchHook.simpleValueHandlerHelper.endScope('endAfterShowScope', '#c7d33d'),
 
     }, {scope: {fetch: '*'},});
 
