@@ -2,7 +2,7 @@
 // @name         goldenDict-browser-helper
 // @namespace    https://github.com/fthvgb1
 // @homepage     https://github.com/fthvgb1/goldendict-browser-helper
-// @version      2.88
+// @version      2.89
 // @description  调用goldendict
 // @author       https://github.com/fthvgb1
 // @include      *
@@ -45,6 +45,7 @@
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/expansionfunction.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/imagesize.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/othersExtensions.js
+// @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/ankicustomize.js
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/iconactions/programmer.js
 
 // @require      https://github.com/fthvgb1/goldendict-browser-helper/raw/refs/heads/master/contextmenuactions/menus.js

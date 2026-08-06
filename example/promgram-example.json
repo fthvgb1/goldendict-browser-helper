@@ -449,13 +449,13 @@
     "add-contextmenu": false,
     "programmerItems": [
       {
-        "codeBlockName": "set text color",
+        "codeBlockName": "add set text color button",
         "codeBlockType": "program",
         "replacement-items": [
           {
             "handleType": "makeAnkiCard",
             "searchValue": "addAnkiStyle",
-            "cssStyle": ".icon-color::before {     content: \"\\61\"}.colorPicker{       width: 2vw;      height: 2vw; cursor: pointer;}"
+            "cssStyle": ".icon-color::before {     content: \"\\61\"}"
           },
           {
             "handleType": "makeAnkiCard",
@@ -510,7 +510,13 @@
             "handleType": "makeAnkiCard",
             "searchValue": "endAddSpellRichEditorButton",
             "rangeHandle": "endAddSpellRichEditorButton"
-          },
+          }
+        ]
+      },
+      {
+        "codeBlockName": "add color picker",
+        "codeBlockType": "program",
+        "replacement-items": [
           {
             "handleType": "makeAnkiCard",
             "searchValue": "addSpellRichEditorButton",
@@ -529,7 +535,7 @@
             "handleType": "htmlFns",
             "searchValue": "stringToElement",
             "setElementVarName": "colorPicker",
-            "elementIdentOuterHTML": "<input class=\"colorPicker\" title=\"pick text color\"  type=\"color\" name=\"color\" value=\"{c}\">"
+            "elementIdentOuterHTML": "<input class=\"colorPicker spell-icon\" title=\"pick text color\"  type=\"color\" name=\"color\" value=\"{c}\">"
           },
           {
             "handleType": "simpleEvent",
@@ -596,7 +602,7 @@
           {
             "handleType": "makeAnkiCard",
             "searchValue": "addAnkiStyle",
-            "cssStyle": ".icon-fontsize::before {     content: \"\\47\"} .select-fontsize{       width: 4vw;      height: 2vw;}"
+            "cssStyle": ".icon-fontsize::before {     content: \"\\47\"} .select-fontsize{       width: 3vw;      height: 2vw;}"
           },
           {
             "handleType": "makeAnkiCard",
@@ -703,6 +709,147 @@
             "handleType": "makeAnkiCard",
             "searchValue": "endAddQueryStateScope",
             "rangeHandle": "endAddQueryStateScope"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "endAddSpellRichEditorButton",
+            "rangeHandle": "endAddSpellRichEditorButton"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "fetch-name": "add background color button",
+    "operate-type": "programmer",
+    "url-scope": ".",
+    "fetch-active": true,
+    "add-contextmenu": false,
+    "programmerItems": [
+      {
+        "codeBlockName": "set text color",
+        "codeBlockType": "program",
+        "replacement-items": [
+          {
+            "handleType": "delayOrInterval",
+            "searchValue": "delay",
+            "delayTime": 2
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "addAnkiStyle",
+            "cssStyle": ".icon-back-color::before {     content: \"\\41\"}"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "addSpellRichEditorButton",
+            "elementVarName": "color",
+            "rangeHandle": "addSpellRichEditorButton"
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "stringToElement",
+            "setElementVarName": "color",
+            "elementIdentOuterHTML": "<button class=\"spell-icon\" title=\"set text background color\"><i class=\"icon-back-color\"></i></button>"
+          },
+          {
+            "handleType": "simpleEvent",
+            "searchValue": "addEvent",
+            "rangeHandle": "startEventScope",
+            "elementVarName": "color",
+            "eventIdentifier": "col",
+            "bindEventElement": "",
+            "event": "click",
+            "preventDefault": false,
+            "stopPropagation": false,
+            "stopImmediatePropagation": false,
+            "capture": false,
+            "once": false,
+            "passive": false
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "queryElement",
+            "leftValue": "co",
+            "elementVarName": "color",
+            "elementSelector": "ns@.backcolorPicker",
+            "queryAll": false,
+            "anchorMode": true
+          },
+          {
+            "handleType": "others",
+            "searchValue": "execCommand",
+            "command": "backColor",
+            "showUI": false,
+            "value": "{co.value}",
+            "needResult": false
+          },
+          {
+            "handleType": "simpleEvent",
+            "searchValue": "endEventScope",
+            "rangeHandle": "endEventScope"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "endAddSpellRichEditorButton",
+            "rangeHandle": "endAddSpellRichEditorButton"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "addSpellRichEditorButton",
+            "elementVarName": "colorPicker",
+            "rangeHandle": "addSpellRichEditorButton"
+          },
+          {
+            "handleType": "Tampermonkey",
+            "searchValue": "getValue",
+            "leftValue": "c",
+            "rightValue": "{field}-back-color",
+            "variableType": "string",
+            "defaultValue": "#ffffff"
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "stringToElement",
+            "setElementVarName": "colorPicker",
+            "elementIdentOuterHTML": "<input class=\"backcolorPicker spell-icon\" title=\"pick text background color\"  type=\"color\" name=\"color\" value=\"{c}\">"
+          },
+          {
+            "handleType": "simpleEvent",
+            "searchValue": "addEvent",
+            "rangeHandle": "startEventScope",
+            "elementVarName": "colorPicker",
+            "eventIdentifier": "pick",
+            "bindEventElement": "",
+            "event": "change",
+            "preventDefault": false,
+            "stopPropagation": false,
+            "stopImmediatePropagation": false,
+            "capture": false,
+            "once": false,
+            "passive": false
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "queryElement",
+            "leftValue": "field",
+            "elementVarName": "colorPicker",
+            "elementSelector": "p@.form-item%s@.field-name",
+            "queryAll": false,
+            "anchorMode": true
+          },
+          {
+            "handleType": "Tampermonkey",
+            "searchValue": "setValue",
+            "leftValue": "{field.value}-back-color",
+            "variableType": "variable",
+            "rightValue": "pick.target.value",
+            "handleThisValue": false
+          },
+          {
+            "handleType": "simpleEvent",
+            "searchValue": "endEventScope",
+            "rangeHandle": "endEventScope"
           },
           {
             "handleType": "makeAnkiCard",
