@@ -56,6 +56,8 @@ ps3: 其实还可以弄些其它骚操作，反正其实就是调些 [快捷键]
 
 无需多言，看demo
 
+[add set color button for editor.webm](https://github.com/user-attachments/assets/cc04fdf4-9dc8-43b4-9e19-117ddca78e17)
+
 [addIconActionDemo.webm](https://github.com/user-attachments/assets/ccb90d13-d4a3-4486-b13f-d78e7f083e0d)
 
 [add an upper lower case button demo.webm](https://github.com/user-attachments/assets/10cd9ba3-ebb5-4a96-83ac-c103373b2042)
