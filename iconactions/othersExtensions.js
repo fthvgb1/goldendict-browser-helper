@@ -126,9 +126,9 @@
         },
         setTimeout: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['setTimeoutStart', 'setTimeoutEnd'], item.currentVarName);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['setTimeoutStart', 'setTimeoutEnd'], item.currentVarName,item.resetVars);
                 const t = setTimeout(async () => {
-                    value = await fn(value, item, param);
+                    value = await fn(value);
                     clearTimeout(t);
                     item.identifier && delete window?.['_timeoutMap']?.[item.identifier];
                 }, item.time);
@@ -145,7 +145,10 @@
                     time: {
                         title: lang('time-desc'),
                         type: 'number',
-                        width: '7vw',
+                        width: '6vw',
+                    },
+                    resetVars:{
+                        type:'checkbox',
                     },
                     rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('setTimeoutStart', '#c5bd63')
                 },
@@ -154,7 +157,7 @@
         },
         clearTimeout: {
             fn(value, item) {
-                item.identifier && clearTimeout(superFetchHook.getVarVal(window, `_timeoutMap.${item.identifier}`, null));
+                item.identifier && (clearTimeout(superFetchHook.getVarVal(window, `_timeoutMap.${item.identifier}`, null)),delete window?.['_timeoutMap']?.[item.identifier]);
                 return value
             },
             param: {
@@ -171,9 +174,9 @@
         setTimeoutEnd: superFetchHook.simpleValueHandlerHelper.endScope('setTimeoutEnd', '#c5bd63'),
         interval: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startInterval', 'endInterVal'], item.currentVarName);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startInterval', 'endInterVal'], item.currentVarName,item.resetVars);
                 const t = setInterval(async () => {
-                    value = await fn(value, item, param);
+                    value = await fn(value);
                 }, item.intervalTime);
                 setMapVal(`_interValMap.${item.intervalName}`, t, window);
                 return value;
@@ -187,7 +190,10 @@
                     intervalTime: {
                         title: lang('time-desc'),
                         type: 'number',
-                        width: '7vw',
+                        width: '6vw',
+                    },
+                    resetVars:{
+                        type:'checkbox',
                     },
                     rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('startInterval', '#f1dc20')
                 },
@@ -326,7 +332,7 @@
     superFetchHook.simpleValueHandlerHelper.addHandlers('simpleWatcher', {
         urlWatcher: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startUrlWatcher', 'endUrlWatcher'], item.currentVarName);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startUrlWatcher', 'endUrlWatcher'], item.currentVarName,item.resetVars);
                 const urlWatcher = async e => {
                     param.vars.navigateEvt = e;
                     value = await fn(value);
@@ -340,7 +346,10 @@
                 fields: {
                     urlWatcherName: {
                         type: 'text',
-                        width: '7vw'
+                        width: '6vw'
+                    },
+                    resetVars:{
+                        type:'checkbox',
                     },
                     rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('startUrlWatcher', '#9def9d'),
                 }
@@ -358,7 +367,7 @@
                 fields: {
                     urlWatcherName: {
                         type: 'text',
-                        width: '7vw'
+                        width: '11vw'
                     }
                 }
             },
@@ -366,7 +375,7 @@
 
         elementObserve: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startElementObserve', 'endElementObserve'], item.currentVarName);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startElementObserve', 'endElementObserve'], item.currentVarName,item.resetVars);
                 const selector = superFetchHook.getVariable(param.vars, item.querySelector, item.querySelector, true);
                 const ele = selector instanceof Element ? selector : document.querySelector(selector);
                 if (!ele) {
@@ -388,6 +397,9 @@
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
+                    resetVars:{
+                        type:'checkbox',
+                    },
                     elementObserveName: {
                         type: 'text',
                         width: '4vw',
@@ -420,7 +432,7 @@
                 fields: {
                     elementObserveName: {
                         type: 'text',
-                        width: '5vw',
+                        width: '11vw',
                     },
                 }
             }
@@ -446,7 +458,7 @@
     superFetchHook.simpleValueHandlerHelper.addHandlers('Tampermonkey', {
         addMenu: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startAddMenu', 'endAddMenu'], item.currentVarName);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startAddMenu', 'endAddMenu'], item.currentVarName,item.resetVars);
                 const menu = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.menuTitle);
                 window.userJSMenu[menu] = GM_registerMenuCommand(menu, async () => {
                     value = await fn(value, item, param);
@@ -464,6 +476,9 @@
                     accessKey: {
                         type: 'text',
                         width: '4vw',
+                    },
+                    resetVars:{
+                        type:'checkbox',
                     },
                     rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('startAddMenu', '#858d9d')
                 }
@@ -927,7 +942,7 @@
         addEvent: {
             fn(value, item, param) {
                 const ele = superFetchHook.getVariable(param.vars, item.elementVarName ? item.elementVarName : item.currentVarName);
-                const handle = superFetchHook.fetchActionHelper.extractHandlers(param, ['startEvenScopet', 'endEventScope'], item.currentVarName);
+                const handle = superFetchHook.fetchActionHelper.extractHandlers(param, ['startEvenScopet', 'endEventScope'], item.currentVarName,item.resetVars);
                 const eventIdentifier = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.eventIdentifier);
                 const fn = async ev => {
                     if (item.bindEventElement && !ev.target.matches(item.bindEventElement)) {
@@ -965,6 +980,9 @@
                     bindEventElement: {
                         type: 'text',
                         width: '6vw'
+                    },
+                    resetVars:{
+                        type:'checkbox',
                     },
                     event: {
                         type: 'select',

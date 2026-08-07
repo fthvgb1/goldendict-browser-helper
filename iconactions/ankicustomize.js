@@ -10,7 +10,7 @@
         AddTag: '打标签',
         customizeSearch: '添加搜索模式',
         'customizeSearch-desc': '将添加 deck field words queryExpress 4个变量，最后将queryExpress的值作为查询表达式',
-        endCustomizeSearch: '结束添加模式作用域',
+        endCustomizeSearch: '结束添加搜索模式作用域',
         searchMode: '搜索模式标识',
         searchModeDesc: '该搜索模式的说明',
         addAnkiStyle: '添加anki制卡对话框样式',
@@ -20,10 +20,10 @@
         ankiField: 'anki字段名，不填表示所有字段',
         buttonHTML: '按钮的HTML,class注意必须包含且与前className表单值相同',
         hookRichText: '默认将按钮表示添加到纯文本字段，勾选表示添加到富文本字段',
-        addFieldClickFn: '添加按钮左键单击事件',
-        endFieldClickFn: '结束添加按钮左键单击事件作用域',
-        addFieldContextMenuFn: '添加按钮右键点击事件',
-        endFieldContextMenuFn: '结束添加按钮右键点击事件作用域',
+        addFieldClickFn: '添加字段按钮左键单击事件',
+        endFieldClickFn: '结束添加字段按钮左键单击事件作用域',
+        addFieldContextMenuFn: '添加字段按钮右键点击事件',
+        endFieldContextMenuFn: '结束字段添加按钮右键点击事件作用域',
         addSpellRichEditorButton: '添加富文本编辑器按钮',
         "addSpellRichEditorButton-desc": '需要创建一个按钮元素',
         buttonElementVarName: '创建的按钮元素变量名',
@@ -39,13 +39,16 @@
     superFetchHook.simpleValueHandlerHelper.addHandlers('makeAnkiCard', {
         openDiag: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endScope', item.currentVarName);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endScope', item.currentVarName, item.resetVars);
                 PushHookAnkiDidRender(() => fn(value));
                 return value;
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
+                    resetVars: {
+                        type: 'checkbox',
+                    },
                     rangeHandle: {
                         type: 'text',
                         attrs: {
@@ -58,23 +61,23 @@
         },
         closeDiag: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endScope', item.currentVarName);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endScope', item.currentVarName, item.resetVars);
                 PushHookAnkiClose(() => fn(value));
                 return value;
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
-                param: {
-                    mountElementSelector: '.fetch-replacement-target',
-                    fields: {
-                        rangeHandle: {
-                            type: 'text',
-                            attrs: {
-                                className: 'hidden',
-                                value: 'closeDiag'
-                            }
-                        },
-                    }
+                fields: {
+                    resetVars: {
+                        type: 'checkbox',
+                    },
+                    rangeHandle: {
+                        type: 'text',
+                        attrs: {
+                            className: 'hidden',
+                            value: 'closeDiag'
+                        }
+                    },
                 }
             }
         },
@@ -98,7 +101,7 @@
         },
         customizeSearch: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['customizeSearch', 'endCustomizeSearch'], item.currentVarName);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['customizeSearch', 'endCustomizeSearch'], item.currentVarName, item.resetVars);
                 ankiHelper.ankiSearchHook[item.searchMode] = {
                     text: item.searchModeDesc,
                     async builder(deck, field, words) {
@@ -117,11 +120,14 @@
                 fields: {
                     searchMode: {
                         type: 'text',
-                        width: '6vw',
+                        width: '5vw',
                     },
                     searchModeDesc: {
                         type: 'text',
-                        width: '6vw',
+                        width: '5vw',
+                    },
+                    resetVars: {
+                        type: 'checkbox',
                     },
                     rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('customizeSearch', '#8ca5ce')
                 }
@@ -145,10 +151,10 @@
         },
         hookButton: {
             async fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['hookButton', 'endHookButton'], item.currentVarName);
-                value = await fn(value);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['hookButton', 'endHookButton'], item.currentVarName, item.resetVars);
+                await fn(value);
                 if (!item.className) {
-                    return value;
+                    return param.vars[item.currentVarName];
                 }
                 const click = param.vars.clickFn;
                 delete param.vars.clickFn;
@@ -174,7 +180,8 @@
                     delete param.vars.contextMenuFn;
                 }
                 (item.hookRichText ? PushExpandAnkiRichButton : PushExpandAnkiInputButton)(item.className, item.button, clickFn, item.field, contextMenuFn)
-                return value;
+                return param.vars[item.currentVarName];
+                ;
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
@@ -186,15 +193,18 @@
                     field: {
                         title: lang('ankiField'),
                         type: 'text',
-                        width: '3.5vw',
+                        width: '3vw',
                     },
                     button: {
                         title: lang('buttonHTML'),
                         type: 'text',
-                        width: '3.5vw',
+                        width: '3vw',
                     },
                     hookRichText: {
                         type: 'checkbox'
+                    },
+                    resetVars: {
+                        type: 'checkbox',
                     },
                     rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('hookButton', '#d9b187')
                 }
@@ -204,12 +214,15 @@
         endHookButton: superFetchHook.simpleValueHandlerHelper.endScope('endHookButton', '#d9b187'),
         addFieldClickFn: {
             fn(value, item, param) {
-                param.vars.clickFn = superFetchHook.fetchActionHelper.extractHandlers(param, ['addFieldClickFn', 'endFieldClickFn'], item.currentVarName);
+                param.vars.clickFn = superFetchHook.fetchActionHelper.extractHandlers(param, ['addFieldClickFn', 'endFieldClickFn'], item.currentVarName, item.resetVars);
                 return value;
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
+                    resetVars: {
+                        type: 'checkbox',
+                    },
                     rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('addFieldClickFn', '#e8aaff')
                 }
             }
@@ -217,12 +230,15 @@
         endFieldClickFn: superFetchHook.simpleValueHandlerHelper.endScope('endFieldClickFn', '#e8aaff'),
         addFieldContextMenuFn: {
             fn(value, item, param) {
-                param.vars.contextMenuFn = superFetchHook.fetchActionHelper.extractHandlers(param, ['addFieldContextMenuFn', 'endFieldContextMenuFn'], item.currentVarName);
+                param.vars.contextMenuFn = superFetchHook.fetchActionHelper.extractHandlers(param, ['addFieldContextMenuFn', 'endFieldContextMenuFn'], item.currentVarName, item.resetVars);
                 return value;
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
+                    resetVars: {
+                        type: 'checkbox',
+                    },
                     rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('addFieldContextMenuFn', '#6d6ae3')
                 }
             }
@@ -230,13 +246,12 @@
         endFieldContextMenuFn: superFetchHook.simpleValueHandlerHelper.endScope('endFieldContextMenuFn', '#6d6ae3'),
         addSpellRichEditorButton: {
             fn(value, item, param) {
-                const h = superFetchHook.fetchActionHelper.buildHandlersMap.array(param, ['addSpellRichEditorButton', 'endAddSpellRichEditorButton'], item.currentVarName);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['addSpellRichEditorButton', 'endAddSpellRichEditorButton'], item.currentVarName, true);
                 spellRichEditor.addButton(async field => {
                     const p = {...param, vars: {...param.vars}};
                     p.vars.field = field;
                     p.vars.elementVarName = item.elementVarName;
-                    const fn = superFetchHook.fetchActionHelper.buildSeparatedScopeHandlers(h[0], param, item.currentVarName, p);
-                    await fn(value);
+                    await fn(value, p);
                     const stateFn = p.vars[`${item.elementVarName}-stateFn`] ?? undefined;
                     stateFn && (spellRichEditor.addStateFn(field, stateFn), delete p.vars[`${item.elementVarName}-stateFn`]);
                     return p.vars[item.elementVarName];
@@ -249,6 +264,7 @@
                     elementVarName: {
                         title: lang('buttonElementVarName'),
                         type: 'text',
+                        width: '11vw',
                     },
                     rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('addSpellRichEditorButton', '#e89c4b')
                 }
@@ -257,12 +273,15 @@
         endAddSpellRichEditorButton: superFetchHook.simpleValueHandlerHelper.endScope('endAddSpellRichEditorButton', '#e89c4b'),
         addQueryState: {
             fn(value, item, param) {
-                param.vars[`${param.vars.elementVarName}-stateFn`] = superFetchHook.fetchActionHelper.extractHandlers(param, ['addQueryState', 'endAddQueryStateScope'], item.currentVarName);
+                param.vars[`${param.vars.elementVarName}-stateFn`] = superFetchHook.fetchActionHelper.extractHandlers(param, ['addQueryState', 'endAddQueryStateScope'], item.currentVarName, item.resetVars);
                 return param.vars[item.currentVarName];
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
+                    resetVars: {
+                        type: 'checkbox',
+                    },
                     rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('addQueryState', '#4b9ae8')
                 }
             }
@@ -270,19 +289,20 @@
         endAddQueryStateScope: superFetchHook.simpleValueHandlerHelper.endScope('endAddQueryStateScope', '#4b9ae8'),
         hookSave: {
             fn(value, item, param) {
-                const p = {...param, vars: {...param.vars}, parentVars: param.vars};
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['hookSave', 'endHookSaveScope'], item.currentVarName, p);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['hookSave', 'endHookSaveScope'], item.currentVarName,true);
                 if (item.hookAfter) {
                     ankiHelper.PushAnkiAfterSaveHook(async (res, params) => {
-                        p.vars.saveResult = res;
-                        p.vars.param = params;
-                        value = await fn(value)
+                       await fn(value,undefined,vars=>{
+                            vars.saveResult = res;
+                            vars.param = params;
+                        })
                     });
                 } else {
                     ankiHelper.PushAnkiBeforeSaveHook(async (isUpdate, note) => {
-                        p.vars.isUpdate = isUpdate;
-                        p.vars.note = note;
-                        value = await fn(value)
+                        await fn(value,undefined,vars=>{
+                            vars.isUpdate = isUpdate;
+                            vars.note = note;
+                        })
                     });
                 }
                 return value;
@@ -301,11 +321,9 @@
         endHookSaveScope: superFetchHook.simpleValueHandlerHelper.endScope('endHookSaveScope', '#5afc79'),
         afterShow: {
             fn(value, item, param) {
-                const p = {...param, vars: {...param.vars}, parentVars: param.vars};
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['afterShow', 'endAfterShowScope'], item.currentVarName, p);
-                ankiHelper.PushShowFn(async (_, card) => {
-                    p.vars.note = card;
-                    value = await fn(value)
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['afterShow', 'endAfterShowScope'], item.currentVarName, true);
+                ankiHelper.PushShowFn(card => {
+                    fn(value, undefined, vars => vars.note = card);
                 });
                 return value;
             },
