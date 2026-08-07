@@ -578,7 +578,7 @@
                         break
                     }
                     if ('function' === typeof item) {
-                        value = await item(value, {}, param);
+                        value = await item(value);
                         name && (param.vars[name] = value);
                         continue;
                     }
@@ -872,9 +872,9 @@
             }
         },
 
-        buildHandlers(handlers, param, name = '', p = undefined) {
-            if (p) {
-                return this.buildSeparatedScopeHandlers(handlers, param, name, p === true ? undefined : p);
+        buildHandlers(handlers, param, name = '', resetVars = false) {
+            if (resetVars) {
+                return this.buildSeparatedScopeHandlers(handlers, param, name);
             }
             return async value => {
                 const handlerss = param.handlers;
@@ -889,12 +889,18 @@
             }
         },
 
-        buildSeparatedScopeHandlers(handlers, param, name = '', p = undefined) {
-            p = p ?? {...param, vars: {...param.vars}, parentVars: param.vars};
-            const handlerss = param.handlers;
-            return async (value, pp = p) => {
+        buildSeparatedScopeHandlers(handlers, param, name = '') {
+            const originalParam = {...param, vars: {...param.vars}, parentVars: param.vars};
+            const getParam = () => ({...originalParam, vars: {...originalParam.vars}, parentVars: originalParam.vars});
+            const handlerss = [...param.handlers];
+            let val, first = true;
+            return async (value, pp = undefined, before = undefined, after = undefined) => {
+                pp = pp ?? getParam();
                 pp.handlers = [...handlers];
+                first ? (val = value, first = false) : (value = val);
+                before?.(pp.vars, pp, value);
                 value = await superFetchHook.fetchActionHelper.handItems(pp.handlers, value, pp, name);
+                after?.(pp.vars, pp, value);
                 if (pp?.break) {
                     pp.handlers = [];
                     return value;
@@ -904,13 +910,13 @@
             }
         },
         buildHandlersMap: {
-            number: (param, option, name, p) => actionHelper.buildHandlers(param.handlers.splice(0, option), param, name, p),
-            function: (param, option, name, p) => actionHelper.buildHandlers(option(param), param, name, p),
-            string: (param, option, name, p) => {
+            number: (param, option, name, resetVars) => actionHelper.buildHandlers(param.handlers.splice(0, option), param, name, resetVars),
+            function: (param, option, name, resetVars) => actionHelper.buildHandlers(option(param), param, name, resetVars),
+            string: (param, option, name, resetVars) => {
                 const i = param.handlers.findIndex(value => value?.rangeHandle === option);
-                return actionHelper.buildHandlers(param.handlers.splice(0, i > -1 ? i : param.handlers.length), param, name, p);
+                return actionHelper.buildHandlers(param.handlers.splice(0, i > -1 ? i : param.handlers.length), param, name, resetVars);
             },
-            array(param, option, name = '', p = undefined) {
+            array(param, option, name = '') {
                 const [start, end] = option;
                 const arr = [start], identifier = new Set(option);
                 const h = [[]];
@@ -929,7 +935,7 @@
                         }
                         const handlers = h.pop();
                         arr.pop();
-                        h[h.length - 1].push(superFetchHook.fetchActionHelper.buildHandlers(handlers, param, name, p))
+                        h[h.length - 1].push(superFetchHook.fetchActionHelper.buildHandlers(handlers, param, name))
                         if (arr.length < 1) {
                             break;
                         }
@@ -942,15 +948,15 @@
             }
         },
 
-        extractHandlers(param, option = 'endRangeHandle', name = '', p = undefined) {
+        extractHandlers(param, option = 'endRangeHandle', name = '', resetVars = false) {
             if (Array.isArray(option)) {
-                const h = actionHelper.buildHandlersMap.array(param, option, name, p);
+                const h = actionHelper.buildHandlersMap.array(param, option, name);
                 if (h[0].length < 1) {
                     return v => v;
                 }
-                return actionHelper.buildHandlers(h[0], param, name, p);
+                return actionHelper.buildHandlers(h[0], param, name, resetVars);
             }
-            return actionHelper.buildHandlersMap[typeof option]?.(param, option, name, p) ?? actionHelper.buildHandlers(param.handlers, param, name, p);
+            return actionHelper.buildHandlersMap[typeof option]?.(param, option, name, resetVars) ?? actionHelper.buildHandlers(param.handlers, param, name, resetVars);
         }
     };
 

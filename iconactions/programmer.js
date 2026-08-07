@@ -14,7 +14,8 @@
         callFunction: '执行函数',
         parameters: '参数, {var1},{var2}...',
         noReturn: '无需返回结果',
-        copyPreviousVars: '勾选使当前及后续代码块使用前一个代码块符号表的副本',
+        copyPreviousVars: '勾选使当前及后续代码块使用前一个代码块符号表的副本,代码块类型为函数时只对param生效',
+        resetVars: '每次执行将重置符号表',
     });
 
     superFetchHook.templateHelper.templateFnHook['programmer-item'] = (html, vars) => {
@@ -92,7 +93,7 @@
                     const fn = async (...args) => {
                         const vars = {...varss};
                         param.arguments.forEach((name, i) => name && (vars[name] = args[i]));
-                        await superFetchHook.fetchActions.programmer.callFunc(param, vars, varss);
+                        await superFetchHook.fetchActions.programmer.callFunc(param.copyPreviousVars ? {...param} : param, vars, varss);
                         if (param.returnVarName) {
                             const v = vars[param.returnVarName];
                             delete vars[param.returnVarName];
@@ -360,12 +361,15 @@
         endAddIcon: superFetchHook.simpleValueHandlerHelper.endScope('endAddIcon', '#5a4027'),
         startAddIconHandle: {
             fn(value, item, param) {
-                param.vars.clickFn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startAddIconHandle', 'endAddIconHandle'], item.currentVarName);
+                param.vars.clickFn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startAddIconHandle', 'endAddIconHandle'], item.currentVarName, item.resetVars);
                 return value;
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
+                    resetVars: {
+                        type: 'checkbox',
+                    },
                     rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('startAddIconHandle', '#8ca5ce')
                 }
             }

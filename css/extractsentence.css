@@ -45,6 +45,11 @@
     width: 6.8vw;
 }
 
+.fetch-replacement-item:has(.fetch-replacement-target +[name=resetVars]):has([name=resetVars]+[name=rangeHandle]):has([name=rangeHandle]+.replacement-add) :where(.handleType,.fetch-replacement-target){
+    width: fit-content;
+    max-width: 12vw;
+}
+
 .fetch-replacement-items {
     list-style-type: none;
     padding-inline-start: 0;
@@ -273,7 +278,6 @@ select.fetch-replacement-target[data-fn-set]:not(:has(:where(option[value=getAtt
     width: 4.2vw;
 }
 
-.fetch-dd:has(>.codeBlockType>option[value=function]:checked) input[name=copyPreviousVars],
 .fetch-dd > .fetch-replacement-items[data-batch] > .fetch-replacement-item:has(.handleType>option[value=Tampermonkey]:checked) input[name=handleThisValue] {
     display: none;
 }
