@@ -950,7 +950,7 @@
                     }
                     param.vars[item.eventIdentifier] = ev;
                     ['preventDefault', 'stopPropagation', 'stopImmediatePropagation'].forEach(v => item[v] && ev[v]());
-                    await handle(value);
+                    value = await handle(value);
                 };
                 ele.addEventListener(item.event, fn, {
                     capture: item.capture,

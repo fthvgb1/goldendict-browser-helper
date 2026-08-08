@@ -35,6 +35,9 @@
         hookAnkiAfter: '默认在保存前执行，勾选后在保存后执行',
         afterShow: '展示结果时勾子',
         endAfterShowScope: '结束展示结果时勾子作用域',
+        getCurrentCardFormData: '获取当前卡片的数据',
+        ankiSave: '执行保存操作',
+        updateApiName: '更新时请求的api操作名，为空默认为updateNote',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('makeAnkiCard', {
         openDiag: {
@@ -109,7 +112,7 @@
                         param.vars.field = field;
                         param.vars.words = words;
                         param.vars.queryExpress = words;
-                        await fn(value);
+                        value = await fn(value);
                         return param.vars.queryExpress;
                     }
                 }
@@ -152,7 +155,7 @@
         hookButton: {
             async fn(value, item, param) {
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['hookButton', 'endHookButton'], item.currentVarName, item.resetVars);
-                await fn(value);
+                value = await fn(value);
                 if (!item.className) {
                     return param.vars[item.currentVarName];
                 }
@@ -181,7 +184,6 @@
                 }
                 (item.hookRichText ? PushExpandAnkiRichButton : PushExpandAnkiInputButton)(item.className, item.button, clickFn, item.field, contextMenuFn)
                 return param.vars[item.currentVarName];
-                ;
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
@@ -289,17 +291,17 @@
         endAddQueryStateScope: superFetchHook.simpleValueHandlerHelper.endScope('endAddQueryStateScope', '#4b9ae8'),
         hookSave: {
             fn(value, item, param) {
-                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['hookSave', 'endHookSaveScope'], item.currentVarName,true);
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['hookSave', 'endHookSaveScope'], item.currentVarName, true);
                 if (item.hookAfter) {
                     ankiHelper.PushAnkiAfterSaveHook(async (res, params) => {
-                       await fn(value,undefined,vars=>{
+                        await fn(value, undefined, vars => {
                             vars.saveResult = res;
                             vars.param = params;
                         })
                     });
                 } else {
                     ankiHelper.PushAnkiBeforeSaveHook(async (isUpdate, note) => {
-                        await fn(value,undefined,vars=>{
+                        await fn(value, undefined, vars => {
                             vars.isUpdate = isUpdate;
                             vars.note = note;
                         })
@@ -336,6 +338,45 @@
         },
         endAfterShowScope: superFetchHook.simpleValueHandlerHelper.endScope('endAfterShowScope', '#c7d33d'),
 
+        getCurrentCardFormData: {
+            async fn(value, item, param) {
+                const o = superFetchHook.valueHandlers.valueRelation.handlers.setValue.parseVal(item, param);
+                const r = await ankiHelper.getAnkiFormValue(['ankiHost', 'model', 'deckName']);
+                o.set(r);
+                return param.vars[item.currentVarName];
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    leftValue: {
+                        type: 'text',
+                    },
+                }
+            }
+        },
+        ankiSave: {
+            async fn(value, item, param) {
+                const o = superFetchHook.valueHandlers.valueRelation.handlers.setValue.parseVal(item, param);
+                const api = item.updateApiName ? superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.updateApiName) : 'updateNote';
+                const r = await ankiHelper.ankiSave(['ankiHost', 'model', 'deckName'], api);
+                o.set(r);
+                return param.vars[item.currentVarName];
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    leftValue: {
+                        type: 'text',
+                        width: '5vw',
+                    },
+                    updateApiName: {
+                        type: 'text',
+                        width: '7vw'
+                    },
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('afterShow', '#c7d33d')
+                }
+            },
+        }
     }, {scope: {fetch: '*'},});
 
     PushHookAnkiClose(() => Object.keys(spellRichEditor.stateFns).forEach(k => delete spellRichEditor.stateFns[k]));
