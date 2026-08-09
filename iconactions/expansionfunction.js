@@ -486,7 +486,7 @@
                     return p.handlers.splice(0, p.handlers.length);
                 }, item.currentVarName);
                 if (r) {
-                    value = await fn(value, item, param);
+                    value = await fn(value);
                     if (param.handlers[0]?.rangeHandle === 'else') {
                         const h = param.handlers[0];
                         h.drop = () => (delete h.drop, true);
@@ -546,7 +546,7 @@
                 if (item?.drop?.()) {
                     return value;
                 }
-                value = await fn(value, item, param)
+                value = await fn(value)
                 return value;
             },
             param: {

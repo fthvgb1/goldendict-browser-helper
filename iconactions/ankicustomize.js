@@ -43,7 +43,7 @@
         openDiag: {
             fn(value, item, param) {
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endScope', item.currentVarName, item.resetVars);
-                PushHookAnkiDidRender(() => fn(value));
+                PushHookAnkiDidRender(async () => value = await fn(value));
                 return value;
             },
             param: {
@@ -65,7 +65,7 @@
         closeDiag: {
             fn(value, item, param) {
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endScope', item.currentVarName, item.resetVars);
-                PushHookAnkiClose(() => fn(value));
+                PushHookAnkiClose(async () => value = await fn(value));
                 return value;
             },
             param: {
@@ -108,12 +108,12 @@
                 ankiHelper.ankiSearchHook[item.searchMode] = {
                     text: item.searchModeDesc,
                     async builder(deck, field, words) {
-                        param.vars.deck = deck;
-                        param.vars.field = field;
-                        param.vars.words = words;
-                        param.vars.queryExpress = words;
-                        value = await fn(value);
-                        return param.vars.queryExpress;
+                        const v = {deck, field, words, queryExpress: words};
+                        !item.resetVars && Object.assign(param.vars, v);
+                        let exp;
+                        value = await fn(value, undefined, vars => Object.assign(vars, v), vars => exp = vars.queryExpress);
+                        !item.resetVars && (exp = param.vars.queryExpress)
+                        return exp;
                     }
                 }
                 return value
@@ -154,35 +154,41 @@
         },
         hookButton: {
             async fn(value, item, param) {
+                param.vars.resetVars = item.resetVars;
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['hookButton', 'endHookButton'], item.currentVarName, item.resetVars);
-                value = await fn(value);
+                const v = {};
+                value = await fn(value, undefined, undefined, vars => Object.assign(v, vars));
                 if (!item.className) {
                     return param.vars[item.currentVarName];
                 }
-                const click = param.vars.clickFn;
+                delete param.vars.resetVars;
+                const click = param.vars.clickFn ?? v.clickFn;
                 delete param.vars.clickFn;
                 const buildFn = async (eventName, call, fn, ev) => {
-                    param.vars[`${eventName}Evt`] = ev;
-                    param.vars[`${eventName}Fn`] = fn || (ev => ev);
-                    param.vars.fieldEle = findParent(ev.target, '.form-item').querySelector('.field-value,.spell-content');
+                    const v = {
+                        [`${eventName}Evt`]: ev,
+                        [`${eventName}Fn`]: fn || (ev => ev),
+                        fieldEle: findParent(ev.target, '.form-item').querySelector('.field-value,.spell-content')
+                    };
                     if (!item.hookRichText) {
-                        param.vars.value = param.vars.fieldEle.value;
+                        v.value = v.fieldEle.value;
                     }
-                    value = await call(value);
+                    !item.resetVars && Object.assign(param.vars, v);
+                    value = await call(value, undefined, vars => Object.assign(vars, v));
                 };
                 const clickFn = async (ev, fn) => {
                     await buildFn('click', click, fn, ev);
                 };
-                let contextMenuFn = null;
-                if (param.vars?.contextMenuFn) {
-                    const contextMenu = param.vars.contextMenuFn;
+                let contextMenuFn = param.vars?.contextMenuFn ?? v?.contextMenuFn;
+                if (contextMenuFn) {
+                    const contextMenu = contextMenuFn;
                     contextMenuFn = async (ev, fn) => {
                         ev.preventDefault();
                         await buildFn('contextMenu', contextMenu, fn, ev);
                     };
                     delete param.vars.contextMenuFn;
                 }
-                (item.hookRichText ? PushExpandAnkiRichButton : PushExpandAnkiInputButton)(item.className, item.button, clickFn, item.field, contextMenuFn)
+                (item.hookRichText ? PushExpandAnkiRichButton : PushExpandAnkiInputButton)(item.className, item.button, clickFn, item.field, contextMenuFn);
                 return param.vars[item.currentVarName];
             },
             param: {
@@ -216,15 +222,12 @@
         endHookButton: superFetchHook.simpleValueHandlerHelper.endScope('endHookButton', '#d9b187'),
         addFieldClickFn: {
             fn(value, item, param) {
-                param.vars.clickFn = superFetchHook.fetchActionHelper.extractHandlers(param, ['addFieldClickFn', 'endFieldClickFn'], item.currentVarName, item.resetVars);
+                param.vars.clickFn = superFetchHook.fetchActionHelper.extractHandlers(param, ['addFieldClickFn', 'endFieldClickFn'], item.currentVarName, param.vars.resetVars);
                 return value;
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
-                    resetVars: {
-                        type: 'checkbox',
-                    },
                     rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('addFieldClickFn', '#e8aaff')
                 }
             }
@@ -232,15 +235,12 @@
         endFieldClickFn: superFetchHook.simpleValueHandlerHelper.endScope('endFieldClickFn', '#e8aaff'),
         addFieldContextMenuFn: {
             fn(value, item, param) {
-                param.vars.contextMenuFn = superFetchHook.fetchActionHelper.extractHandlers(param, ['addFieldContextMenuFn', 'endFieldContextMenuFn'], item.currentVarName, item.resetVars);
+                param.vars.contextMenuFn = superFetchHook.fetchActionHelper.extractHandlers(param, ['addFieldContextMenuFn', 'endFieldContextMenuFn'], item.currentVarName, param.vars.resetVars);
                 return value;
             },
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
-                    resetVars: {
-                        type: 'checkbox',
-                    },
                     rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('addFieldContextMenuFn', '#6d6ae3')
                 }
             }

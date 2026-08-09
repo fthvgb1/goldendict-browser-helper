@@ -334,8 +334,8 @@
             fn(value, item, param) {
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startUrlWatcher', 'endUrlWatcher'], item.currentVarName,item.resetVars);
                 const urlWatcher = async e => {
-                    param.vars.navigateEvt = e;
-                    value = await fn(value);
+                    !item.resetVars && (param.vars.navigateEvt = e);
+                    value = await fn(value, undefined, vars => vars.navigateEvt = e);
                 };
                 setMapVal(`urlWatcher.${item.urlWatcherName}`, urlWatcher, window);
                 navigation.addEventListener("navigate", urlWatcher);
@@ -383,8 +383,8 @@
                     return value;
                 }
                 const observer = new MutationObserver(async (mutationList) => {
-                    param.vars.mutationRecord = mutationList;
-                    value = await fn(value);
+                    !item.resetVars && (param.vars.mutationRecord = mutationList);
+                    value = await fn(value, undefined, vars => vars.mutationRecord = mutationList);
                 });
                 setMapVal(`elementObserve.${item.elementObserveName}`, observer, window);
                 observer.observe(ele, {
@@ -461,7 +461,7 @@
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startAddMenu', 'endAddMenu'], item.currentVarName,item.resetVars);
                 const menu = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.menuTitle);
                 window.userJSMenu[menu] = GM_registerMenuCommand(menu, async () => {
-                    value = await fn(value, item, param);
+                    value = await fn(value);
                 }, item.accessKey);
                 return value;
             },
@@ -948,9 +948,9 @@
                     if (item.bindEventElement && !ev.target.matches(item.bindEventElement)) {
                         return;
                     }
-                    param.vars[item.eventIdentifier] = ev;
+                    !item.resetVars && (param.vars[item.eventIdentifier] = ev);
                     ['preventDefault', 'stopPropagation', 'stopImmediatePropagation'].forEach(v => item[v] && ev[v]());
-                    value = await handle(value);
+                    value = await handle(value, undefined, vars => vars[item.eventIdentifier] = ev);
                 };
                 ele.addEventListener(item.event, fn, {
                     capture: item.capture,
