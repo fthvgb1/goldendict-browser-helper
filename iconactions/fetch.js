@@ -298,7 +298,7 @@
             },
             renderHook(html, vars) {
                 simpleValueHandlerHelper.renderHooker(html, vars, this.getOptions(this.handlers, html.dataset.from));
-                html.querySelectorAll('.fetch-replacement-target~:not(.replacement-add)')
+                html.querySelectorAll('.fetch-replacement-target~:not(button[class^=replacement])')
                     .forEach(el => el.remove());
             },
             handlers: {

@@ -675,4 +675,51 @@
         }
     }, {scope: 'fetch'});
 
+    superFetchHook.hookLang({
+        addHandlers: '添加自定义操作',
+        addSimpleHandlers: '添加到简单函数集合',
+        endAddSimpleHandlers: '结束添加到简单函数集合作用域',
+        showName: '操作说明',
+        inputParam: '入参变量名',
+        returnParamName: '返回值变量名，为空默认为入参名',
+    });
+    superFetchHook.simpleValueHandlerHelper.addHandlers('addHandlers', {
+        addSimpleHandlers: {
+            fn(value, item, param) {
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endAddSimpleHandlers', item.currentVarName, item.resetVars);
+                const returnVarName = item.returnVarName ? item.returnVarName : item.inputParam;
+                superFetchHook.valueHandlers.simpleValueHandlers.handlers[item.name] = async v => {
+                    !item.resetVars && (param.vars[item.inputParam] = v);
+                    let r;
+                    value = await fn(value, undefined, vars => vars[item.inputParam] = v, vars => r = vars[returnVarName]);
+                    return item.resetVars ? r : param.vars[returnVarName];
+                };
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    name: {
+                        title: superFetchHook.lang('showName'),
+                        type: 'text',
+                        width: '3.5vw'
+                    },
+                    inputParam: {
+                        type: 'text',
+                        width: '3.4vw'
+                    },
+                    returnVarName: {
+                        type: 'text',
+                        width: '3.4vw'
+                    },
+                    resetVars: {
+                        type: 'checkbox'
+                    },
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('addSimpleHandlers', '#4be7a7'),
+                }
+            }
+        },
+        endAddSimpleHandlers: superFetchHook.simpleValueHandlerHelper.endScope('endAddSimpleHandlers', '#4be7a7')
+    }, {scope: 'fetch'});
+
 })();
