@@ -876,10 +876,18 @@
             if (resetVars) {
                 return this.buildSeparatedScopeHandlers(handlers, param, name);
             }
-            return async value => {
+            // use this method can't share same sign with buildSeparatedScopeHandlers but couldn't use value=await fn(value)
+            let v, first = true;
+            return async (value, newVal = false, val = undefined) => {
+                if (newVal) { // also could remove newVal and val
+                    value = val;
+                } else {
+                    first ? (first = false, v = value) : (value = v);
+                }
                 const handlerss = param.handlers;
                 param.handlers = handlers;
                 value = await superFetchHook.fetchActionHelper.handItems(handlers, value, param, name);
+                v = value;
                 if (param?.break) {
                     param.handlers = [];
                     return value;
