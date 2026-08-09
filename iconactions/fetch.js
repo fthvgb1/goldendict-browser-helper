@@ -876,14 +876,10 @@
             if (resetVars) {
                 return this.buildSeparatedScopeHandlers(handlers, param, name);
             }
-            // use this method can't share same sign with buildSeparatedScopeHandlers but couldn't use value=await fn(value)
+            // use this method share same sign with buildSeparatedScopeHandlers without use value = await fn(value) but value will be locked in closure
             let v, first = true;
-            return async (value, newVal = false, val = undefined) => {
-                if (newVal) { // also could remove newVal and val
-                    value = val;
-                } else {
-                    first ? (first = false, v = value) : (value = v);
-                }
+            return async (value) => {
+                first ? (first = false, v = value) : (value = v);
                 const handlerss = param.handlers;
                 param.handlers = handlers;
                 value = await superFetchHook.fetchActionHelper.handItems(handlers, value, param, name);
