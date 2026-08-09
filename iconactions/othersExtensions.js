@@ -675,7 +675,6 @@
                 const handlers = h[0];
                 const handlerss = param.handlers;
                 return async (value, separate = false, o = {}, p = param) => {
-                    p.handlers = handlers;
                     if (separate) {
                         p = {
                             ...param,
@@ -696,7 +695,7 @@
                         p.handlers = [];
                         return value;
                     }
-                    p.handlers = separate ? [...handlers] : handlerss;
+                    p.handlers = separate ? [...handlerss] : handlerss;
                     return value;
                 }
             },
