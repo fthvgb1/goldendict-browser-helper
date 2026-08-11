@@ -585,7 +585,7 @@
                     const handler = {currentVarName: name, ...item};
                     value = await valueHandlers[handler.handleType].handle(handler, value, param);
                     name = handler.currentVarName;
-                    name && (param.vars[name] = value);
+                    name && !item.clearVariables && (param.vars[name] = value);
                     if (handler?.break || param?.break) {
                         break;
                     }

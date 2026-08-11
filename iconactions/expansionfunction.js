@@ -84,6 +84,9 @@
         'endRangeHandle': '结束前一个作用域',
         'endRangeHandle-desc': '用于结束如url，元素监听等',
         'jsonDecodeX': 'use new Function parse',
+        clearVariables: '清理符号表',
+        'clearVariables-desc': '删除变量，方便用在一些常驻闭包中回收内存',
+        exceptVarNames: '排除的变量名，多个用,隔开',
     });
     const lang = superFetchHook.lang, getValue = superFetchHook.getVariable;
     Object.assign(superFetchHook.valueHandlers.simpleValueHandlers.handlers, {
@@ -843,6 +846,23 @@
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {
                     varName: {
+                        type: 'text',
+                    }
+                }
+            }
+        },
+        clearVariables: {
+            fn(value, item, param) {
+                item.clearVariables = true;
+                const s = new Set(item.exceptVarNames.trim().split(','));
+                Object.keys(param.vars).forEach(k => !s.has(k) && delete param.vars[k]);
+                Object.assign(param.vars, superFetchHook.fetchActionHelper.global);
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    exceptVarNames: {
                         type: 'text',
                     }
                 }

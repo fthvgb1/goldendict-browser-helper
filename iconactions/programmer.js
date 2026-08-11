@@ -677,6 +677,15 @@
                     },
                 }
             }
+        },
+        debugger: {
+            fn: v => {
+                debugger;
+                return v;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+            }
         }
     }, {scope: 'fetch'});
 
