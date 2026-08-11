@@ -323,12 +323,16 @@
                 await _addIconAction({
                     ...data,
                     trigger: fn ? async (text, hideIcon, event) => {
-                        param.vars.text = text;
-                        param.vars[item.iconId] = event.target;
-                        param.vars.hideIcon = hideIcon;
-                        param.vars.trContent = findParent(event.target, 'tr-icon').querySelector('tr-content');
-                        param.vars.trDiv = param.vars.trContent.querySelector(':scope>div');
-                        value = await fn(value)
+                        const trContent = findParent(event.target, 'tr-icon').querySelector('tr-content');
+                        const p = {
+                            text,
+                            [item.iconId]: event.target,
+                            hideIcon,
+                            trContent,
+                            trDiv: trContent.querySelector(':scope>div'),
+                        };
+                        !param.resetVars && Object.assign(param.vars, p);
+                        value = await fn(value, undefined, vars => Object.assign(vars, p));
                     } : null,
                     call: call,
                 }, item.replacement);
@@ -361,6 +365,7 @@
         endAddIcon: superFetchHook.simpleValueHandlerHelper.endScope('endAddIcon', '#5a4027'),
         startAddIconHandle: {
             fn(value, item, param) {
+                param.resetVars = item.resetVars;
                 param.vars.clickFn = superFetchHook.fetchActionHelper.extractHandlers(param, ['startAddIconHandle', 'endAddIconHandle'], item.currentVarName, item.resetVars);
                 return value;
             },
