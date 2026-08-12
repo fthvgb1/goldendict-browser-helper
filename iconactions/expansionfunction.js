@@ -565,7 +565,7 @@
                 }
             }
         },
-        endif: superFetchHook.simpleValueHandlerHelper.endScope('endif', '#ebd0e7', {fn: v => v}),
+        endif: superFetchHook.simpleValueHandlerHelper.endScope('endif', '#ebd0e7'),
         break: {
             fn: (value, item) => (item.break = true, value),
             param: {

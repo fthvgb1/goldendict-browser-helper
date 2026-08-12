@@ -425,6 +425,15 @@
         execCommand: 'execCommand执行指令',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('others', {
+        debugger: {
+            fn: v => {
+                debugger;
+                return v;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+            }
+        },
         tts: {
             fn(value, item, param) {
                 const text = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.content);
@@ -678,15 +687,6 @@
                 }
             }
         },
-        debugger: {
-            fn: v => {
-                debugger;
-                return v;
-            },
-            param: {
-                mountElementSelector: '.fetch-replacement-target',
-            }
-        }
     }, {scope: 'fetch'});
 
     superFetchHook.hookLang({

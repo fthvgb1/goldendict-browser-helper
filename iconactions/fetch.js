@@ -213,7 +213,7 @@
         },
         endScope(name, color = '#ebd0e7', attr = {}) {
             return {
-                fn: (...args) => simpleValueHandlerHelper.clearVariables(...args),
+                fn: (...args) => args[1].clearVariables && simpleValueHandlerHelper.clearVariables(...args),
                 param: {
                     mountElementSelector: '.fetch-replacement-target',
                     fields: {
