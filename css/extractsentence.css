@@ -45,6 +45,7 @@
     width: 6.8vw;
 }
 
+.fetch-replacement-item:has(.fetch-replacement-target +[name=clearVariables]):has([name=clearVariables]+[name=rangeHandle]):has([name=rangeHandle]+.replacement-add) :where(.handleType,.fetch-replacement-target),
 .fetch-replacement-item:has(.fetch-replacement-target +[name=resetVars]):has([name=resetVars]+[name=rangeHandle]):has([name=rangeHandle]+.replacement-add) :where(.handleType,.fetch-replacement-target){
     width: fit-content;
     max-width: 12vw;

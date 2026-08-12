@@ -852,13 +852,7 @@
             }
         },
         clearVariables: {
-            fn(value, item, param) {
-                item.clearVariables = true;
-                const s = new Set(item.exceptVarNames.trim().split(','));
-                Object.keys(param.vars).forEach(k => !s.has(k) && delete param.vars[k]);
-                Object.assign(param.vars, superFetchHook.fetchActionHelper.global);
-                return value;
-            },
+            fn: (...args) => superFetchHook.simpleValueHandlerHelper.clearVariables(...args),
             param: {
                 mountElementSelector: '.fetch-replacement-target',
                 fields: {

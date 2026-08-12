@@ -16,6 +16,7 @@
         btoa: '进行base64编码',
         'NBSPtoSpace': '将特殊空格转成普通空格',
         'NBSPtoSpace-desc': '将特殊空格(char(160)NBSP)转成普通空格',
+        clearVariablesAtEnd: '执行到最后清理符号表',
     });
     superFetchHook.eventHook.addTplFn = {
         ...superFetchHook.eventHook.addTplFn,
@@ -212,10 +213,14 @@
         },
         endScope(name, color = '#ebd0e7', attr = {}) {
             return {
-                fn: v => v,
+                fn: (...args) => simpleValueHandlerHelper.clearVariables(...args),
                 param: {
                     mountElementSelector: '.fetch-replacement-target',
                     fields: {
+                        clearVariables: {
+                            title: mapTitle.clearVariablesAtEnd,
+                            type: 'checkbox'
+                        },
                         rangeHandle: {
                             type: 'text',
                             attrs: {
@@ -228,6 +233,13 @@
                 },
                 ...attr
             }
+        },
+        clearVariables(value, item, param) {
+            item.clearVariables = true;
+            const s = new Set(item?.exceptVarNames?.trim()?.split(','));
+            Object.keys(param.vars).forEach(k => !s.has(k) && delete param.vars[k]);
+            Object.assign(param.vars, superFetchHook.fetchActionHelper.global);
+            return value;
         }
     };
 
@@ -931,6 +943,7 @@
                     }
                     if (arr[arr.length - 1] === start && handler.rangeHandle === end) {
                         if (h.length < 2) {
+                            (handler?.clearVariables || handler?.hookEnd) && h[0].push(handler)
                             break;
                         }
                         const handlers = h.pop();
