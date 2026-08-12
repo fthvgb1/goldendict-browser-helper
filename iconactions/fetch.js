@@ -211,7 +211,7 @@
                 ...attr
             }
         },
-        endScope(name, color = '#ebd0e7', attr = {}) {
+        endScope(name, color = '#ebd0e7', attr = {}, fields = {}) {
             return {
                 fn: (...args) => args[1].clearVariables && simpleValueHandlerHelper.clearVariables(...args),
                 param: {
@@ -221,6 +221,7 @@
                             title: mapTitle.clearVariablesAtEnd,
                             type: 'checkbox'
                         },
+                        ...fields,
                         rangeHandle: {
                             type: 'text',
                             attrs: {
@@ -943,10 +944,11 @@
                     }
                     if (arr[arr.length - 1] === start && handler.rangeHandle === end) {
                         if (h.length < 2) {
-                            (handler?.clearVariables || handler?.hookEnd) && h[0].push(handler)
+                            (handler?.clearVariables || handler?.hookEnd) && h[0].push(handler);
                             break;
                         }
                         const handlers = h.pop();
+                        (handler?.clearVariables || handler?.hookEnd) && handlers.push(handler);
                         arr.pop();
                         h[h.length - 1].push(superFetchHook.fetchActionHelper.buildHandlers(handlers, param, name))
                         if (arr.length < 1) {
