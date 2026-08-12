@@ -38,6 +38,10 @@
         getCurrentCardFormData: '获取当前卡片的数据',
         ankiSave: '执行保存操作',
         updateApiName: '更新时请求的api操作名，为空默认为updateNote',
+        queryCard: '查询卡片',
+        queryExpression: '查询卡片的表达式，可使用{变量}',
+        showCard: '展示查询的卡片',
+        cardVarName: '卡片查询结果的变量名,注意查询结果返回的是数组，所以得加上下标',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('makeAnkiCard', {
         openDiag: {
@@ -289,6 +293,46 @@
             }
         },
         endAddQueryStateScope: superFetchHook.simpleValueHandlerHelper.endScope('endAddQueryStateScope', '#4b9ae8'),
+
+        queryCard: {
+            async fn(value, item, param) {
+                const exp = superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.queryExpression);
+                const r = await ankiHelper.queryAnki(exp);
+                const o = superFetchHook.valueHandlers.valueRelation.handlers.setValue.parseVal(item, param);
+                o.set(r);
+                return param.vars[item.currentVarName];
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    leftValue: {
+                        type: 'input',
+                        width: '3.5vw',
+                    },
+                    queryExpression: {
+                        type: 'text',
+                        width: '8.2vw',
+                    },
+                }
+            }
+        },
+
+        showCard: {
+            async fn(value, item, param) {
+                const cardInfo = superFetchHook.fetchActionHelper.getVar(item.cardVarName, param);
+                await ankiHelper.showAnkiCard(cardInfo);
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    cardVarName: {
+                        type: 'input',
+                    },
+                }
+            }
+        },
+
         hookSave: {
             fn(value, item, param) {
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param, ['hookSave', 'endHookSaveScope'], item.currentVarName, true);
