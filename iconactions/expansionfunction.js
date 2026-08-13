@@ -543,7 +543,7 @@
                 superFetchHook.valueHandlers.ifBranch.handlers.if.show(li, vars);
             }
         },
-        else: {
+        else: superFetchHook.simpleValueHandlerHelper.endScope('else', '', false, {
             async fn(value, item, param) {
                 const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endif', item.currentVarName);
                 if (item?.drop?.()) {
@@ -552,20 +552,8 @@
                 value = await fn(value)
                 return value;
             },
-            param: {
-                mountElementSelector: '.fetch-replacement-target',
-                fields: {
-                    rangeHandle: {
-                        type: 'text',
-                        attrs: {
-                            className: 'hidden',
-                            value: 'else',
-                        }
-                    }
-                }
-            }
-        },
-        endif: superFetchHook.simpleValueHandlerHelper.endScope('endif', '#ebd0e7'),
+        }),
+        endif: superFetchHook.simpleValueHandlerHelper.endScope('endif', '#ebd0e7', true),
         break: {
             fn: (value, item) => (item.break = true, value),
             param: {

@@ -758,7 +758,7 @@
                 }
             }
         },
-        endfor: superFetchHook.simpleValueHandlerHelper.endScope('endfor', '#8491a4'),
+        endfor: superFetchHook.simpleValueHandlerHelper.endScope('endfor', '#8491a4', true),
 
         forof: {
             async fn(value, item, param) {
@@ -800,7 +800,7 @@
                 }
             }
         },
-        endforof: superFetchHook.simpleValueHandlerHelper.endScope('endforof', '#ca88cf'),
+        endforof: superFetchHook.simpleValueHandlerHelper.endScope('endforof', '#ca88cf', true),
         'while(true)': {
             async fn(value, item, param) {
                 const fn = superFetchHook.valueHandlers.foreach.handlers.for.continueHook(param, ['while', 'endwhile'], item.currentVarName);
@@ -830,7 +830,7 @@
                 }
             }
         },
-        endwhile: superFetchHook.simpleValueHandlerHelper.endScope('endwhile', '#9cbef1'),
+        endwhile: superFetchHook.simpleValueHandlerHelper.endScope('endwhile', '#9cbef1', true),
         iterateObject: {
             async fn(value, item, param) {
                 const fn = superFetchHook.valueHandlers.foreach.handlers.for.continueHook(param, ['iterateObject', 'endIterateObject'], item.currentVarName);
@@ -878,7 +878,7 @@
                 }
             }
         },
-        endIterateObject: superFetchHook.simpleValueHandlerHelper.endScope('endIterateObject', '#bce4d9'),
+        endIterateObject: superFetchHook.simpleValueHandlerHelper.endScope('endIterateObject', '#bce4d9', true),
         continue: {
             fn(value, item, param) {
                 item.break = true;

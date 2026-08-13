@@ -211,16 +211,23 @@
                 ...attr
             }
         },
-        endScope(name, color = '#ebd0e7', attr = {}, fields = {}) {
+        endScope(name, color = '#ebd0e7', ignore = {
+            title: mapTitle.clearVariablesAtEnd,
+            type: 'checkbox'
+        }, attr = {}, fields = {}) {
+            ignore === false && (fields.hookEnd = {
+                type: 'text',
+                attrs: {
+                    className: 'hidden',
+                    value: 'hookEnd'
+                }
+            });
+            (typeof ignore !== "boolean") && (fields.clearVariables = ignore);
             return {
                 fn: (...args) => args[1].clearVariables && simpleValueHandlerHelper.clearVariables(...args),
                 param: {
                     mountElementSelector: '.fetch-replacement-target',
                     fields: {
-                        clearVariables: {
-                            title: mapTitle.clearVariablesAtEnd,
-                            type: 'checkbox'
-                        },
                         ...fields,
                         rangeHandle: {
                             type: 'text',
