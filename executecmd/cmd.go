@@ -78,7 +78,7 @@ func PipeExecCMDs(cmds []string, res bool, args map[string][]string) (string, []
 	return cmdStr, b.Bytes(), err
 }
 
-func ExecCMD(cmd string, res, getPid bool, fn func([]byte, error), args ...string) ([]byte, error) {
+func ExecCMD(cmd string, res, getPid, await bool, fn func([]byte, error), args ...string) ([]byte, error) {
 	cm := exec.Command(cmd, args...)
 	if res {
 		return cm.CombinedOutput()
@@ -92,6 +92,10 @@ func ExecCMD(cmd string, res, getPid bool, fn func([]byte, error), args ...strin
 	}
 	err := cm.Start()
 	if err != nil {
+		return nil, err
+	}
+	if await {
+		err = cm.Wait()
 		return nil, err
 	}
 	go func() {
@@ -108,7 +112,7 @@ func ExecCMD(cmd string, res, getPid bool, fn func([]byte, error), args ...strin
 	return []byte(number.IntToString(cm.Process.Pid)), nil
 }
 
-func ShellCmd(cmd string, res, getPid bool, args []string) ([]byte, error) {
+func ShellCmd(cmd string, res, getPid, await bool, args []string) ([]byte, error) {
 	ex, err := os.Executable()
 	if err != nil {
 		return nil, err
@@ -145,7 +149,7 @@ func ShellCmd(cmd string, res, getPid bool, args []string) ([]byte, error) {
 	} else {
 		defer fn()
 	}
-	return ExecCMD(sh, res, getPid, def, args...)
+	return ExecCMD(sh, res, getPid, await, def, args...)
 }
 
 func KillProcess(pid int) error {
