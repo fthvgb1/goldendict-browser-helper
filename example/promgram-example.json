@@ -593,6 +593,7 @@
       {
         "codeBlockName": "set font size",
         "codeBlockType": "program",
+        "copyPreviousVars": false,
         "replacement-items": [
           {
             "handleType": "delayOrInterval",
@@ -623,6 +624,7 @@
             "elementVarName": "fontsize",
             "eventIdentifier": "fon",
             "bindEventElement": "",
+            "resetVars": false,
             "event": "click",
             "preventDefault": false,
             "stopPropagation": false,
@@ -651,11 +653,13 @@
           {
             "handleType": "simpleEvent",
             "searchValue": "endEventScope",
+            "clearVariables": false,
             "rangeHandle": "endEventScope"
           },
           {
             "handleType": "makeAnkiCard",
             "searchValue": "endAddSpellRichEditorButton",
+            "clearVariables": false,
             "rangeHandle": "endAddSpellRichEditorButton"
           },
           {
@@ -669,8 +673,39 @@
             "searchValue": "setValue",
             "leftValue": "o",
             "variableType": "object",
-            "rightValue": "{1:\"8pt\",2:\"10pt\",3:\"12pt\",4:\"14pt\",5:\"18pt\",6:\"24pt\",8:\"36pt\"}",
+            "rightValue": "{1:8,2:10,3:12,4:14,5:18,6:24,7:36}",
             "handleThisValue": false
+          },
+          {
+            "handleType": "foreach",
+            "searchValue": "iterateObject",
+            "object": "o",
+            "key": "k",
+            "value": "v",
+            "useSeparateVars": false,
+            "rangeHandle": "iterateObject"
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "handleThisValue",
+            "varName": "v"
+          },
+          {
+            "handleType": "stringConjunction",
+            "format": "{v}px"
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "setValue",
+            "leftValue": "{o}.{k}",
+            "variableType": "variable",
+            "rightValue": "v",
+            "handleThisValue": false
+          },
+          {
+            "handleType": "foreach",
+            "searchValue": "endIterateObject",
+            "rangeHandle": "endIterateObject"
           },
           {
             "handleType": "valueRelation",
@@ -689,6 +724,7 @@
           {
             "handleType": "makeAnkiCard",
             "searchValue": "addQueryState",
+            "resetVars": false,
             "rangeHandle": "addQueryState"
           },
           {
@@ -708,11 +744,13 @@
           {
             "handleType": "makeAnkiCard",
             "searchValue": "endAddQueryStateScope",
+            "clearVariables": false,
             "rangeHandle": "endAddQueryStateScope"
           },
           {
             "handleType": "makeAnkiCard",
             "searchValue": "endAddSpellRichEditorButton",
+            "clearVariables": false,
             "rangeHandle": "endAddSpellRichEditorButton"
           }
         ]
@@ -854,6 +892,239 @@
           {
             "handleType": "makeAnkiCard",
             "searchValue": "endAddSpellRichEditorButton",
+            "rangeHandle": "endAddSpellRichEditorButton"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "fetch-name": "add copy button",
+    "operate-type": "programmer",
+    "url-scope": ".",
+    "fetch-active": true,
+    "add-contextmenu": false,
+    "programmerItems": [
+      {
+        "codeBlockName": "add copy button",
+        "codeBlockType": "program",
+        "copyPreviousVars": false,
+        "replacement-items": [
+          {
+            "handleType": "delayOrInterval",
+            "searchValue": "delay",
+            "delayTime": 3
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "addAnkiStyle",
+            "cssStyle": ".icon-copy::before {     content: \"\\63\"}"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "addSpellRichEditorButton",
+            "elementVarName": "copy",
+            "rangeHandle": "addSpellRichEditorButton"
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "stringToElement",
+            "setElementVarName": "copy",
+            "elementIdentOuterHTML": "<button class=\"spell-icon\" title=\"copy\"><i class=\"icon-copy\"></i></button>"
+          },
+          {
+            "handleType": "simpleEvent",
+            "searchValue": "addEvent",
+            "rangeHandle": "startEventScope",
+            "elementVarName": "copy",
+            "eventIdentifier": "evt",
+            "bindEventElement": "",
+            "resetVars": false,
+            "event": "click",
+            "preventDefault": false,
+            "stopPropagation": false,
+            "stopImmediatePropagation": false,
+            "capture": false,
+            "once": false,
+            "passive": false
+          },
+          {
+            "handleType": "typeKeys",
+            "searchValue": "simpleType",
+            "keys": "ctrl c"
+          },
+          {
+            "handleType": "simpleEvent",
+            "searchValue": "endEventScope",
+            "clearVariables": false,
+            "rangeHandle": "endEventScope"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "endAddSpellRichEditorButton",
+            "clearVariables": false,
+            "rangeHandle": "endAddSpellRichEditorButton"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "fetch-name": "add cut button",
+    "operate-type": "programmer",
+    "url-scope": ".",
+    "fetch-active": true,
+    "add-contextmenu": false,
+    "programmerItems": [
+      {
+        "codeBlockName": "add copy button",
+        "codeBlockType": "program",
+        "copyPreviousVars": false,
+        "replacement-items": [
+          {
+            "handleType": "delayOrInterval",
+            "searchValue": "delay",
+            "delayTime": 4
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "addAnkiStyle",
+            "cssStyle": ".icon-cut::before {     content: \"\\78\"}"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "addSpellRichEditorButton",
+            "elementVarName": "cut",
+            "rangeHandle": "addSpellRichEditorButton"
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "stringToElement",
+            "setElementVarName": "cut",
+            "elementIdentOuterHTML": "<button class=\"spell-icon\" title=\"cut\"><i class=\"icon-cut\"></i></button>"
+          },
+          {
+            "handleType": "simpleEvent",
+            "searchValue": "addEvent",
+            "rangeHandle": "startEventScope",
+            "elementVarName": "cut",
+            "eventIdentifier": "evt",
+            "bindEventElement": "",
+            "resetVars": false,
+            "event": "click",
+            "preventDefault": false,
+            "stopPropagation": false,
+            "stopImmediatePropagation": false,
+            "capture": false,
+            "once": false,
+            "passive": false
+          },
+          {
+            "handleType": "others",
+            "searchValue": "execCommand",
+            "command": "cut",
+            "showUI": false,
+            "value": "",
+            "needResult": false
+          },
+          {
+            "handleType": "simpleEvent",
+            "searchValue": "endEventScope",
+            "clearVariables": false,
+            "rangeHandle": "endEventScope"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "endAddSpellRichEditorButton",
+            "clearVariables": false,
+            "rangeHandle": "endAddSpellRichEditorButton"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "fetch-name": "add pasta button",
+    "operate-type": "programmer",
+    "url-scope": ".",
+    "fetch-active": true,
+    "add-contextmenu": false,
+    "programmerItems": [
+      {
+        "codeBlockName": "add pasta button",
+        "codeBlockType": "program",
+        "copyPreviousVars": false,
+        "replacement-items": [
+          {
+            "handleType": "delayOrInterval",
+            "searchValue": "delay",
+            "delayTime": 5
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "addAnkiStyle",
+            "cssStyle": ".icon-pasta::before {     content: \"\\76\"}"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "addSpellRichEditorButton",
+            "elementVarName": "pasta",
+            "rangeHandle": "addSpellRichEditorButton"
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "stringToElement",
+            "setElementVarName": "pasta",
+            "elementIdentOuterHTML": "<button class=\"spell-icon\" title=\"pasta\"><i class=\"icon-pasta\"></i></button>"
+          },
+          {
+            "handleType": "simpleEvent",
+            "searchValue": "addEvent",
+            "rangeHandle": "startEventScope",
+            "elementVarName": "pasta",
+            "eventIdentifier": "evt",
+            "bindEventElement": "",
+            "resetVars": false,
+            "event": "click",
+            "preventDefault": false,
+            "stopPropagation": false,
+            "stopImmediatePropagation": false,
+            "capture": false,
+            "once": false,
+            "passive": false
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "queryElement",
+            "leftValue": "spell",
+            "elementVarName": "pasta",
+            "elementSelector": "p@.spell%s@.spell-content",
+            "queryAll": false,
+            "anchorMode": true
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "setValue",
+            "leftValue": "x",
+            "variableType": "func",
+            "rightValue": "{spell.focus}",
+            "handleThisValue": false
+          },
+          {
+            "handleType": "typeKeys",
+            "searchValue": "simpleType",
+            "keys": "ctrl v"
+          },
+          {
+            "handleType": "simpleEvent",
+            "searchValue": "endEventScope",
+            "clearVariables": false,
+            "rangeHandle": "endEventScope"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "endAddSpellRichEditorButton",
+            "clearVariables": false,
             "rangeHandle": "endAddSpellRichEditorButton"
           }
         ]
