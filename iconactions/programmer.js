@@ -270,7 +270,7 @@
         html.querySelectorAll('.field-name').forEach(input =>
             GM_getValue(`addHidden_${input.value}`) && input.classList.add('addHidden')
         );
-        html.querySelector('.anki-search').addEventListener('mousedown', async ev => {
+        html.addEventListener('mousedown', async ev => {
             if (ev.button !== 1 || ev.target.className !== 'anki-search') {
                 return
             }
@@ -735,5 +735,14 @@
         },
         endAddSimpleHandlers: superFetchHook.simpleValueHandlerHelper.endScope('endAddSimpleHandlers', '#4be7a7')
     }, {scope: 'fetch'});
+
+    PushHookAnkiHtml(html => {
+        html.addEventListener('keyup', ev => {
+            if (ev.key !== 'Enter' || !ev.target.classList.contains('field-value')) {
+                return
+            }
+            findParent(ev.target, '.form-item').querySelector('.anki-search').click();
+        });
+    });
 
 })();

@@ -42,6 +42,10 @@
         queryExpression: '查询卡片的表达式，可使用{变量}',
         showCard: '展示查询的卡片',
         cardVarName: '卡片查询结果的变量名,注意查询结果返回的是数组，所以得加上下标',
+        afterQuery: '查询结果勾子',
+        endAfterQuery: '结束查询结果勾子作用域',
+        queryResHookName: '勾子名(用于覆盖)',
+        queryResVarName: '查询结果变量名',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('makeAnkiCard', {
         openDiag: {
@@ -316,6 +320,35 @@
                 }
             }
         },
+
+        afterQuery: {
+            fn(value, item, param) {
+                const fn = superFetchHook.fetchActionHelper.extractHandlers(param, 'endAfterQuery', item.currentVarName, item.resetVars);
+                ankiHelper.afterQuery(item.queryResHookName, async results => {
+                    !item.resetVars && (param.vars[item.queryResVarName] = results);
+                    value = await fn(value, undefined, vars => vars[item.queryResVarName] = results);
+                });
+                return value;
+            },
+            param: {
+                mountElementSelector: '.fetch-replacement-target',
+                fields: {
+                    queryResHookName: {
+                        type: 'text',
+                        width: '3vw',
+                    },
+                    queryResVarName: {
+                        type: 'input',
+                        width: '8vw',
+                    },
+                    resetVars: {
+                        type: 'checkbox'
+                    },
+                    rangeHandle: superFetchHook.simpleValueHandlerHelper.startScope('afterQuery', '#d98080')
+                }
+            }
+        },
+        endAfterQuery: superFetchHook.simpleValueHandlerHelper.endScope('endAfterQuery', '#d98080'),
 
         showCard: {
             async fn(value, item, param) {

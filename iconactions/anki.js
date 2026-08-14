@@ -52,6 +52,8 @@
         }
     });
 
+    const hookQueryResults = {};
+
     async function queryAnki(expression) {
         let {result, error} = await anki('findNotes', {
             query: expression
@@ -67,6 +69,9 @@
         })
         if (res.error) {
             throw res.error;
+        }
+        for (const [, fn] of Object.entries(hookQueryResults)) {
+            await fn(res);
         }
         return res.result;
     }
@@ -110,11 +115,12 @@
     };
 
     async function getSearchType(ev, type = null) {
-        const value = ev.target.parentElement.previousElementSibling.value.trim();
-        const field = ev.target.parentElement.parentElement.querySelector('.field-name').value;
+        const form = findParent(ev.target, '.form-item');
+        const inputs = form.querySelector('.field-value');
+        const value = inputs.value.trim();
+        const field = form.querySelector('.field-name').value;
         const deck = document.querySelector('#deckName').value;
         const sel = document.createElement('select');
-        const inputs = ev.target.parentElement.previousElementSibling;
         sel.name = inputs.name;
         sel.className = inputs.className;
         if (type !== null) {
@@ -139,7 +145,7 @@
             const target = ev.target;
             if (!searchInput) {
                 searchInput = document.createElement('input');
-                searchInput.title = '请输入正面字段名';
+                searchInput.title = '请输入要切换选择搜索结果的字段名';
                 const set = () => {
                     const val = searchInput.value.trim();
                     if (val) {
@@ -153,12 +159,13 @@
                 }
                 searchInput.addEventListener('blur', fn);
                 searchInput.addEventListener('keyup', (ev) => {
-                    if (ev.key === 'Enter') {
-                        set();
-                        searchInput.removeEventListener('blur', fn);
-                        searchInput.parentElement.replaceChild(target, searchInput);
-                        target.click();
+                    if (ev.key !== 'Enter') {
+                        return
                     }
+                    set();
+                    searchInput.removeEventListener('blur', fn);
+                    searchInput.parentElement.replaceChild(target, searchInput);
+                    target.click();
                 });
             }
 
@@ -166,9 +173,10 @@
         },
         'anki-search': async (ev) => {
             ev.preventDefault();
-            const field = ev.target.parentElement.parentElement.querySelector('.field-name').value;
+            const form = findParent(ev.target, '.form-item');
+            const field = form.querySelector('.field-name').value;
             const sel = document.createElement('select');
-            const inputs = ev.target.parentElement.previousElementSibling;
+            const inputs = form.querySelector('.field-value');
             sel.name = inputs.name;
             sel.className = inputs.className;
             const options = await getSearchType(ev);
@@ -265,9 +273,10 @@
             searchAnki(ev, express, el);
         },
         'anki-search': async (ev) => {
-            const field = ev.target.parentElement.parentElement.querySelector('.field-name').value;
+            const form = findParent(ev.target, '.form-item');
+            const field = form.querySelector('.field-name').value;
             const express = await getSearchType(ev, getDefaultSearchType(field));
-            const inputs = ev.target.parentElement.previousElementSibling;
+            const inputs = form.querySelector('.field-value');
             searchAnki(ev, express, inputs);
         },
         'word-wrap-first': (ev) => {
@@ -283,7 +292,8 @@
             b.parentElement.scrollBy({top: b.offsetTop})
         },
         'lemmatizer': (ev) => {
-            const inputs = ev.target.parentElement.previousElementSibling;
+            const form = findParent(ev.target, '.form-item')
+            const inputs = form.querySelector('.field-value');
             const words = inputs.value.split(' ');
             const word = inputs.value.split(' ')[0].toLowerCase();
             if (word === '') {
@@ -352,32 +362,36 @@
     };
 
     async function searchAnki(ev, queryStr, inputs, sels = null) {
-        const field = ev.target.parentElement.parentElement.querySelector('.field-name').value;
+        const form = findParent(inputs?.parentElement ? inputs : ev.target, '.form-item');
+        const field = form.querySelector('.field-name').value;
+        let b = form.querySelector('.searchResults');
         let result;
         try {
             result = await queryAnki(queryStr);
             if (!result || result.length < 1) {
                 setExistsNoteId(0);
                 sels && sels.replaceWith(inputs);
+                b?.remove();
                 return
             }
         } catch (e) {
             sels && sels.replaceWith(inputs);
+            b?.remove();
             Swal.showValidationMessage(e);
             return
         }
         if (result.length === 1) {
+            b?.remove();
             sels && sels.replaceWith(inputs);
             await showAnkiCard(result[0]);
             return
         }
+
         const sel = document.createElement('select');
         sel.name = inputs.name;
         sel.className = inputs.className;
-        const values = {};
-        const options = result.map(v => {
-            values[v.fields[field].value] = v;
-            return [v.fields[field].value, v.fields[field].value];
+        const options = result.map((v, i) => {
+            return [i, v.fields[field].value];
         });
         sel.innerHTML = buildOption(options, '', 0, 1);
         const ele = (sels && sels.parentElement) ? sels : inputs;
@@ -386,14 +400,25 @@
         }
         ele.parentElement.replaceChild(sel, ele);
         sel.focus();
+        const fn = () => {
+            sel.addEventListener('change', changeFn);
+            !inputs.parentElement && (inputs = b.previousElementSibling);
+            inputs.replaceWith(sel);
+        }
+        if (!b) {
+            b = document.createElement('button');
+            b.classList.add('searchResults')
+            b.innerHTML = '📖';
+        }
+        b.onclick = fn;
         const changeFn = async () => {
-            inputs.value = sel.value;
-            await showAnkiCard(values[sel.value]);
+            await showAnkiCard(result[sel.value]);
         }
         const blurFn = async () => {
             sel.removeEventListener('change', changeFn);
-            inputs.value = sel.value;
+            inputs.value = sel.querySelector('option:checked').innerText;
             sel.replaceWith(inputs);
+            inputs.insertAdjacentElement('afterend', b);
         };
         sel.addEventListener('change', changeFn);
         sel.addEventListener('blur', blurFn);
@@ -502,7 +527,7 @@
             ${input} 
             <div class="field-operate">
                 <button class="minus">➖</button>
-                <input type="radio" title="选中赋值" ${checkeds} name="shadow-form-defaut[]">
+                <input type="radio" class="vestValue" title="选中赋值" ${checkeds} name="shadow-form-defaut[]">
                 <input type="checkbox" title="切换为textarea" ${useTextarea ? 'checked' : ''} name="useTextarea" class="useTextarea">
                 <button class="lemmatizer" title="lemmatize查找单词原型">📟</button>
                 <button class="anki-search" title="search anki 左健搜索 中键复制搜索表达式 右键选择搜索模式">🔍</button>
@@ -561,7 +586,7 @@
             <div class="wait-replace"></div>            
             <div class="field-operate">
                 <button class="minus">➖</button>
-                <input type="radio" title="选中赋值" ${checkeds} name="shadow-form-defaut[]">
+                <input type="radio" class="vestValue" title="选中赋值" ${checkeds} name="shadow-form-defaut[]">
                 <button class="paste-html" title="粘贴">✍️</button>
                 <button class="text-clean" title="清空">🧹</button>
                 <button class="action-copy" title="复制innerHTML 左键处理图片 右键不处理">⭕</button>
@@ -990,17 +1015,18 @@
         });
         const isText = ele => ['INPUT', 'TEXTAREA'].includes(ele.tagName);
         for (const div of [...document.querySelectorAll('#shadowFields > ol > div')]) {
-            const name = div.children[0].value;
+            const [field, val] = div.children;
+            const name = field.value;
             if (name === '') {
                 continue;
             }
             modelField.push([
-                isText(div.children[1]) ? 1 : 2,
+                isText(val) ? 1 : 2,
                 name,
-                div.children[2].children[1].checked
+                div.querySelector('.field-operate > .vestValue').checked
             ]);
-            if (isText(div.children[1])) {
-                fields[name] = decodeHtmlSpecial(div.children[1].value);
+            if (isText(val)) {
+                fields[name] = val.value;
             } else {
                 const el = div.querySelector('.spell-content');
                 fields[name] = await checkAndStoreMedia(el.tagName === 'DIV' ? el.innerHTML : el.value)
@@ -1060,7 +1086,7 @@
     return {
         ankiHelper: {
             anki, getSearchType, ankiSave, queryAnki, showAnkiCard, searchAnki,
-            ankiSearchHook, addAnki, getDefaultSearchType,
+            ankiSearchHook, addAnki, getDefaultSearchType, afterQuery: (name, fn) => hookQueryResults[name] = fn,
             ankiFormChange: changeFns, PushShowFn,
             getAnkiFormValue, PushAnkiAfterSaveHook, PushAnkiBeforeSaveHook
         },

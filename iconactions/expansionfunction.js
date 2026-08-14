@@ -641,6 +641,7 @@
         arguments: '参数,可使用{变量},默认格式同常见shell命令行字符串参数',
         argvUseVariable: '参数使用一个变量',
         returnPid: '返回pid',
+        awaits: '等待执行完成',
     });
     superFetchHook.simpleValueHandlerHelper.addHandlers('executeCmd', {
         haveReturn: {
@@ -676,6 +677,7 @@
                 const req = superFetchHook.valueHandlers.executeCmd.req;
                 const argv = {
                     res: 0,
+                    await: item.awaits ? 1 : 0,
                     cmd: superFetchHook.fetchActionHelper.replaceVars2Format(param.vars, item.commandPath),
                     args: item.argvUseVariable ?
                         superFetchHook.fetchActionHelper.getVar(item.arguments, param, true) :
@@ -686,7 +688,7 @@
                     const r = await req(argv, 'cmd');
                     return r.response;
                 }
-                req(argv, 'cmd');
+                item.awaits ? await req(argv, 'cmd') : req(argv, 'cmd');
                 return value;
             },
             param: {
@@ -694,16 +696,19 @@
                 fields: {
                     commandPath: {
                         type: 'text',
-                        width: '5vw',
+                        width: '4.5vw',
                     },
                     arguments: {
                         type: 'text',
-                        width: '5vw',
+                        width: '4.5vw',
                     },
                     argvUseVariable: {
                         type: 'checkbox'
                     },
                     returnPid: {
+                        type: 'checkbox'
+                    },
+                    awaits: {
                         type: 'checkbox'
                     }
                 }

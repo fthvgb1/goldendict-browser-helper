@@ -162,3 +162,14 @@ textarea.field-value {
 .spell-zone {
     text-align: left;
 }
+
+.form-item:has(.searchResults) {
+    position: static;
+}
+
+.form-item:has(.searchResults) .searchResults {
+    position: absolute;
+    right: 7vw;
+    margin-top: 1vw;
+    cursor: pointer;
+}
