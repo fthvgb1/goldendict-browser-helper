@@ -14,7 +14,7 @@
         callFunction: '执行函数',
         parameters: '参数, {var1},{var2}...',
         noReturn: '无需返回结果',
-        copyPreviousVars: '勾选使当前及后续代码块使用前一个代码块符号表的副本,代码块类型为函数时只对param生效',
+        copyPreviousVars: '勾选使当前及后续代码块使用前一个代码块符号表的副本,代码块类型为函数时只对param生效且每次会清理符号表',
         resetVars: '每次执行将重置符号表',
     });
 
@@ -744,5 +744,7 @@
             findParent(ev.target, '.form-item').querySelector('.anki-search').click();
         });
     });
+
+    superFetchHook.valueHandlers.simpleValueHandlers.handlers['arrayBufferToBase64'] = buffer => (new Uint8Array(buffer)).toBase64(buffer);
 
 })();

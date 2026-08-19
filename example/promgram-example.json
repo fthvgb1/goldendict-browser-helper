@@ -1130,5 +1130,142 @@
         ]
       }
     ]
+  },
+  {
+    "fetch-name": "readImageAndToBase64",
+    "operate-type": "programmer",
+    "url-scope": "",
+    "fetch-active": false,
+    "add-contextmenu": false,
+    "programmerItems": [
+      {
+        "codeBlockName": "",
+        "codeBlockType": "function",
+        "copyPreviousVars": false,
+        "replacement-items": [
+          {
+            "handleType": "valueRelation",
+            "searchValue": "setValue",
+            "leftValue": "a",
+            "variableType": "string",
+            "rightValue": "",
+            "handleThisValue": true
+          },
+          {
+            "handleType": "others",
+            "searchValue": "readFile",
+            "leftValue": "",
+            "fileInfo": "",
+            "openAsBinary": true
+          },
+          {
+            "handleType": "simpleValueHandlers",
+            "searchValue": "arrayBufferToBase64"
+          },
+          {
+            "handleType": "stringConjunction",
+            "format": "data:image/png;base64,{a}"
+          }
+        ],
+        "arguments": [
+          ""
+        ],
+        "returnVarName": "a"
+      }
+    ]
+  },
+  {
+    "fetch-name": "add local image button",
+    "operate-type": "programmer",
+    "url-scope": ".",
+    "fetch-active": true,
+    "add-contextmenu": false,
+    "programmerItems": [
+      {
+        "codeBlockName": "add image button",
+        "codeBlockType": "program",
+        "copyPreviousVars": false,
+        "replacement-items": [
+          {
+            "handleType": "delayOrInterval",
+            "searchValue": "delay",
+            "delayTime": 6
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "addSpellRichEditorButton",
+            "elementVarName": "img",
+            "rangeHandle": "addSpellRichEditorButton"
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "stringToElement",
+            "setElementVarName": "img",
+            "elementIdentOuterHTML": "<button class=\"spell-icon\" title=\"insert local image\">🖼</button>"
+          },
+          {
+            "handleType": "simpleEvent",
+            "searchValue": "addEvent",
+            "rangeHandle": "startEventScope",
+            "elementVarName": "img",
+            "eventIdentifier": "evt",
+            "bindEventElement": "",
+            "resetVars": false,
+            "event": "click",
+            "preventDefault": false,
+            "stopPropagation": false,
+            "stopImmediatePropagation": false,
+            "capture": false,
+            "once": false,
+            "passive": false
+          },
+          {
+            "handleType": "valueRelation",
+            "searchValue": "setValue",
+            "leftValue": "im",
+            "variableType": "string",
+            "rightValue": "",
+            "handleThisValue": true
+          },
+          {
+            "handleType": "callFunction",
+            "func": "readImageAndToBase64",
+            "parameters": "",
+            "async": false,
+            "noReturn": false
+          },
+          {
+            "handleType": "others",
+            "searchValue": "execCommand",
+            "command": "insertImage",
+            "showUI": false,
+            "value": "{im}",
+            "needResult": false
+          },
+          {
+            "handleType": "simpleEvent",
+            "searchValue": "endEventScope",
+            "clearVariables": false,
+            "rangeHandle": "endEventScope"
+          },
+          {
+            "handleType": "makeAnkiCard",
+            "searchValue": "endAddSpellRichEditorButton",
+            "clearVariables": false,
+            "rangeHandle": "endAddSpellRichEditorButton"
+          },
+          {
+            "handleType": "ifBranch",
+            "searchValue": "break"
+          },
+          {
+            "handleType": "htmlFns",
+            "searchValue": "stringToElement",
+            "setElementVarName": "img",
+            "elementIdentOuterHTML": "<button class=\"spell-icon\" title=\"insert local image\"><i class=\"icon-image\"></i></button>"
+          }
+        ]
+      }
+    ]
   }
 ]

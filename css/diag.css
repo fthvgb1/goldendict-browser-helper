@@ -173,3 +173,7 @@ textarea.field-value {
     margin-top: 1vw;
     cursor: pointer;
 }
+
+.spell-icon {
+    font-size: 1vw;
+}
